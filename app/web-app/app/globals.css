@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a1020;
+  --foreground: #f6efe2;
+  --panel: rgba(11, 18, 37, 0.82);
+  --panel-strong: rgba(6, 10, 23, 0.96);
+  --accent: #d4a867;
+  --accent-soft: #f2d9ac;
+  --muted: #8fa5c6;
+  --border: rgba(242, 217, 172, 0.16);
+  --shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  --font-app-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+    "URW Palladio L", Georgia, serif;
+  --font-app-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-app-mono: "SFMono-Regular", "Menlo", "Consolas", monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-app-sans);
+  --font-mono: var(--font-app-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-app-sans), sans-serif;
+  background-image:
+    radial-gradient(circle at top, rgba(212, 168, 103, 0.18), transparent 32%),
+    linear-gradient(180deg, #11192d 0%, #0a1020 42%, #070b16 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 28px 28px;
+}
+
+::selection {
+  background: rgba(212, 168, 103, 0.36);
+}
+
+.font-display {
+  font-family: var(--font-app-display), serif;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

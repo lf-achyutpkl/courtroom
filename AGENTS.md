@@ -8,9 +8,9 @@ This file applies to the whole repository.
 
 - Treat this repository as a polyglot monorepo.
 - `app/web-app` contains the Next.js frontend.
-- `agent-service` is reserved for the future Python and LangGraph service.
+- `app/agent-service` is reserved for the future Python and LangGraph service.
 - Do not place backend orchestration, Python code, or LangGraph graphs inside `app/web-app`.
-- Do not place frontend UI code inside `agent-service`.
+- Do not place frontend UI code inside `app/agent-service`.
 
 ## Source Of Truth
 
@@ -29,5 +29,5 @@ This file applies to the whole repository.
 ## Current Direction
 
 - The web app should move toward a component-based architecture.
-- The future `agent-service` should be designed as an independent service contract that can feed the frontend with generated trial data, audio metadata, and verdict outputs.
+- The future `app/agent-service` workspace should be designed as an independent service contract that can feed the frontend with generated trial data, audio metadata, and verdict outputs.
 - Shared schemas and integration contracts should live in dedicated shared documentation or shared packages once they exist.

@@ -1,0 +1,649 @@
+[
+  {
+    "turnId": 1,
+    "speakerId": "prosecution",
+    "scene": "opening",
+    "text": "Ladies and gentlemen of the jury, today we will present a disturbing case involving the defendant, Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems. Thank you.",
+    "cleanText": "Ladies and gentlemen of the jury, today we will present a disturbing case involving the defendant, Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems. Thank you.",
+    "emotion": null,
+    "audioUrl": "/audio/1.wav",
+    "durationMs": 14008,
+    "subtitleChunks": [
+      {
+        "text": "Ladies and gentlemen of the jury, today we will present a disturbing case involving the defendant, Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems.",
+        "startMs": 0,
+        "endMs": 13259
+      },
+      {
+        "text": "Thank you.",
+        "startMs": 13259,
+        "endMs": 14008
+      }
+    ]
+  },
+  {
+    "turnId": 2,
+    "speakerId": "defense",
+    "scene": "opening",
+    "text": "Ladies and gentlemen of the jury, my name is Defense Attorney, and I represent Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems. Thank you.",
+    "cleanText": "Ladies and gentlemen of the jury, my name is Defense Attorney, and I represent Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems. Thank you.",
+    "emotion": null,
+    "audioUrl": "/audio/2.wav",
+    "durationMs": 12661,
+    "subtitleChunks": [
+      {
+        "text": "Ladies and gentlemen of the jury, my name is Defense Attorney, and I represent Ethan Caldwell, the former Chief Operating Officer of Meridian Health Systems.",
+        "startMs": 0,
+        "endMs": 11903
+      },
+      {
+        "text": "Thank you.",
+        "startMs": 11903,
+        "endMs": 12661
+      }
+    ]
+  },
+  {
+    "turnId": 3,
+    "speakerId": "W1",
+    "scene": "direct",
+    "text": "The blockchain ledger shows a series of transactions that were traced to various accounts associated with Caldwell-controlled entities.",
+    "cleanText": "The blockchain ledger shows a series of transactions that were traced to various accounts associated with Caldwell-controlled entities.",
+    "emotion": null,
+    "audioUrl": "/audio/3.wav",
+    "durationMs": 8907,
+    "subtitleChunks": [
+      {
+        "text": "The blockchain ledger shows a series of transactions that were traced to various accounts associated with Caldwell-controlled entities.",
+        "startMs": 0,
+        "endMs": 8907
+      }
+    ]
+  },
+  {
+    "turnId": 6,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the intentions and actions of Caldwell without any factual basis to support the possibility of legitimate business purposes. Such speculation is not permissible under ordinary courtroom evidence principles. Objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the intentions and actions of Caldwell without any factual basis to support the possibility of legitimate business purposes. Such speculation is not permissible under ordinary courtroom evidence principles. Objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/6.wav",
+    "durationMs": 19261,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the intentions and actions of Caldwell without any factual basis to support the possibility of legitimate business purposes.",
+        "startMs": 0,
+        "endMs": 11923
+      },
+      {
+        "text": "Such speculation is not permissible under ordinary courtroom evidence principles.",
+        "startMs": 11923,
+        "endMs": 17638
+      },
+      {
+        "text": "Objection is sustained.",
+        "startMs": 17638,
+        "endMs": 19261
+      }
+    ]
+  },
+  {
+    "turnId": 7,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding Caldwell's involvement without presenting any direct evidence to support such a claim. It is inappropriate to ask a witness to infer or assume Caldwell's actions without concrete evidence. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding Caldwell's involvement without presenting any direct evidence to support such a claim. It is inappropriate to ask a witness to infer or assume Caldwell's actions without concrete evidence. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/7.wav",
+    "durationMs": 19409,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding Caldwell's involvement without presenting any direct evidence to support such a claim.",
+        "startMs": 0,
+        "endMs": 9817
+      },
+      {
+        "text": "It is inappropriate to ask a witness to infer or assume Caldwell's actions without concrete evidence.",
+        "startMs": 9817,
+        "endMs": 17386
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 17386,
+        "endMs": 19409
+      }
+    ]
+  },
+  {
+    "turnId": 11,
+    "speakerId": "W3",
+    "scene": "direct",
+    "text": "In the days leading up to his disappearance, Daniel Mercer seemed increasingly paranoid and anxious. He was often distracted, had difficulty concentrating, and frequently mentioned feeling unsafe. He conveyed a sense of apprehension about potential dangers from within the board, though he didn't share any specific incidents or names.",
+    "cleanText": "In the days leading up to his disappearance, Daniel Mercer seemed increasingly paranoid and anxious. He was often distracted, had difficulty concentrating, and frequently mentioned feeling unsafe. He conveyed a sense of apprehension about potential dangers from within the board, though he didn't share any specific incidents or names.",
+    "emotion": null,
+    "audioUrl": "/audio/11.wav",
+    "durationMs": 22772,
+    "subtitleChunks": [
+      {
+        "text": "In the days leading up to his disappearance, Daniel Mercer seemed increasingly paranoid and anxious.",
+        "startMs": 0,
+        "endMs": 6838
+      },
+      {
+        "text": "He was often distracted, had difficulty concentrating, and frequently mentioned feeling unsafe.",
+        "startMs": 6838,
+        "endMs": 13335
+      },
+      {
+        "text": "He conveyed a sense of apprehension about potential dangers from within the board, though he didn't share any specific incidents or names.",
+        "startMs": 13335,
+        "endMs": 22772
+      }
+    ]
+  },
+  {
+    "turnId": 12,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question seeks to establish a direct connection between Daniel Mercer's concerns and Ethan Caldwell, which is relevant to the case. It does not call for speculation but rather asks for a factual account of Mercer's statements or concerns, if any were expressed. The objection is overruled.",
+    "cleanText": "The question seeks to establish a direct connection between Daniel Mercer's concerns and Ethan Caldwell, which is relevant to the case. It does not call for speculation but rather asks for a factual account of Mercer's statements or concerns, if any were expressed. The objection is overruled.",
+    "emotion": null,
+    "audioUrl": "/audio/12.wav",
+    "durationMs": 23487,
+    "subtitleChunks": [
+      {
+        "text": "The question seeks to establish a direct connection between Daniel Mercer's concerns and Ethan Caldwell, which is relevant to the case.",
+        "startMs": 0,
+        "endMs": 10896
+      },
+      {
+        "text": "It does not call for speculation but rather asks for a factual account of Mercer's statements or concerns, if any were expressed.",
+        "startMs": 10896,
+        "endMs": 21308
+      },
+      {
+        "text": "The objection is overruled.",
+        "startMs": 21308,
+        "endMs": 23487
+      }
+    ]
+  },
+  {
+    "turnId": 13,
+    "speakerId": "W3",
+    "scene": "cross",
+    "text": "No, Daniel Mercer did not mention Ethan Caldwell by name when he expressed concerns about his safety. He only indicated a general sense of danger from within the board.",
+    "cleanText": "No, Daniel Mercer did not mention Ethan Caldwell by name when he expressed concerns about his safety. He only indicated a general sense of danger from within the board.",
+    "emotion": null,
+    "audioUrl": "/audio/13.wav",
+    "durationMs": 12998,
+    "subtitleChunks": [
+      {
+        "text": "No, Daniel Mercer did not mention Ethan Caldwell by name when he expressed concerns about his safety.",
+        "startMs": 0,
+        "endMs": 7861
+      },
+      {
+        "text": "He only indicated a general sense of danger from within the board.",
+        "startMs": 7861,
+        "endMs": 12998
+      }
+    ]
+  },
+  {
+    "turnId": 14,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for hearsay as it seeks to elicit statements made by Daniel Mercer regarding his plans or actions, which are not being offered for their truth but rather for the truth of the matter asserted. Without a proper exception to the hearsay rule, this testimony cannot be admitted. The objection is sustained.",
+    "cleanText": "The question calls for hearsay as it seeks to elicit statements made by Daniel Mercer regarding his plans or actions, which are not being offered for their truth but rather for the truth of the matter asserted. Without a proper exception to the hearsay rule, this testimony cannot be admitted. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/14.wav",
+    "durationMs": 26713,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for hearsay as it seeks to elicit statements made by Daniel Mercer regarding his plans or actions, which are not being offered for their truth but rather for the truth of the matter asserted.",
+        "startMs": 0,
+        "endMs": 17585
+      },
+      {
+        "text": "Without a proper exception to the hearsay rule, this testimony cannot be admitted.",
+        "startMs": 17585,
+        "endMs": 24452
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 24452,
+        "endMs": 26713
+      }
+    ]
+  },
+  {
+    "turnId": 15,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding Daniel Mercer's feelings and perceptions, which cannot be definitively answered without direct evidence or testimony from Mercer himself. The inquiry lacks a factual basis and relies on conjecture about his state of mind regarding external threats. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding Daniel Mercer's feelings and perceptions, which cannot be definitively answered without direct evidence or testimony from Mercer himself. The inquiry lacks a factual basis and relies on conjecture about his state of mind regarding external threats. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/15.wav",
+    "durationMs": 23583,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding Daniel Mercer's feelings and perceptions, which cannot be definitively answered without direct evidence or testimony from Mercer himself.",
+        "startMs": 0,
+        "endMs": 13455
+      },
+      {
+        "text": "The inquiry lacks a factual basis and relies on conjecture about his state of mind regarding external threats.",
+        "startMs": 13455,
+        "endMs": 21587
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 21587,
+        "endMs": 23583
+      }
+    ]
+  },
+  {
+    "turnId": 16,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question asks for speculation about Daniel Mercer's feelings and potential involvement in activities without providing concrete evidence. Such speculation does not meet the standard for admissible evidence, as it lacks a factual basis and invites conjecture. The objection is sustained.",
+    "cleanText": "The question asks for speculation about Daniel Mercer's feelings and potential involvement in activities without providing concrete evidence. Such speculation does not meet the standard for admissible evidence, as it lacks a factual basis and invites conjecture. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/16.wav",
+    "durationMs": 21087,
+    "subtitleChunks": [
+      {
+        "text": "The question asks for speculation about Daniel Mercer's feelings and potential involvement in activities without providing concrete evidence.",
+        "startMs": 0,
+        "endMs": 10324
+      },
+      {
+        "text": "Such speculation does not meet the standard for admissible evidence, as it lacks a factual basis and invites conjecture.",
+        "startMs": 10324,
+        "endMs": 19110
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 19110,
+        "endMs": 21087
+      }
+    ]
+  },
+  {
+    "turnId": 17,
+    "speakerId": "W5",
+    "scene": "direct",
+    "text": "I can confirm that there were internal warnings about financial irregularities discussed among board members. However, I cannot speak to the scale of the fraud or the specifics surrounding Daniel Mercer's disappearance.",
+    "cleanText": "I can confirm that there were internal warnings about financial irregularities discussed among board members. However, I cannot speak to the scale of the fraud or the specifics surrounding Daniel Mercer's disappearance.",
+    "emotion": null,
+    "audioUrl": "/audio/17.wav",
+    "durationMs": 15815,
+    "subtitleChunks": [
+      {
+        "text": "I can confirm that there were internal warnings about financial irregularities discussed among board members.",
+        "startMs": 0,
+        "endMs": 7908
+      },
+      {
+        "text": "However, I cannot speak to the scale of the fraud or the specifics surrounding Daniel Mercer's disappearance.",
+        "startMs": 7908,
+        "endMs": 15815
+      }
+    ]
+  },
+  {
+    "turnId": 18,
+    "speakerId": "W5",
+    "scene": "direct",
+    "text": "I cannot specify the actions taken by the board in response to those internal warnings about financial irregularities.",
+    "cleanText": "I cannot specify the actions taken by the board in response to those internal warnings about financial irregularities.",
+    "emotion": null,
+    "audioUrl": "/audio/18.wav",
+    "durationMs": 8808,
+    "subtitleChunks": [
+      {
+        "text": "I cannot specify the actions taken by the board in response to those internal warnings about financial irregularities.",
+        "startMs": 0,
+        "endMs": 8808
+      }
+    ]
+  },
+  {
+    "turnId": 19,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question seeks to elicit information about discussions among board members, which constitutes hearsay. The witness is being asked to testify about statements made by others not present in court, which cannot be verified for their truthfulness. Therefore, the objection is sustained.",
+    "cleanText": "The question seeks to elicit information about discussions among board members, which constitutes hearsay. The witness is being asked to testify about statements made by others not present in court, which cannot be verified for their truthfulness. Therefore, the objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/19.wav",
+    "durationMs": 21409,
+    "subtitleChunks": [
+      {
+        "text": "The question seeks to elicit information about discussions among board members, which constitutes hearsay.",
+        "startMs": 0,
+        "endMs": 7991
+      },
+      {
+        "text": "The witness is being asked to testify about statements made by others not present in court, which cannot be verified for their truthfulness.",
+        "startMs": 7991,
+        "endMs": 18545
+      },
+      {
+        "text": "Therefore, the objection is sustained.",
+        "startMs": 18545,
+        "endMs": 21409
+      }
+    ]
+  },
+  {
+    "turnId": 20,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the witness's motivations and thought processes, which cannot be definitively answered without conjecture. The witness's choice not to act can only be answered based on their direct knowledge and intentions, which are not established in the question. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the witness's motivations and thought processes, which cannot be definitively answered without conjecture. The witness's choice not to act can only be answered based on their direct knowledge and intentions, which are not established in the question. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/20.wav",
+    "durationMs": 24009,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the witness's motivations and thought processes, which cannot be definitively answered without conjecture.",
+        "startMs": 0,
+        "endMs": 11294
+      },
+      {
+        "text": "The witness's choice not to act can only be answered based on their direct knowledge and intentions, which are not established in the question.",
+        "startMs": 11294,
+        "endMs": 21990
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 21990,
+        "endMs": 24009
+      }
+    ]
+  },
+  {
+    "turnId": 21,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the involvement of board members in discussions about corporate fraud, which is not based on the witness's personal knowledge and assumes facts not in evidence. The witness cannot confirm discussions they may not have been privy to, making the question speculative in nature. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the involvement of board members in discussions about corporate fraud, which is not based on the witness's personal knowledge and assumes facts not in evidence. The witness cannot confirm discussions they may not have been privy to, making the question speculative in nature. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/21.wav",
+    "durationMs": 26791,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the involvement of board members in discussions about corporate fraud, which is not based on the witness's personal knowledge and assumes facts not in evidence.",
+        "startMs": 0,
+        "endMs": 15873
+      },
+      {
+        "text": "The witness cannot confirm discussions they may not have been privy to, making the question speculative in nature.",
+        "startMs": 15873,
+        "endMs": 24700
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 24700,
+        "endMs": 26791
+      }
+    ]
+  },
+  {
+    "turnId": 22,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation about the thoughts and considerations of board members regarding external threats or pressures, which cannot be established without direct evidence. There is no foundation laid to support that the board members discussed or considered such factors, making the question speculative in nature. The objection is sustained.",
+    "cleanText": "The question calls for speculation about the thoughts and considerations of board members regarding external threats or pressures, which cannot be established without direct evidence. There is no foundation laid to support that the board members discussed or considered such factors, making the question speculative in nature. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/22.wav",
+    "durationMs": 26113,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation about the thoughts and considerations of board members regarding external threats or pressures, which cannot be established without direct evidence.",
+        "startMs": 0,
+        "endMs": 13576
+      },
+      {
+        "text": "There is no foundation laid to support that the board members discussed or considered such factors, making the question speculative in nature.",
+        "startMs": 13576,
+        "endMs": 24110
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 24110,
+        "endMs": 26113
+      }
+    ]
+  },
+  {
+    "turnId": 23,
+    "speakerId": "W2",
+    "scene": "direct",
+    "text": "The evidence suggesting the network breach was consistent with an external attack includes the specific breach patterns we identified during our internal analysis. These patterns align with known tactics used by external attackers, particularly those associated with cyber activities from Russian IP clusters. However, while I can confirm this alignment, I cannot fully verify the timeline of credential misuse, which makes it challenging to definitively link the breach to any specific individual or action within the company.",
+    "cleanText": "The evidence suggesting the network breach was consistent with an external attack includes the specific breach patterns we identified during our internal analysis. These patterns align with known tactics used by external attackers, particularly those associated with cyber activities from Russian IP clusters. However, while I can confirm this alignment, I cannot fully verify the timeline of credential misuse, which makes it challenging to definitively link the breach to any specific individual or action within the company.",
+    "emotion": null,
+    "audioUrl": "/audio/23.wav",
+    "durationMs": 37270,
+    "subtitleChunks": [
+      {
+        "text": "The evidence suggesting the network breach was consistent with an external attack includes the specific breach patterns we identified during our internal analysis.",
+        "startMs": 0,
+        "endMs": 11571
+      },
+      {
+        "text": "These patterns align with known tactics used by external attackers, particularly those associated with cyber activities from Russian IP clusters.",
+        "startMs": 11571,
+        "endMs": 21865
+      },
+      {
+        "text": "However, while I can confirm this alignment, I cannot fully verify the timeline of credential misuse, which makes it challenging to definitively link the breach to any specific individual or action within the company.",
+        "startMs": 21865,
+        "endMs": 37270
+      }
+    ]
+  },
+  {
+    "turnId": 24,
+    "speakerId": "W2",
+    "scene": "direct",
+    "text": "The cybersecurity report I prepared does not fully account for the possibility of credential misuse by an internal party. While it identifies external attack patterns, it does not provide a comprehensive timeline or verification of credential misuse.",
+    "cleanText": "The cybersecurity report I prepared does not fully account for the possibility of credential misuse by an internal party. While it identifies external attack patterns, it does not provide a comprehensive timeline or verification of credential misuse.",
+    "emotion": null,
+    "audioUrl": "/audio/24.wav",
+    "durationMs": 17856,
+    "subtitleChunks": [
+      {
+        "text": "The cybersecurity report I prepared does not fully account for the possibility of credential misuse by an internal party.",
+        "startMs": 0,
+        "endMs": 8677
+      },
+      {
+        "text": "While it identifies external attack patterns, it does not provide a comprehensive timeline or verification of credential misuse.",
+        "startMs": 8677,
+        "endMs": 17856
+      }
+    ]
+  },
+  {
+    "turnId": 25,
+    "speakerId": "W2",
+    "scene": "direct",
+    "text": "The specific indicators that led me to conclude the corporate network was compromised by an external entity include the detection of unusual login behaviors originating from IP addresses known to be associated with foreign threat actors, as well as anomalous data transfer patterns that did not align with typical internal usage. These breach patterns matched known external attack tactics, reinforcing the likelihood of a sophisticated external intrusion rather than internal credential misuse.",
+    "cleanText": "The specific indicators that led me to conclude the corporate network was compromised by an external entity include the detection of unusual login behaviors originating from IP addresses known to be associated with foreign threat actors, as well as anomalous data transfer patterns that did not align with typical internal usage. These breach patterns matched known external attack tactics, reinforcing the likelihood of a sophisticated external intrusion rather than internal credential misuse.",
+    "emotion": null,
+    "audioUrl": "/audio/25.wav",
+    "durationMs": 34887,
+    "subtitleChunks": [
+      {
+        "text": "The specific indicators that led me to conclude the corporate network was compromised by an external entity include the detection of unusual login behaviors originating from IP addresses known to be associated with foreign threat actors, as well as anomalous data transfer patterns that did not align with typical internal usage.",
+        "startMs": 0,
+        "endMs": 23234
+      },
+      {
+        "text": "These breach patterns matched known external attack tactics, reinforcing the likelihood of a sophisticated external intrusion rather than internal credential misuse.",
+        "startMs": 23234,
+        "endMs": 34887
+      }
+    ]
+  },
+  {
+    "turnId": 26,
+    "speakerId": "W2",
+    "scene": "direct",
+    "text": "As the Head of Cybersecurity at Meridian, I can say that we had several protocols in place, including multi-factor authentication, regular audits of access logs, and employee training on data security. However, despite these measures, our internal security had vulnerabilities, and I had previously criticized it for not being robust enough against sophisticated attacks. The focus was more on preventing external threats, and this may have contributed to the challenges we faced.",
+    "cleanText": "As the Head of Cybersecurity at Meridian, I can say that we had several protocols in place, including multi-factor authentication, regular audits of access logs, and employee training on data security. However, despite these measures, our internal security had vulnerabilities, and I had previously criticized it for not being robust enough against sophisticated attacks. The focus was more on preventing external threats, and this may have contributed to the challenges we faced.",
+    "emotion": null,
+    "audioUrl": "/audio/26.wav",
+    "durationMs": 34639,
+    "subtitleChunks": [
+      {
+        "text": "As the Head of Cybersecurity at Meridian, I can say that we had several protocols in place, including multi-factor authentication, regular audits of access logs, and employee training on data security.",
+        "startMs": 0,
+        "endMs": 14566
+      },
+      {
+        "text": "However, despite these measures, our internal security had vulnerabilities, and I had previously criticized it for not being robust enough against sophisticated attacks.",
+        "startMs": 14566,
+        "endMs": 26813
+      },
+      {
+        "text": "The focus was more on preventing external threats, and this may have contributed to the challenges we faced.",
+        "startMs": 26813,
+        "endMs": 34639
+      }
+    ]
+  },
+  {
+    "turnId": 27,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question seeks to establish a fact regarding unauthorized access to sensitive information, which is relevant to the case. While it may involve speculation about the effectiveness of security protocols, the inquiry is permissible as it pertains to the witness's knowledge or experience with the security measures in place. The objection is overruled.",
+    "cleanText": "The question seeks to establish a fact regarding unauthorized access to sensitive information, which is relevant to the case. While it may involve speculation about the effectiveness of security protocols, the inquiry is permissible as it pertains to the witness's knowledge or experience with the security measures in place. The objection is overruled.",
+    "emotion": null,
+    "audioUrl": "/audio/27.wav",
+    "durationMs": 26878,
+    "subtitleChunks": [
+      {
+        "text": "The question seeks to establish a fact regarding unauthorized access to sensitive information, which is relevant to the case.",
+        "startMs": 0,
+        "endMs": 9572
+      },
+      {
+        "text": "While it may involve speculation about the effectiveness of security protocols, the inquiry is permissible as it pertains to the witness's knowledge or experience with the security measures in place.",
+        "startMs": 9572,
+        "endMs": 24811
+      },
+      {
+        "text": "The objection is overruled.",
+        "startMs": 24811,
+        "endMs": 26878
+      }
+    ]
+  },
+  {
+    "turnId": 28,
+    "speakerId": "W2",
+    "scene": "cross",
+    "text": "Yes, that is true. Despite having several security protocols in place, we still experienced unauthorized access to sensitive information within Meridian Health Systems.",
+    "cleanText": "Yes, that is true. Despite having several security protocols in place, we still experienced unauthorized access to sensitive information within Meridian Health Systems.",
+    "emotion": null,
+    "audioUrl": "/audio/28.wav",
+    "durationMs": 11307,
+    "subtitleChunks": [
+      {
+        "text": "Yes, that is true.",
+        "startMs": 0,
+        "endMs": 1219
+      },
+      {
+        "text": "Despite having several security protocols in place, we still experienced unauthorized access to sensitive information within Meridian Health Systems.",
+        "startMs": 1219,
+        "endMs": 11307
+      }
+    ]
+  },
+  {
+    "turnId": 29,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the interpretation of the login logs and whether they definitively show the COO's credentials were used to access the CFO's encrypted drive. Without concrete evidence or a clear foundation for the witness's knowledge of the logs, the question is not permissible. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the interpretation of the login logs and whether they definitively show the COO's credentials were used to access the CFO's encrypted drive. Without concrete evidence or a clear foundation for the witness's knowledge of the logs, the question is not permissible. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/29.wav",
+    "durationMs": 25783,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the interpretation of the login logs and whether they definitively show the COO's credentials were used to access the CFO's encrypted drive.",
+        "startMs": 0,
+        "endMs": 14324
+      },
+      {
+        "text": "Without concrete evidence or a clear foundation for the witness's knowledge of the logs, the question is not permissible.",
+        "startMs": 14324,
+        "endMs": 23693
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 23693,
+        "endMs": 25783
+      }
+    ]
+  },
+  {
+    "turnId": 30,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the motivations and actions of individuals involved in the cybersecurity breach without providing sufficient evidence to support the assertion that it could be an inside job. The witness cannot provide certainty on this matter, making the question inappropriate. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the motivations and actions of individuals involved in the cybersecurity breach without providing sufficient evidence to support the assertion that it could be an inside job. The witness cannot provide certainty on this matter, making the question inappropriate. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/30.wav",
+    "durationMs": 24609,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the motivations and actions of individuals involved in the cybersecurity breach without providing sufficient evidence to support the assertion that it could be an inside job.",
+        "startMs": 0,
+        "endMs": 16184
+      },
+      {
+        "text": "The witness cannot provide certainty on this matter, making the question inappropriate.",
+        "startMs": 16184,
+        "endMs": 22613
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 22613,
+        "endMs": 24609
+      }
+    ]
+  },
+  {
+    "turnId": 31,
+    "speakerId": "judge",
+    "scene": "ruling",
+    "text": "The question calls for speculation regarding the motivations and actions of individuals without concrete evidence. It does not establish a factual basis for the inquiry and relies on conjecture about potential scenarios. The objection is sustained.",
+    "cleanText": "The question calls for speculation regarding the motivations and actions of individuals without concrete evidence. It does not establish a factual basis for the inquiry and relies on conjecture about potential scenarios. The objection is sustained.",
+    "emotion": null,
+    "audioUrl": "/audio/31.wav",
+    "durationMs": 18400,
+    "subtitleChunks": [
+      {
+        "text": "The question calls for speculation regarding the motivations and actions of individuals without concrete evidence.",
+        "startMs": 0,
+        "endMs": 8527
+      },
+      {
+        "text": "It does not establish a factual basis for the inquiry and relies on conjecture about potential scenarios.",
+        "startMs": 8527,
+        "endMs": 16381
+      },
+      {
+        "text": "The objection is sustained.",
+        "startMs": 16381,
+        "endMs": 18400
+      }
+    ]
+  }
+]

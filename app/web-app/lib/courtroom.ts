@@ -135,6 +135,12 @@ export function isWitnessSpeaker(speakerId: string) {
   return speakerId.startsWith("W");
 }
 
+export function getWitnessSpeakerIds(transcript: TranscriptData) {
+  return Object.keys(transcript.voice_character_map).filter((speakerId) =>
+    isWitnessSpeaker(speakerId),
+  );
+}
+
 export function getSceneLabel(scene: string) {
   return scene.charAt(0).toUpperCase() + scene.slice(1);
 }

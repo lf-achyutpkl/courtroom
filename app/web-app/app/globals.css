@@ -71,6 +71,19 @@ body::before {
   backdrop-filter: blur(18px);
 }
 
+@keyframes speaker-bar {
+  0%,
+  100% {
+    transform: scaleY(0.55);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: scaleY(1.15);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,5 +1,34 @@
 import type { PlaybackMode } from "@/hooks/use-courtroom-playback";
 
+function PlayIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+      <path d="M8 5.5v13l10-6.5z" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24">
+      <path d="M9 6v12M15 6v12" strokeLinecap="round" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
+function ReplayIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24">
+      <path
+        d="M7 7v4h4M7.8 15.7A7 7 0 1 0 5 10.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.1"
+      />
+    </svg>
+  );
+}
+
 export function PlaybackControls({
   isPlaying,
   mode,
@@ -16,46 +45,39 @@ export function PlaybackControls({
   onTogglePlayback: () => void;
 }) {
   return (
-    <>
-      <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-3 py-3 sm:px-4">
-        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.25em]">
-          <span className="rounded-full border border-[var(--border)] bg-white/5 px-3 py-2 text-[var(--accent-soft)]">
-            {mode === "audio" ? "Audio playback" : "Preview timeline"}
-          </span>
-          <span className="rounded-full border border-[var(--border)] bg-white/5 px-3 py-2 text-[var(--muted)]">
-            {manifestSource}
-          </span>
-        </div>
-      </div>
+    <div className="flex w-full items-center gap-3 rounded-full bg-[linear-gradient(180deg,rgba(7,11,22,0.5),rgba(7,11,22,0.82))] px-3 py-2.5 backdrop-blur-xl">
+        <button
+          aria-label={isPlaying ? "Pause playback" : "Play playback"}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-slate-950 transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+          onClick={onTogglePlayback}
+          type="button"
+        >
+          {isPlaying ? <PauseIcon /> : <PlayIcon />}
+        </button>
 
-      <div className="mt-4 shrink-0 rounded-[28px] border border-white/10 bg-[rgba(255,255,255,0.03)] px-4 py-4">
-        <div className="mb-3 flex items-center justify-between gap-3 text-xs uppercase tracking-[0.3em] text-[var(--muted)]">
-          <span>Playback rail</span>
-          <span>{Math.round(overallProgress * 100)}%</span>
-        </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/8">
+        <div
+          aria-hidden="true"
+          className="relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-white/12"
+        >
           <div
-            className="h-full rounded-full bg-[linear-gradient(90deg,var(--accent),#f0d7a6)] transition-[width] duration-300"
+            className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,var(--accent),#f0d7a6)] transition-[width] duration-300"
             style={{ width: `${Math.max(3, overallProgress * 100)}%` }}
           />
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            className="rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-medium text-slate-950 transition-transform duration-200 hover:-translate-y-0.5"
-            onClick={onTogglePlayback}
-            type="button"
-          >
-            {isPlaying ? "Pause Session" : "Play Session"}
-          </button>
-          <button
-            className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-[var(--foreground)] transition-colors duration-200 hover:bg-white/10"
-            onClick={onRestart}
-            type="button"
-          >
-            Reset Timeline
-          </button>
+
+        <button
+          aria-label="Replay from start"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/7 text-[var(--foreground)] transition-colors duration-200 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+          onClick={onRestart}
+          type="button"
+        >
+          <ReplayIcon />
+        </button>
+
+        <div className="sr-only">
+          {mode === "audio" ? "Audio playback" : "Preview timeline"} via {manifestSource},
+          {` ${Math.round(overallProgress * 100)} percent complete`}
         </div>
-      </div>
-    </>
+    </div>
   );
 }

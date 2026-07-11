@@ -1,26 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  Application,
-  Container,
-  Graphics,
-  Text,
-  TextStyle,
-} from "pixi.js";
+import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 
 import {
-  getSceneLabel,
   getSpeakerShortName,
   isWitnessSpeaker,
   type TranscriptData,
 } from "@/lib/courtroom";
 
 type CourtroomStageProps = {
-  activeSpeakerId: string;
+  activeSpeakerId: string | null;
   currentLineProgress: number;
   isPlaying: boolean;
-  scene: string;
+  scene: string | null;
   transcript: TranscriptData;
   witnessInBoxId: string | null;
 };
@@ -45,7 +38,12 @@ const FIXED_POSITIONS: Record<string, { x: number; y: number }> = {
 };
 
 const WITNESS_BOX_POSITION = { x: 650, y: 410 };
-const WITNESS_OFFSTAGE_POSITION = { x: 1130, y: 490 };
+const WITNESS_BENCH_POSITIONS = [
+  { x: 480, y: 590 },
+  { x: 570, y: 602 },
+  { x: 660, y: 590 },
+  { x: 750, y: 602 },
+];
 
 const CHARACTER_COLORS: Record<string, number> = {
   judge: 0xd2b179,
@@ -85,7 +83,6 @@ function drawCircle(
 
 function createCharacter(
   id: string,
-  labelText: string,
   x: number,
   y: number,
 ): CharacterSprite {
@@ -120,12 +117,14 @@ function createCharacter(
   container.addChild(speechGlow);
 
   const label = new Text({
-    text: labelText,
+    text: "",
     style: new TextStyle({
       fill: 0xf9f3e7,
-      fontFamily: "IBM Plex Sans",
-      fontSize: 17,
+      fontFamily: "Avenir Next, Segoe UI, Helvetica Neue, Arial, sans-serif",
+      fontSize: 16,
       fontWeight: "600",
+      letterSpacing: 0.5,
+      stroke: { color: 0x09101d, width: 4, join: "round" },
     }),
   });
   label.anchor.set(0.5, 0);
@@ -225,6 +224,34 @@ export function CourtroomStage(props: CourtroomStageProps) {
         .stroke({ width: 3, color: 0xd7b57f, alpha: 0.45 });
       world.addChild(witnessBox);
 
+      const witnessBench = new Graphics();
+      witnessBench
+        .roundRect(418, 610, 360, 28, 14)
+        .roundRect(446, 632, 304, 22, 10)
+        .fill(0x433127);
+      witnessBench
+        .moveTo(474, 636)
+        .lineTo(458, 700)
+        .moveTo(722, 636)
+        .lineTo(738, 700)
+        .stroke({ width: 5, color: 0x2f221b, alpha: 0.9 });
+      world.addChild(witnessBench);
+
+      const witnessBenchLabel = new Text({
+        text: "Witness",
+        style: new TextStyle({
+          fill: 0xf9f3e7,
+          fontFamily: "Avenir Next, Segoe UI, Helvetica Neue, Arial, sans-serif",
+          fontSize: 16,
+          fontWeight: "600",
+          letterSpacing: 0.5,
+          stroke: { color: 0x09101d, width: 4, join: "round" },
+        }),
+      });
+      witnessBenchLabel.anchor.set(0.5, 0);
+      witnessBenchLabel.position.set(598, 705);
+      world.addChild(witnessBenchLabel);
+
       const prosecutorTable = new Graphics();
       prosecutorTable.roundRect(88, 516, 256, 78, 18).fill(0x3f3027);
       world.addChild(prosecutorTable);
@@ -233,38 +260,24 @@ export function CourtroomStage(props: CourtroomStageProps) {
       defenseTable.roundRect(938, 516, 256, 78, 18).fill(0x3f3027);
       world.addChild(defenseTable);
 
-      const sceneRibbon = new Graphics();
-      sceneRibbon.roundRect(464, 34, 352, 52, 26).fill({ color: 0x111827, alpha: 0.88 });
-      world.addChild(sceneRibbon);
-
-      const sceneText = new Text({
-        text: "",
-        style: new TextStyle({
-          fill: 0xf7ebd6,
-          fontFamily: "Cormorant Garamond",
-          fontSize: 30,
-          fontWeight: "700",
-          letterSpacing: 2,
-        }),
-      });
-      sceneText.anchor.set(0.5, 0.5);
-      sceneText.position.set(640, 60);
-      world.addChild(sceneText);
-
       const characterIds = Object.keys(props.transcript.voice_character_map);
+      const witnessIds = characterIds.filter((id) => isWitnessSpeaker(id));
+      const witnessBenchPositions = new Map<string, { x: number; y: number }>();
+      witnessIds.forEach((id, index) => {
+        witnessBenchPositions.set(id, WITNESS_BENCH_POSITIONS[index] ?? WITNESS_BENCH_POSITIONS.at(-1)!);
+      });
       const characters = new Map<string, CharacterSprite>();
 
       characterIds.forEach((id) => {
         const isWitness = isWitnessSpeaker(id);
         const fixedPosition = FIXED_POSITIONS[id];
-        const initialX = isWitness ? WITNESS_OFFSTAGE_POSITION.x : fixedPosition.x;
-        const initialY = isWitness ? WITNESS_OFFSTAGE_POSITION.y : fixedPosition.y;
-        const sprite = createCharacter(
-          id,
-          getSpeakerShortName(props.transcript, id),
-          initialX,
-          initialY,
-        );
+        const benchPosition = witnessBenchPositions.get(id);
+        const initialX = isWitness ? benchPosition!.x : fixedPosition.x;
+        const initialY = isWitness ? benchPosition!.y : fixedPosition.y;
+        const sprite = createCharacter(id, initialX, initialY);
+        if (isWitness) {
+          sprite.container.scale.set(0.74);
+        }
         world.addChild(sprite.container);
         characters.set(id, sprite);
       });
@@ -281,7 +294,6 @@ export function CourtroomStage(props: CourtroomStageProps) {
         );
 
         const elapsedSeconds = performance.now() / 1000;
-        sceneText.text = getSceneLabel(stateRef.current.scene).toUpperCase();
 
         characters.forEach((sprite, id) => {
           const isWitness = isWitnessSpeaker(id);
@@ -291,23 +303,49 @@ export function CourtroomStage(props: CourtroomStageProps) {
 
           let targetX = sprite.baseX;
           let targetY = sprite.baseY;
+          let targetScale = isWitness ? 0.74 : 0.985;
+          let stride = 0;
+          let armRotationBase = 0.04;
 
           if (isWitness) {
             const isCurrentWitness = stateRef.current.witnessInBoxId === id;
-            targetX = isCurrentWitness ? WITNESS_BOX_POSITION.x : WITNESS_OFFSTAGE_POSITION.x;
-            targetY = isCurrentWitness ? WITNESS_BOX_POSITION.y : WITNESS_OFFSTAGE_POSITION.y;
+            const benchPosition = witnessBenchPositions.get(id)!;
+            targetX = isCurrentWitness ? WITNESS_BOX_POSITION.x : benchPosition.x;
+            targetY = isCurrentWitness ? WITNESS_BOX_POSITION.y : benchPosition.y;
+            const distance = Math.hypot(targetX - sprite.container.x, targetY - sprite.container.y);
+            const isWalking = distance > 26;
+
+            targetScale = isCurrentWitness || isWalking ? 0.98 : 0.74;
+            stride = isWalking ? Math.sin(elapsedSeconds * 8.4 + sprite.baseX / 90) * 2.4 : 0;
+            armRotationBase = isWalking ? 0.18 : 0.02;
           }
 
           sprite.container.x += (targetX - sprite.container.x) * 0.08;
           sprite.container.y += (targetY - sprite.container.y) * 0.08;
-          sprite.container.y += Math.sin(elapsedSeconds * 1.9 + sprite.baseX / 100) * 0.15;
-          sprite.arm.rotation = isActive ? 0.2 + pulse * 0.08 + speechProgress * 0.04 : 0.04 + pulse * 0.015;
+          sprite.container.y += stride + Math.sin(elapsedSeconds * 1.9 + sprite.baseX / 100) * 0.15;
+          sprite.arm.rotation = isActive
+            ? 0.2 + pulse * 0.08 + speechProgress * 0.04
+            : armRotationBase + pulse * 0.015;
           sprite.arm.alpha = isActive ? 1 : 0.86;
           sprite.speechGlow.alpha = isActive ? 0.6 + (pulse + 1) * 0.16 : 0.03;
-          sprite.container.scale.set(isActive ? 1.02 : 0.985);
+          const activeScaleBoost = isActive ? 0.04 : 0;
+          const currentScale = sprite.container.scale.x;
+          const nextScale = currentScale + (targetScale + activeScaleBoost - currentScale) * 0.12;
+          sprite.container.scale.set(nextScale);
           sprite.body.tint = CHARACTER_COLORS[id] ?? 0xc9ba90;
-          sprite.label.alpha = isActive ? 1 : 0.75;
+          if (isWitness) {
+            const isCurrentWitness = stateRef.current.witnessInBoxId === id;
+            sprite.label.text = isCurrentWitness
+              ? getSpeakerShortName(stateRef.current.transcript, id)
+              : "";
+          } else {
+            sprite.label.text = getSpeakerShortName(stateRef.current.transcript, id);
+          }
+          sprite.label.alpha = isActive ? 1 : 0.78;
         });
+
+        const hasSeatedWitness = witnessIds.some((id) => stateRef.current.witnessInBoxId !== id);
+        witnessBenchLabel.alpha = hasSeatedWitness ? 0.82 : 0;
       };
 
       app.ticker.add(ticker);

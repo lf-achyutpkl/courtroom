@@ -139,6 +139,50 @@ export function getSceneLabel(scene: string) {
   return scene.charAt(0).toUpperCase() + scene.slice(1);
 }
 
+function stripDescriptor(value: string) {
+  return value.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function getCaseDateLabel(caseId: string) {
+  const match = caseId.match(/(\d{4})-(\d{4})$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, year, monthDay] = match;
+  const month = Number(monthDay.slice(0, 2));
+  const day = Number(monthDay.slice(2, 4));
+
+  if (!Number.isInteger(month) || !Number.isInteger(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(Number(year), month - 1, day));
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+export function getAttorneyName(transcript: TranscriptData, speakerId: string) {
+  const speaker = transcript.voice_character_map[speakerId];
+  return speaker?.name ?? speaker?.role ?? "Unknown";
+}
+
+export function getCaseTitle(transcript: TranscriptData) {
+  const prosecution = stripDescriptor(transcript.case_metadata.prosecution);
+  const defendant = stripDescriptor(transcript.case_metadata.defendant);
+
+  if (!prosecution || !defendant) {
+    return transcript.case_metadata.case_id;
+  }
+
+  return `${prosecution} v. ${defendant}`;
+}
+
 export function getCurrentSubtitle(
   subtitleChunks: SubtitleChunk[],
   currentTimeMs: number,

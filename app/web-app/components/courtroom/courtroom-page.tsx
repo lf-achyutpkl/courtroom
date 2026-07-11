@@ -1,12 +1,11 @@
 "use client";
 
 import transcript from "@/app/courtroom-transcript.json";
+import { CaseSummary } from "@/components/courtroom/case-summary";
 import { CaptionFeed } from "@/components/courtroom/caption-feed";
 import { CourtroomHeader } from "@/components/courtroom/courtroom-header";
-import { CourtroomNotes } from "@/components/courtroom/courtroom-notes";
 import { CourtroomStagePanel } from "@/components/courtroom/courtroom-stage-panel";
 import { DocketTimeline } from "@/components/courtroom/docket-timeline";
-import { PlaybackControls } from "@/components/courtroom/playback-controls";
 import {
   getCurrentSubtitle,
   type TranscriptData,
@@ -34,9 +33,8 @@ function CourtroomPageContent({ transcript }: { transcript: TranscriptData }) {
   const currentSubtitle = currentTurn
     ? getCurrentSubtitle(currentTurn.subtitleChunks, currentTimeMs)
     : null;
-  const currentSpeakerId = currentTurn?.speakerId ?? "judge";
+  const currentSpeakerId = currentTurn?.speakerId ?? null;
   const witnessInBoxId = getWitnessOccupant(manifest, index);
-  const visibleTurns = manifest.slice(Math.max(0, index - 1), Math.min(index + 4, manifest.length));
 
   const handleTogglePlayback = () => {
     if (!currentTurn) {
@@ -58,47 +56,38 @@ function CourtroomPageContent({ transcript }: { transcript: TranscriptData }) {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col px-3 py-3 sm:px-5 sm:py-4 lg:px-8">
-      <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4">
+    <main className="relative flex min-h-screen flex-col px-3 py-3 sm:px-5 sm:py-4 lg:h-dvh lg:min-h-dvh lg:overflow-hidden lg:px-6 lg:py-3">
+      <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 lg:min-h-0">
         <CourtroomHeader transcript={transcript} />
 
-        <section className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(20rem,0.75fr)] lg:items-start">
-          <div className="flex flex-col">
+        <section className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1.62fr)_minmax(18rem,0.72fr)] lg:items-start">
+          <div className="flex flex-col lg:min-h-0">
             <CourtroomStagePanel
               currentLineProgress={
                 currentTurn ? Math.min(1, currentTimeMs / currentTurn.durationMs) : 0
               }
               currentSpeakerId={currentSpeakerId}
-              currentTurnScene={currentTurn?.scene ?? "opening"}
+              currentTurnScene={currentTurn?.scene ?? null}
               isPlaying={isPlaying}
+              manifestSource={manifestSource}
+              mode={mode}
+              onRestart={handleRestart}
+              onTogglePlayback={handleTogglePlayback}
+              overallProgress={overallProgress}
               transcript={transcript}
               witnessInBoxId={witnessInBoxId}
             />
             <CaptionFeed
               currentSubtitle={currentSubtitle}
-              manifestLength={manifest.length}
-              turnId={currentTurn?.turnId ?? null}
-            />
-            <PlaybackControls
-              isPlaying={isPlaying}
-              manifestSource={manifestSource}
-              mode={mode}
-              overallProgress={overallProgress}
-              onRestart={handleRestart}
-              onTogglePlayback={handleTogglePlayback}
             />
           </div>
 
-          <aside className="flex flex-col gap-4">
-            <CourtroomNotes
-              currentSpeakerId={currentTurn?.speakerId ?? null}
-              mode={mode}
-              transcript={transcript}
-            />
+          <aside className="flex flex-col gap-4 lg:min-h-0">
+            <CaseSummary transcript={transcript} />
             <DocketTimeline
               currentTurnId={currentTurn?.turnId ?? null}
               transcript={transcript}
-              turns={visibleTurns}
+              turns={manifest}
             />
           </aside>
         </section>

@@ -10,7 +10,6 @@ components/
     courtroom-page.tsx      # top-level client composition
     courtroom-header.tsx    # case header and summary
     caption-feed.tsx        # active subtitle surface
-    courtroom-notes.tsx     # metadata panel
     docket-timeline.tsx     # turn queue
     playback-controls.tsx   # progress rail and transport
     courtroom-stage-panel.tsx
@@ -30,7 +29,6 @@ lib/
 - Header content moves to `components/courtroom/courtroom-header.tsx`
 - Caption surface moves to `components/courtroom/caption-feed.tsx`
 - Progress rail and transport controls move to `components/courtroom/playback-controls.tsx`
-- Metadata panel moves to `components/courtroom/courtroom-notes.tsx`
 - Turn queue moves to `components/courtroom/docket-timeline.tsx`
 - Stage shell composition moves to `components/courtroom/courtroom-stage-panel.tsx`
 - PixiJS canvas rendering remains isolated in `components/courtroom/stage/courtroom-stage.tsx`
@@ -44,7 +42,7 @@ Keep global:
 
 Move to component-level primitives:
 - page and section layout classes
-- panel internals for header, notes, timeline, and controls
+- panel internals for header, timeline, and controls
 - stateful styling for active turns, playback mode pills, and transport buttons
 
 ## Refactor Goal

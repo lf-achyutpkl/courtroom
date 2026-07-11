@@ -71,6 +71,15 @@ body::before {
   backdrop-filter: blur(18px);
 }
 
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes speaker-bar {
   0%,
   100% {

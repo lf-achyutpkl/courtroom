@@ -146,7 +146,7 @@ export function getSceneLabel(scene: string) {
 }
 
 function stripDescriptor(value: string) {
-  return value.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+  return value?.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export function getCaseDateLabel(caseId: string) {

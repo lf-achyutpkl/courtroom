@@ -56,7 +56,7 @@ export function DocketTimeline({
 
       <div
         ref={containerRef}
-        className="mt-4 h-[24rem] space-y-3 overflow-y-auto pr-1 lg:min-h-0 lg:h-auto lg:flex-1"
+        className="scrollbar-hidden mt-4 h-[24rem] space-y-3 overflow-y-auto pr-1 lg:min-h-0 lg:h-auto lg:flex-1"
       >
         {turns.map((turn) => {
           const isActive = turn.turnId === currentTurnId;

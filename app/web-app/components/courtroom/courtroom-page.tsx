@@ -56,12 +56,12 @@ function CourtroomPageContent({ transcript }: { transcript: TranscriptData }) {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col px-3 py-3 sm:px-5 sm:py-4 lg:h-dvh lg:min-h-dvh lg:overflow-hidden lg:px-6 lg:py-3">
+    <main className="relative flex min-h-screen flex-col px-3 pt-3 pb-8 sm:px-5 sm:pt-4 sm:pb-10 lg:min-h-dvh lg:px-6 lg:pt-3 lg:pb-6">
       <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 lg:min-h-0">
         <CourtroomHeader transcript={transcript} />
 
-        <section className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1.62fr)_minmax(18rem,0.72fr)] lg:items-start">
-          <div className="flex flex-col lg:min-h-0">
+        <section className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1.62fr)_minmax(18rem,0.72fr)] lg:items-stretch">
+          <div className="flex flex-col lg:min-h-0 lg:h-full">
             <CourtroomStagePanel
               currentLineProgress={
                 currentTurn ? Math.min(1, currentTimeMs / currentTurn.durationMs) : 0
@@ -82,7 +82,7 @@ function CourtroomPageContent({ transcript }: { transcript: TranscriptData }) {
             />
           </div>
 
-          <aside className="flex flex-col gap-4 lg:min-h-0">
+          <aside className="flex flex-col gap-4 lg:min-h-0 lg:h-full">
             <CaseSummary transcript={transcript} />
             <DocketTimeline
               currentTurnId={currentTurn?.turnId ?? null}

@@ -5,6 +5,7 @@ import { Application, Container, Graphics, Text, TextStyle } from "pixi.js";
 
 import {
   getSpeakerShortName,
+  getWitnessSpeakerIds,
   isWitnessSpeaker,
   type TranscriptData,
 } from "@/lib/courtroom";
@@ -38,12 +39,16 @@ const FIXED_POSITIONS: Record<string, { x: number; y: number }> = {
 };
 
 const WITNESS_BOX_POSITION = { x: 650, y: 410 };
-const WITNESS_BENCH_POSITIONS = [
-  { x: 480, y: 590 },
-  { x: 570, y: 602 },
-  { x: 660, y: 590 },
-  { x: 750, y: 602 },
-];
+const WITNESS_BENCH_LAYOUT = {
+  centerX: 635,
+  lowerRowY: 638,
+  upperRowY: 624,
+  maxWidth: 264,
+  rowSpacing: 86,
+};
+const SEATED_WITNESS_SCALE = 0.66;
+const ACTIVE_WITNESS_SCALE = 0.92;
+const FIXED_CHARACTER_SCALE = 0.985;
 
 const CHARACTER_COLORS: Record<string, number> = {
   judge: 0xd2b179,
@@ -142,6 +147,40 @@ function createCharacter(
   };
 }
 
+function buildWitnessBenchPositions(witnessIds: string[]) {
+  const positions = new Map<string, { x: number; y: number }>();
+
+  if (witnessIds.length === 0) {
+    return positions;
+  }
+
+  const rowCount = witnessIds.length > 4 ? 2 : 1;
+  const firstRowCount = rowCount === 1 ? witnessIds.length : Math.ceil(witnessIds.length / 2);
+  const rows = [witnessIds.slice(0, firstRowCount), witnessIds.slice(firstRowCount)];
+
+  rows.forEach((rowWitnessIds, rowIndex) => {
+    if (rowWitnessIds.length === 0) {
+      return;
+    }
+
+    const y = rowIndex === 0 ? WITNESS_BENCH_LAYOUT.lowerRowY : WITNESS_BENCH_LAYOUT.upperRowY;
+    const spread = Math.min(
+      WITNESS_BENCH_LAYOUT.maxWidth,
+      Math.max(0, (rowWitnessIds.length - 1) * WITNESS_BENCH_LAYOUT.rowSpacing),
+    );
+    const startX = WITNESS_BENCH_LAYOUT.centerX - spread / 2;
+
+    rowWitnessIds.forEach((id, index) => {
+      positions.set(id, {
+        x: startX + index * WITNESS_BENCH_LAYOUT.rowSpacing,
+        y,
+      });
+    });
+  });
+
+  return positions;
+}
+
 export function CourtroomStage(props: CourtroomStageProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const appRef = useRef<Application | null>(null);
@@ -226,14 +265,14 @@ export function CourtroomStage(props: CourtroomStageProps) {
 
       const witnessBench = new Graphics();
       witnessBench
-        .roundRect(418, 610, 360, 28, 14)
-        .roundRect(446, 632, 304, 22, 10)
+        .roundRect(455, 628, 360, 28, 14)
+        .roundRect(483, 650, 304, 22, 10)
         .fill(0x433127);
       witnessBench
-        .moveTo(474, 636)
-        .lineTo(458, 700)
-        .moveTo(722, 636)
-        .lineTo(738, 700)
+        .moveTo(511, 654)
+        .lineTo(495, 718)
+        .moveTo(759, 654)
+        .lineTo(775, 718)
         .stroke({ width: 5, color: 0x2f221b, alpha: 0.9 });
       world.addChild(witnessBench);
 
@@ -249,7 +288,7 @@ export function CourtroomStage(props: CourtroomStageProps) {
         }),
       });
       witnessBenchLabel.anchor.set(0.5, 0);
-      witnessBenchLabel.position.set(598, 705);
+      witnessBenchLabel.position.set(635, 723);
       world.addChild(witnessBenchLabel);
 
       const prosecutorTable = new Graphics();
@@ -261,11 +300,8 @@ export function CourtroomStage(props: CourtroomStageProps) {
       world.addChild(defenseTable);
 
       const characterIds = Object.keys(props.transcript.voice_character_map);
-      const witnessIds = characterIds.filter((id) => isWitnessSpeaker(id));
-      const witnessBenchPositions = new Map<string, { x: number; y: number }>();
-      witnessIds.forEach((id, index) => {
-        witnessBenchPositions.set(id, WITNESS_BENCH_POSITIONS[index] ?? WITNESS_BENCH_POSITIONS.at(-1)!);
-      });
+      const witnessIds = getWitnessSpeakerIds(props.transcript);
+      const witnessBenchPositions = buildWitnessBenchPositions(witnessIds);
       const characters = new Map<string, CharacterSprite>();
 
       characterIds.forEach((id) => {
@@ -276,7 +312,7 @@ export function CourtroomStage(props: CourtroomStageProps) {
         const initialY = isWitness ? benchPosition!.y : fixedPosition.y;
         const sprite = createCharacter(id, initialX, initialY);
         if (isWitness) {
-          sprite.container.scale.set(0.74);
+          sprite.container.scale.set(SEATED_WITNESS_SCALE);
         }
         world.addChild(sprite.container);
         characters.set(id, sprite);
@@ -303,7 +339,7 @@ export function CourtroomStage(props: CourtroomStageProps) {
 
           let targetX = sprite.baseX;
           let targetY = sprite.baseY;
-          let targetScale = isWitness ? 0.74 : 0.985;
+          let targetScale = isWitness ? SEATED_WITNESS_SCALE : FIXED_CHARACTER_SCALE;
           let stride = 0;
           let armRotationBase = 0.04;
 
@@ -315,7 +351,7 @@ export function CourtroomStage(props: CourtroomStageProps) {
             const distance = Math.hypot(targetX - sprite.container.x, targetY - sprite.container.y);
             const isWalking = distance > 26;
 
-            targetScale = isCurrentWitness || isWalking ? 0.98 : 0.74;
+            targetScale = isCurrentWitness || isWalking ? ACTIVE_WITNESS_SCALE : SEATED_WITNESS_SCALE;
             stride = isWalking ? Math.sin(elapsedSeconds * 8.4 + sprite.baseX / 90) * 2.4 : 0;
             armRotationBase = isWalking ? 0.18 : 0.02;
           }

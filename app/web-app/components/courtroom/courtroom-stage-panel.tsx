@@ -41,7 +41,7 @@ export function CourtroomStagePanel({
   const sectionLabelClassName =
     "text-[0.65rem] uppercase tracking-[0.35em] text-[var(--muted)]";
   const sectionValueClassName =
-    "mt-1 font-display text-lg leading-none text-[var(--foreground)] sm:text-xl";
+    "mt-1 font-display text-lg leading-none text-[var(--foreground)] sm:text-xl pb-0.5";
 
   return (
     <div className="panel flex flex-col rounded-[32px] p-3 sm:p-4 lg:min-h-0 lg:p-3.5">

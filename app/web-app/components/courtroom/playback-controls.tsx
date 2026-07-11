@@ -2,7 +2,7 @@ import type { PlaybackMode } from "@/hooks/use-courtroom-playback";
 
 function PlayIcon() {
   return (
-    <svg aria-hidden="true" className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
       <path d="M8 5.5v13l10-6.5z" />
     </svg>
   );
@@ -10,7 +10,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg aria-hidden="true" className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24">
       <path d="M9 6v12M15 6v12" strokeLinecap="round" strokeWidth="2.2" />
     </svg>
   );
@@ -18,7 +18,7 @@ function PauseIcon() {
 
 function ReplayIcon() {
   return (
-    <svg aria-hidden="true" className="h-4 w-4 fill-none stroke-current" viewBox="0 0 24 24">
+    <svg aria-hidden="true" className="h-3.5 w-3.5 fill-none stroke-current" viewBox="0 0 24 24">
       <path
         d="M7 7v4h4M7.8 15.7A7 7 0 1 0 5 10.5"
         strokeLinecap="round"
@@ -45,10 +45,10 @@ export function PlaybackControls({
   onTogglePlayback: () => void;
 }) {
   return (
-    <div className="flex w-full items-center gap-3 rounded-full bg-[linear-gradient(180deg,rgba(7,11,22,0.5),rgba(7,11,22,0.82))] px-3 py-2.5 backdrop-blur-xl">
+    <div className="flex w-full items-center gap-3 rounded-full px-3 py-1 ">
         <button
           aria-label={isPlaying ? "Pause playback" : "Play playback"}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-slate-950 transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-slate-950 transition-transform duration-200 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
           onClick={onTogglePlayback}
           type="button"
         >
@@ -67,7 +67,7 @@ export function PlaybackControls({
 
         <button
           aria-label="Replay from start"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/7 text-[var(--foreground)] transition-colors duration-200 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/7 text-[var(--foreground)] transition-colors duration-200 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
           onClick={onRestart}
           type="button"
         >

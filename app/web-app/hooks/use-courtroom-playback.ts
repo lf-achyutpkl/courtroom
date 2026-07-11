@@ -7,14 +7,26 @@ import { isWitnessSpeaker, type PlaybackManifestTurn } from "@/lib/courtroom";
 export type PlaybackMode = "audio" | "timeline";
 
 export function getWitnessOccupant(manifest: PlaybackManifestTurn[], index: number) {
+  let latestWitnessId: string | null = null;
+
   for (let cursor = index; cursor >= 0; cursor -= 1) {
-    const speakerId = manifest[cursor]?.speakerId;
+    const turn = manifest[cursor];
+    const speakerId = turn?.speakerId;
+    if (!turn) {
+      continue;
+    }
+
+    if (turn.scene === "closing") {
+      return null;
+    }
+
     if (speakerId && isWitnessSpeaker(speakerId)) {
-      return speakerId;
+      latestWitnessId = speakerId;
+      break;
     }
   }
 
-  return null;
+  return latestWitnessId;
 }
 
 export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
@@ -78,6 +90,9 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
       currentTimeRef.current = currentTurn.durationMs;
       transitionTimeoutRef.current = window.setTimeout(() => {
         if (index >= manifest.length - 1) {
+          setCurrentTimeMs(0);
+          currentTimeRef.current = 0;
+          setIndex(0);
           setIsPlaying(false);
           return;
         }

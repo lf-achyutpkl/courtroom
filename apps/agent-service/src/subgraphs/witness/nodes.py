@@ -1,9 +1,13 @@
 from typing import Literal
 
 from ... import TrialState
-from .helpers import (
+from ...utils.config import TRIAL_CONFIG
+from ...utils.helpers import (
+    get_witness_by_id,
     render_witness_private,
     render_witness_public,
+)
+from .helpers import (
     format_recent_testimony,
     append_witness_turn,
     current_phase_question_count,
@@ -16,21 +20,15 @@ from .prompts import (
     judge_ruling_prompt,
     witness_answer_prompt,
 )
-from ... import types, invoke, llm
-
-
-def load_case_template(state: TrialState) -> str:
-    """Load the case template for the given trial state."""
-    print(f"Loading case template for case: {state.case_file.case_id}")
+from ... import invoke, llm, types
 
 
 def ask_question_node(state: TrialState) -> dict:
     """Ask a question based on the current trial state."""
-    witness = next(
-        witness
-        for witness in state.case_file.witnesses
-        if witness.witness_id == state.current_witness_id
-    )
+    if state.current_witness_id is None:
+        raise ValueError("current_witness_id must be set before asking a question")
+
+    witness = get_witness_by_id(state.case_file, state.current_witness_id)
     attorney, phase = state.examining_attorney, state.examination_phase
     knows_private = phase == "direct" and witness.called_by == attorney
     witness_context = (
@@ -44,7 +42,7 @@ def ask_question_node(state: TrialState) -> dict:
         if turn.scene == phase and turn.speaker_id == attorney
     )
     transcript_so_far = format_recent_testimony(
-        state.current_witness_transcript, state.transcript_window_turns
+        state.current_witness_transcript, TRIAL_CONFIG.context_window_turns
     )
     system_prompt, user_prompt = ask_question_prompt(
         state,
@@ -79,7 +77,7 @@ def ask_question_node(state: TrialState) -> dict:
 def objection_check_node(state: TrialState) -> dict:
     opposing = "defense" if state.examining_attorney == "prosecution" else "prosecution"
     last_question = state.active_question_text
-    if state.skip_direct_objections and state.examination_phase == "direct":
+    if TRIAL_CONFIG.skip_direct_objections and state.examination_phase == "direct":
         return {"objection_pending": False, "last_objection_type": None}
     system_prompt, user_prompt = objection_check_prompt(state, opposing, last_question)
 
@@ -127,14 +125,13 @@ def judge_ruling_node(state: TrialState) -> dict:
 
 
 def witness_answer_node(state: TrialState) -> dict:
-    witness = next(
-        witness
-        for witness in state.case_file.witnesses
-        if witness.witness_id == state.current_witness_id
-    )
+    if state.current_witness_id is None:
+        raise ValueError("current_witness_id must be set before answering a question")
+
+    witness = get_witness_by_id(state.case_file, state.current_witness_id)
     question = state.active_question_text
     transcript_so_far = format_recent_testimony(
-        state.current_witness_transcript, state.transcript_window_turns
+        state.current_witness_transcript, TRIAL_CONFIG.context_window_turns
     )
     system_prompt, user_prompt = witness_answer_prompt(
         state, witness, question, transcript_so_far
@@ -159,11 +156,10 @@ def witness_answer_node(state: TrialState) -> dict:
 
 
 def swap_to_cross_node(state: TrialState) -> dict:
-    witness = next(
-        witness
-        for witness in state.case_file.witnesses
-        if witness.witness_id == state.current_witness_id
-    )
+    if state.current_witness_id is None:
+        raise ValueError("current_witness_id must be set before cross examination")
+
+    witness = get_witness_by_id(state.case_file, state.current_witness_id)
     other_side = "defense" if witness.called_by == "prosecution" else "prosecution"
 
     return {

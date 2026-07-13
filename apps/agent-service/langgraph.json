@@ -1,7 +1,8 @@
   {
     "dependencies": ["."],
     "graphs": {
-      "witness": "./src/witness_agent.py:witness_graph"
+      "trial": "./src/agent.py:graph",
+      "examine-witness": "./src/subgraphs/witness/agent.py:witness_graph"
     },
     "env": "./.env",
     "python_version": "3.11"

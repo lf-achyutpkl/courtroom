@@ -10,4 +10,18 @@ Reserved workspace for the Python and LangGraph runtime behind the courtroom sim
 
 ## Status
 
-This workspace is scaffolded only. Runtime implementation has not started yet.
+This workspace is actively being scaffolded.
+
+## Local Development
+
+Install dependencies and the LangGraph CLI with:
+
+```bash
+uv sync
+```
+
+Start the LangGraph dev server with:
+
+```bash
+uv run langgraph dev
+```

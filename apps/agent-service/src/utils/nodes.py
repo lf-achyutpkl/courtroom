@@ -20,6 +20,7 @@ from .prompts import (
     verdict_prompt,
 )
 from ..subgraphs.witness.graph import build_witness_graph
+from ..subgraphs.witness.state import WitnessExaminationState
 from .llm import judge_llm, invoke_structured
 from .state import TrialState
 
@@ -43,15 +44,10 @@ class WitnessQueueUpdate(TypedDict):
 class WitnessSelectionUpdate(TypedDict):
     current_witness_id: str | None
     witness_queue: list[str]
-    current_witness_transcript: list[types.TranscriptTurn]
-    turn_count: int
-    objection_pending: bool
-    last_objection_type: str | None
-    last_ruling: types.RulingOutput | None
-    active_question_text: str | None
-    attorney_is_done: bool
-    examination_phase: Literal["direct", "cross"]
-    examining_attorney: Literal["prosecution", "defense"]
+
+
+class WitnessExaminationUpdate(TypedDict):
+    full_trial_transcript: list[types.TranscriptTurn]
 
 
 class SummaryUpdate(TypedDict):
@@ -61,19 +57,6 @@ class SummaryUpdate(TypedDict):
 class VerdictUpdate(TypedDict):
     verdict: types.VerdictOutput
     full_trial_transcript: list[types.TranscriptTurn]
-
-
-class WitnessExaminationUpdate(TypedDict):
-    current_witness_transcript: list[types.TranscriptTurn]
-    full_trial_transcript: list[types.TranscriptTurn]
-    turn_count: int
-    examination_phase: Literal["direct", "cross"]
-    examining_attorney: Literal["prosecution", "defense"]
-    objection_pending: bool
-    last_objection_type: str | None
-    last_ruling: types.RulingOutput | None
-    active_question_text: str | None
-    attorney_is_done: bool
 
 
 _witness_graph = build_witness_graph()
@@ -157,31 +140,11 @@ def select_next_witness_node(state: TrialState) -> WitnessSelectionUpdate:
         return {
             "current_witness_id": None,
             "witness_queue": [],
-            "current_witness_transcript": [],
-            "turn_count": 0,
-            "objection_pending": False,
-            "last_objection_type": None,
-            "last_ruling": None,
-            "active_question_text": None,
-            "attorney_is_done": False,
-            "examination_phase": "direct",
-            "examining_attorney": state.examining_attorney,
         }
 
-    next_witness_id = state.witness_queue[0]
-    witness = get_witness_by_id(state.case_file, next_witness_id)
     return {
-        "current_witness_id": next_witness_id,
+        "current_witness_id": state.witness_queue[0],
         "witness_queue": state.witness_queue[1:],
-        "current_witness_transcript": [],
-        "turn_count": 0,
-        "objection_pending": False,
-        "last_objection_type": None,
-        "last_ruling": None,
-        "active_question_text": None,
-        "attorney_is_done": False,
-        "examination_phase": "direct",
-        "examining_attorney": witness.called_by,
     }
 
 
@@ -196,23 +159,23 @@ def route_after_witness_selection(
 
 
 def examine_witness_node(state: TrialState) -> WitnessExaminationUpdate:
-    result = _witness_graph.invoke(state)
+    if state.current_witness_id is None:
+        raise ValueError("current_witness_id must be set before examining a witness")
+
+    witness = get_witness_by_id(state.case_file, state.current_witness_id)
+    witness_state = WitnessExaminationState(
+        case_file=state.case_file,
+        current_witness_id=state.current_witness_id,
+        examining_attorney=witness.called_by,
+    )
+    result = _witness_graph.invoke(witness_state)
     result_state = (
         result
-        if isinstance(result, TrialState)
-        else TrialState.model_validate(result)
+        if isinstance(result, WitnessExaminationState)
+        else WitnessExaminationState.model_validate(result)
     )
     return {
-        "current_witness_transcript": result_state.current_witness_transcript,
         "full_trial_transcript": result_state.current_witness_transcript,
-        "turn_count": result_state.turn_count,
-        "examination_phase": result_state.examination_phase,
-        "examining_attorney": result_state.examining_attorney,
-        "objection_pending": result_state.objection_pending,
-        "last_objection_type": result_state.last_objection_type,
-        "last_ruling": result_state.last_ruling,
-        "active_question_text": result_state.active_question_text,
-        "attorney_is_done": result_state.attorney_is_done,
     }
 
 

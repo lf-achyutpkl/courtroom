@@ -1,6 +1,5 @@
 from langgraph.graph import START, StateGraph
 
-from ... import TrialState
 from .nodes import (
     ask_question_node,
     swap_to_cross_node,
@@ -11,10 +10,11 @@ from .nodes import (
     route_after_ruling,
     route_after_answer,
 )
+from .state import WitnessExaminationState
 
 
 def build_witness_graph():
-    builder = StateGraph(TrialState)
+    builder = StateGraph(WitnessExaminationState)
     builder.add_node("ask_question", ask_question_node)
     builder.add_node("objection_check", objection_check_node)
     builder.add_node("judge_ruling", judge_ruling_node)

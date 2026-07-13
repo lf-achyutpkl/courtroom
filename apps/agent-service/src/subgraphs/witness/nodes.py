@@ -1,6 +1,5 @@
 from typing import Literal
 
-from ... import TrialState
 from ...utils.config import TRIAL_CONFIG
 from ...utils.helpers import (
     get_witness_by_id,
@@ -21,9 +20,10 @@ from .prompts import (
     witness_answer_prompt,
 )
 from ... import invoke, llm, types
+from .state import WitnessExaminationState
 
 
-def ask_question_node(state: TrialState) -> dict:
+def ask_question_node(state: WitnessExaminationState) -> dict:
     """Ask a question based on the current trial state."""
     if state.current_witness_id is None:
         raise ValueError("current_witness_id must be set before asking a question")
@@ -74,7 +74,7 @@ def ask_question_node(state: TrialState) -> dict:
     }
 
 
-def objection_check_node(state: TrialState) -> dict:
+def objection_check_node(state: WitnessExaminationState) -> dict:
     opposing = "defense" if state.examining_attorney == "prosecution" else "prosecution"
     last_question = state.active_question_text
     if TRIAL_CONFIG.skip_direct_objections and state.examination_phase == "direct":
@@ -94,7 +94,7 @@ def objection_check_node(state: TrialState) -> dict:
     }
 
 
-def judge_ruling_node(state: TrialState) -> dict:
+def judge_ruling_node(state: WitnessExaminationState) -> dict:
     question = state.active_question_text
     objection_type = state.last_objection_type
     chunks_text = ""
@@ -124,7 +124,7 @@ def judge_ruling_node(state: TrialState) -> dict:
     }
 
 
-def witness_answer_node(state: TrialState) -> dict:
+def witness_answer_node(state: WitnessExaminationState) -> dict:
     if state.current_witness_id is None:
         raise ValueError("current_witness_id must be set before answering a question")
 
@@ -155,7 +155,7 @@ def witness_answer_node(state: TrialState) -> dict:
     }
 
 
-def swap_to_cross_node(state: TrialState) -> dict:
+def swap_to_cross_node(state: WitnessExaminationState) -> dict:
     if state.current_witness_id is None:
         raise ValueError("current_witness_id must be set before cross examination")
 
@@ -174,7 +174,7 @@ def swap_to_cross_node(state: TrialState) -> dict:
     }
 
 
-def route_after_answer(state: TrialState):
+def route_after_answer(state: WitnessExaminationState):
     if should_end_phase(state):
         next_node = phase_complete_next_node(state)
         return next_node
@@ -183,12 +183,12 @@ def route_after_answer(state: TrialState):
 
 
 def route_after_objection_check(
-    state: TrialState,
+    state: WitnessExaminationState,
 ) -> Literal["judge_ruling", "witness_answer"]:
     return "judge_ruling" if state.objection_pending else "witness_answer"
 
 
-def route_after_ruling(state: TrialState):
+def route_after_ruling(state: WitnessExaminationState):
     if state.last_ruling.decision != "sustained":
         next_node = "witness_answer"
     elif should_end_phase(state):

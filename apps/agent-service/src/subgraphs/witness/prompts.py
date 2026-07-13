@@ -1,13 +1,14 @@
-from ... import TrialState, types
+from ... import types
 from ...utils.helpers import (
     render_case_context,
     render_witness_private,
     spoken_style_rules,
 )
+from .state import WitnessExaminationState
 
 
 def ask_question_prompt(
-    state: TrialState,
+    state: WitnessExaminationState,
     witness_context: str,
     attorney: str,
     phase: str,
@@ -34,7 +35,7 @@ def ask_question_prompt(
 
 
 def objection_check_prompt(
-    state: TrialState, opposing: str, last_question: str | None
+    state: WitnessExaminationState, opposing: str, last_question: str | None
 ) -> tuple[str, str]:
     system_prompt = f"""You are {opposing}'s attorney. Evaluate the question just asked and decide
       whether to object. Objection types: hearsay, leading, relevance, speculation,
@@ -50,7 +51,7 @@ def objection_check_prompt(
 
 
 def judge_ruling_prompt(
-    state: TrialState,
+    state: WitnessExaminationState,
     objection_type: str | None,
     question: str | None,
     chunks_text: str,
@@ -71,7 +72,7 @@ def judge_ruling_prompt(
 
 
 def witness_answer_prompt(
-    state: TrialState,
+    state: WitnessExaminationState,
     witness: types.WitnessProfile,
     question: str | None,
     transcript_so_far: str,

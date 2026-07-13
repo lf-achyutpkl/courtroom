@@ -1,6 +1,7 @@
-from ... import TrialState, types
+from ... import types
 from ...utils.config import TRIAL_CONFIG
 from ...utils.helpers import format_recent_transcript
+from .state import WitnessExaminationState
 
 
 def format_recent_testimony(
@@ -16,12 +17,12 @@ def format_recent_testimony(
 
 
 def append_witness_turn(
-    state: TrialState, turn: types.TranscriptTurn
+    state: WitnessExaminationState, turn: types.TranscriptTurn
 ) -> list[types.TranscriptTurn]:
     return state.current_witness_transcript + [turn]
 
 
-def current_phase_question_count(state: TrialState) -> int:
+def current_phase_question_count(state: WitnessExaminationState) -> int:
     return sum(
         1
         for turn in state.current_witness_transcript
@@ -30,12 +31,12 @@ def current_phase_question_count(state: TrialState) -> int:
     )
 
 
-def should_end_phase(state: TrialState) -> bool:
+def should_end_phase(state: WitnessExaminationState) -> bool:
     return (
         state.attorney_is_done
         or current_phase_question_count(state) >= TRIAL_CONFIG.max_questions_per_phase
     )
 
 
-def phase_complete_next_node(state: TrialState):
+def phase_complete_next_node(state: WitnessExaminationState):
     return "swap_to_cross" if state.examination_phase == "direct" else "__end__"

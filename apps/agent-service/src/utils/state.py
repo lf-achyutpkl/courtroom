@@ -8,8 +8,8 @@ from .types import CaseFile, TranscriptTurn, VerdictOutput
 
 class TrialState(BaseModel):
     case_file: CaseFile
-    prosecution_witness_plan: list[str]
-    defense_witness_plan: list[str]
+    prosecution_witness_plan: list[str] = Field(default_factory=list)
+    defense_witness_plan: list[str] = Field(default_factory=list)
     witness_queue: list[str] = Field(default_factory=list)
     current_witness_id: str | None = None
     full_trial_transcript: Annotated[list[TranscriptTurn], add] = Field(

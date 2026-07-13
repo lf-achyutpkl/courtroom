@@ -31,6 +31,14 @@ class TranscriptTurn(BaseModel):
     cited_chunk_ids: Optional[list[str]] = None
 
 
+class RunTrialRequest(BaseModel):
+    case_file: "CaseFile"
+
+
+class RunTrialResponse(BaseModel):
+    full_trial_transcript: list[TranscriptTurn]
+
+
 class RulingOutput(BaseModel):
     decision: Literal["sustained", "overruled"]
     reasoning: str = Field(

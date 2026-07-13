@@ -4,7 +4,25 @@
 
 Define the first contract between `app/agent-service` outputs and `app/web-app` inputs.
 
-## Output Model
+## API Contract
+
+### Run Trial Request
+
+`RunTrialRequest` should provide:
+
+- `case_file`
+
+The caller should not provide orchestration fields such as witness plans, queue state, transcript buffers, summary, or verdict.
+
+### Run Trial Response
+
+`RunTrialResponse` should provide:
+
+- `full_trial_transcript`
+
+Internal graph fields like `trial_summary` and `verdict` may still exist during execution, but they are not part of the public API response.
+
+## Artifact Output Model
 
 ### Case Payload
 

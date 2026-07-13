@@ -1,5 +1,6 @@
 import unittest
 
+from src.service import RunTrialRequest, _build_initial_state
 from src.subgraphs.witness.state import WitnessExaminationState
 from src.utils.config import TRIAL_CONFIG
 from src.utils.helpers import (
@@ -47,16 +48,22 @@ def build_case_file() -> CaseFile:
 
 
 def build_state() -> TrialState:
-    return TrialState.model_validate(
-        {
-            "case_file": build_case_file(),
-            "prosecution_witness_plan": [],
-            "defense_witness_plan": [],
-        }
-    )
+    return TrialState.model_validate({"case_file": build_case_file()})
 
 
 class MainGraphHelpersTest(unittest.TestCase):
+    def test_build_initial_state_only_requires_case_file(self) -> None:
+        request = RunTrialRequest(case_file=build_case_file())
+
+        state = _build_initial_state(request)
+
+        self.assertEqual(state.case_file.case_id, "case-1")
+        self.assertEqual(state.prosecution_witness_plan, [])
+        self.assertEqual(state.defense_witness_plan, [])
+        self.assertEqual(state.full_trial_transcript, [])
+        self.assertIsNone(state.trial_summary)
+        self.assertIsNone(state.verdict)
+
     def test_runtime_config_defaults(self) -> None:
         self.assertEqual(TRIAL_CONFIG.max_questions_per_phase, 4)
         self.assertEqual(TRIAL_CONFIG.context_window_turns, 4)

@@ -1,10 +1,12 @@
-from pydantic import BaseModel
+import logging
+from typing import TypeVar
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
-
-import logging
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
 fast_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.9, max_retries=0)
 judge_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2, max_retries=0)
@@ -28,11 +30,11 @@ NODE_MAX_COMPLETION_TOKENS = {
 def invoke_structured(
     system_prompt: str,
     user_prompt: str,
-    schema: type[BaseModel],
+    schema: type[SchemaT],
     llm: ChatOpenAI = fast_llm,
     *,
     node_name: str = "unknown",
-) -> BaseModel:
+) -> SchemaT:
     try:
         max_completion_tokens = NODE_MAX_COMPLETION_TOKENS.get(node_name, 160)
         structured_llm = llm.bind(

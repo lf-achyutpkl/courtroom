@@ -1,0 +1,298 @@
+from __future__ import annotations
+
+from typing import Literal, TypedDict
+
+from . import types
+from .helpers import (
+    build_witness_queue as build_witness_queue_from_plans,
+    get_witness_by_id,
+    get_witnesses_by_side,
+    log_graph_event,
+)
+from .prompts import (
+    closing_defense_prompt,
+    closing_prosecution_prompt,
+    defense_strategy_prompt,
+    opening_defense_prompt,
+    opening_prosecution_prompt,
+    prosecution_strategy_prompt,
+    summarize_trial_transcript_prompt,
+    verdict_prompt,
+)
+from ..subgraphs.witness.graph import build_witness_graph
+from .llm import judge_llm, invoke_structured
+from .state import TrialState
+
+
+class WitnessPlanUpdate(TypedDict):
+    prosecution_witness_plan: list[str]
+
+
+class DefensePlanUpdate(TypedDict):
+    defense_witness_plan: list[str]
+
+
+class TranscriptUpdate(TypedDict):
+    full_trial_transcript: list[types.TranscriptTurn]
+
+
+class WitnessQueueUpdate(TypedDict):
+    witness_queue: list[str]
+
+
+class WitnessSelectionUpdate(TypedDict):
+    current_witness_id: str | None
+    witness_queue: list[str]
+    current_witness_transcript: list[types.TranscriptTurn]
+    turn_count: int
+    objection_pending: bool
+    last_objection_type: str | None
+    last_ruling: types.RulingOutput | None
+    active_question_text: str | None
+    attorney_is_done: bool
+    examination_phase: Literal["direct", "cross"]
+    examining_attorney: Literal["prosecution", "defense"]
+
+
+class SummaryUpdate(TypedDict):
+    trial_summary: str
+
+
+class VerdictUpdate(TypedDict):
+    verdict: types.VerdictOutput
+    full_trial_transcript: list[types.TranscriptTurn]
+
+
+class WitnessExaminationUpdate(TypedDict):
+    current_witness_transcript: list[types.TranscriptTurn]
+    full_trial_transcript: list[types.TranscriptTurn]
+    turn_count: int
+    examination_phase: Literal["direct", "cross"]
+    examining_attorney: Literal["prosecution", "defense"]
+    objection_pending: bool
+    last_objection_type: str | None
+    last_ruling: types.RulingOutput | None
+    active_question_text: str | None
+    attorney_is_done: bool
+
+
+_witness_graph = build_witness_graph()
+
+
+def load_case_template_node(state: TrialState) -> dict[str, object]:
+    log_graph_event("load_case_template", case_id=state.case_file.case_id)
+    return {}
+
+
+def plan_prosecution_strategy_node(state: TrialState) -> WitnessPlanUpdate:
+    own_witnesses = get_witnesses_by_side(state.case_file, "prosecution")
+    system_prompt, user_prompt = prosecution_strategy_prompt(state, own_witnesses)
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.WitnessPlan,
+        node_name="plan_prosecution_strategy",
+    )
+    return {"prosecution_witness_plan": result.witness_ids}
+
+
+def plan_defense_strategy_node(state: TrialState) -> DefensePlanUpdate:
+    own_witnesses = get_witnesses_by_side(state.case_file, "defense")
+    opposing_public_witnesses = get_witnesses_by_side(state.case_file, "prosecution")
+    system_prompt, user_prompt = defense_strategy_prompt(
+        state, own_witnesses, opposing_public_witnesses
+    )
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.WitnessPlan,
+        node_name="plan_defense_strategy",
+    )
+    return {"defense_witness_plan": result.witness_ids}
+
+
+def opening_prosecution_node(state: TrialState) -> TranscriptUpdate:
+    system_prompt, user_prompt = opening_prosecution_prompt(state)
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.OpeningStatement,
+        node_name="opening_prosecution",
+    )
+    turn = types.TranscriptTurn(
+        scene="opening",
+        speaker_id="prosecution",
+        text=result.statement,
+    )
+    return {"full_trial_transcript": [turn]}
+
+
+def opening_defense_node(state: TrialState) -> TranscriptUpdate:
+    system_prompt, user_prompt = opening_defense_prompt(state)
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.OpeningStatement,
+        node_name="opening_defense",
+    )
+    turn = types.TranscriptTurn(
+        scene="opening",
+        speaker_id="defense",
+        text=result.statement,
+    )
+    return {"full_trial_transcript": [turn]}
+
+
+def build_witness_queue_node(state: TrialState) -> WitnessQueueUpdate:
+    return {
+        "witness_queue": build_witness_queue_from_plans(
+            state.prosecution_witness_plan,
+            state.defense_witness_plan,
+        )
+    }
+
+
+def select_next_witness_node(state: TrialState) -> WitnessSelectionUpdate:
+    if not state.witness_queue:
+        return {
+            "current_witness_id": None,
+            "witness_queue": [],
+            "current_witness_transcript": [],
+            "turn_count": 0,
+            "objection_pending": False,
+            "last_objection_type": None,
+            "last_ruling": None,
+            "active_question_text": None,
+            "attorney_is_done": False,
+            "examination_phase": "direct",
+            "examining_attorney": state.examining_attorney,
+        }
+
+    next_witness_id = state.witness_queue[0]
+    witness = get_witness_by_id(state.case_file, next_witness_id)
+    return {
+        "current_witness_id": next_witness_id,
+        "witness_queue": state.witness_queue[1:],
+        "current_witness_transcript": [],
+        "turn_count": 0,
+        "objection_pending": False,
+        "last_objection_type": None,
+        "last_ruling": None,
+        "active_question_text": None,
+        "attorney_is_done": False,
+        "examination_phase": "direct",
+        "examining_attorney": witness.called_by,
+    }
+
+
+def route_after_witness_selection(
+    state: TrialState,
+) -> Literal["summarize_trial_transcript", "examine_witness"]:
+    return (
+        "summarize_trial_transcript"
+        if state.current_witness_id is None
+        else "examine_witness"
+    )
+
+
+def examine_witness_node(state: TrialState) -> WitnessExaminationUpdate:
+    result = _witness_graph.invoke(state)
+    result_state = (
+        result
+        if isinstance(result, TrialState)
+        else TrialState.model_validate(result)
+    )
+    return {
+        "current_witness_transcript": result_state.current_witness_transcript,
+        "full_trial_transcript": result_state.current_witness_transcript,
+        "turn_count": result_state.turn_count,
+        "examination_phase": result_state.examination_phase,
+        "examining_attorney": result_state.examining_attorney,
+        "objection_pending": result_state.objection_pending,
+        "last_objection_type": result_state.last_objection_type,
+        "last_ruling": result_state.last_ruling,
+        "active_question_text": result_state.active_question_text,
+        "attorney_is_done": result_state.attorney_is_done,
+    }
+
+
+def summarize_trial_transcript_node(state: TrialState) -> SummaryUpdate:
+    transcript = "\n".join(
+        f"{turn.speaker_id}: {turn.text}" for turn in state.full_trial_transcript
+    )
+    system_prompt, user_prompt = summarize_trial_transcript_prompt(state, transcript)
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.TrialSummary,
+        node_name="summarize_trial_transcript",
+    )
+    return {"trial_summary": result.summary_text}
+
+
+def closing_prosecution_node(state: TrialState) -> TranscriptUpdate:
+    summary = state.trial_summary or "(no summary available)"
+    system_prompt, user_prompt = closing_prosecution_prompt(state, summary)
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.ClosingArgument,
+        node_name="closing_prosecution",
+    )
+    turn = types.TranscriptTurn(
+        scene="closing",
+        speaker_id="prosecution",
+        text=result.statement,
+    )
+    return {"full_trial_transcript": [turn]}
+
+
+def closing_defense_node(state: TrialState) -> TranscriptUpdate:
+    summary = state.trial_summary or "(no summary available)"
+    prosecution_closing = state.full_trial_transcript[-1].text
+    system_prompt, user_prompt = closing_defense_prompt(
+        state, summary, prosecution_closing
+    )
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.ClosingArgument,
+        node_name="closing_defense",
+    )
+    turn = types.TranscriptTurn(
+        scene="closing",
+        speaker_id="defense",
+        text=result.statement,
+    )
+    return {"full_trial_transcript": [turn]}
+
+
+def verdict_node(state: TrialState) -> VerdictUpdate:
+    summary = state.trial_summary or "(no summary available)"
+    prosecution_closing = (
+        state.full_trial_transcript[-2].text
+        if len(state.full_trial_transcript) >= 2
+        else ""
+    )
+    defense_closing = state.full_trial_transcript[-1].text if state.full_trial_transcript else ""
+    system_prompt, user_prompt = verdict_prompt(
+        state,
+        summary,
+        prosecution_closing,
+        defense_closing,
+        chunks_text="",
+    )
+    result = invoke_structured(
+        system_prompt,
+        user_prompt,
+        types.VerdictOutput,
+        llm=judge_llm,
+        node_name="verdict",
+    )
+    verdict_turn = types.TranscriptTurn(
+        scene="verdict",
+        speaker_id="judge",
+        text=result.reasoning,
+        cited_chunk_ids=result.cited_chunk_ids,
+    )
+    return {"verdict": result, "full_trial_transcript": [verdict_turn]}

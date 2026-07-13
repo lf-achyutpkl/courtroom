@@ -3,14 +3,11 @@ from operator import add
 from pydantic import BaseModel, Field
 from typing import Literal, Optional, Annotated
 
-from ..types import CaseFile, TranscriptTurn, RulingOutput, VerdictOutput
+from .types import CaseFile, RulingOutput, TranscriptTurn, VerdictOutput
 
 
 class TrialState(BaseModel):
     case_file: CaseFile
-    max_turns: int = 10
-    transcript_window_turns: int = 4
-    skip_direct_objections: bool = True
     prosecution_witness_plan: list[str]
     defense_witness_plan: list[str]
     witness_queue: list[str] = Field(default_factory=list)

@@ -1,0 +1,224 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from .state import TrialState
+from .types import NodeTelemetry, RunMetadata, TranscriptTurn
+
+TRIAL_NODE_SEQUENCE = [
+    "plan_prosecution_strategy",
+    "plan_defense_strategy",
+    "opening_prosecution",
+    "opening_defense",
+    "summarize_trial_transcript",
+    "closing_prosecution",
+    "closing_defense",
+    "verdict",
+]
+
+WITNESS_NODE_SEQUENCE = [
+    "ask_question",
+    "objection_check",
+    "judge_ruling",
+    "witness_answer",
+]
+
+
+class DeterministicValidationError(ValueError):
+    """Raised when a trial run violates deterministic response invariants."""
+
+    def __init__(self, errors: list[str]) -> None:
+        self.errors = errors
+        super().__init__("Deterministic validation failed: " + "; ".join(errors))
+
+
+def _parse_iso8601(value: str, field_name: str, errors: list[str]) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        errors.append(f"{field_name} must be a valid ISO-8601 timestamp")
+        return None
+
+
+def _validate_transcript_structure(
+    state: TrialState,
+    errors: list[str],
+) -> None:
+    transcript = state.full_trial_transcript
+    if not transcript:
+        errors.append("full_trial_transcript must not be empty")
+        return
+
+    witness_ids = {witness.witness_id for witness in state.case_file.witnesses}
+    valid_speakers = {"prosecution", "defense", "judge", *witness_ids}
+    scene_order = {
+        "opening": 0,
+        "direct": 1,
+        "cross": 2,
+        "closing": 3,
+        "ruling": 3,
+        "verdict": 4,
+    }
+    required_scenes = {"opening", "closing", "verdict"}
+    seen_scenes: set[str] = set()
+    last_scene_rank = -1
+    witness_turn_without_question = False
+
+    for index, turn in enumerate(transcript):
+        if turn.speaker_id not in valid_speakers:
+            errors.append(
+                f"turn {index} uses invalid speaker_id '{turn.speaker_id}'"
+            )
+
+        seen_scenes.add(turn.scene)
+        current_scene_rank = scene_order[turn.scene]
+        if current_scene_rank < last_scene_rank:
+            errors.append(
+                f"turn {index} scene '{turn.scene}' regresses from prior scene order"
+            )
+        last_scene_rank = max(last_scene_rank, current_scene_rank)
+
+        if turn.speaker_id != "judge" and (
+            turn.ruling is not None or turn.objection_type is not None
+        ):
+            errors.append(
+                f"turn {index} uses judge-only fields on non-judge speaker"
+            )
+
+        if turn.scene == "verdict" and turn.speaker_id != "judge":
+            errors.append("verdict scene must be spoken by the judge")
+
+        if turn.scene == "ruling" and turn.speaker_id != "judge":
+            errors.append("ruling scene must be spoken by the judge")
+
+        if turn.scene in {"direct", "cross"} and turn.speaker_id in witness_ids:
+            if index == 0:
+                witness_turn_without_question = True
+            else:
+                previous_turn = transcript[index - 1]
+                if (
+                    previous_turn.scene != turn.scene
+                    or previous_turn.speaker_id not in {"prosecution", "defense"}
+                ):
+                    witness_turn_without_question = True
+
+    missing_scenes = sorted(required_scenes - seen_scenes)
+    if missing_scenes:
+        errors.append(f"transcript missing required scenes: {', '.join(missing_scenes)}")
+
+    if transcript[-1].scene != "verdict":
+        errors.append("final transcript turn must be the verdict")
+
+    if witness_turn_without_question:
+        errors.append(
+            "witness answers must follow an attorney question in the same examination phase"
+        )
+
+
+def _validate_node_telemetry(telemetry: list[NodeTelemetry], errors: list[str]) -> None:
+    trial_positions: list[int] = []
+
+    for index, record in enumerate(telemetry):
+        started_at = _parse_iso8601(
+            record.started_at, f"node_telemetry[{index}].started_at", errors
+        )
+        completed_at = _parse_iso8601(
+            record.completed_at, f"node_telemetry[{index}].completed_at", errors
+        )
+        if (
+            started_at is not None
+            and completed_at is not None
+            and completed_at < started_at
+        ):
+            errors.append(
+                f"node_telemetry[{index}] completed before it started for '{record.node_name}'"
+            )
+
+        if record.duration_ms < 0:
+            errors.append(
+                f"node_telemetry[{index}] has negative duration for '{record.node_name}'"
+            )
+
+        if record.parse_success is False:
+            errors.append(
+                f"node_telemetry[{index}] reports parse failure for '{record.node_name}'"
+            )
+
+        if record.stage == "trial":
+            if record.node_name not in TRIAL_NODE_SEQUENCE:
+                errors.append(
+                    f"node_telemetry[{index}] uses unknown trial node '{record.node_name}'"
+                )
+            else:
+                trial_positions.append(TRIAL_NODE_SEQUENCE.index(record.node_name))
+        elif record.node_name in WITNESS_NODE_SEQUENCE:
+            if record.phase not in {"direct", "cross"}:
+                errors.append(
+                    f"node_telemetry[{index}] witness node '{record.node_name}' is missing a direct/cross phase"
+                )
+            if not record.witness_id:
+                errors.append(
+                    f"node_telemetry[{index}] witness node '{record.node_name}' is missing witness_id"
+                )
+
+    if trial_positions != sorted(trial_positions):
+        errors.append("trial node telemetry is out of order")
+
+    trial_node_names = {record.node_name for record in telemetry if record.stage == "trial"}
+    required_trial_nodes = {
+        "plan_prosecution_strategy",
+        "plan_defense_strategy",
+        "opening_prosecution",
+        "opening_defense",
+        "summarize_trial_transcript",
+        "closing_prosecution",
+        "closing_defense",
+        "verdict",
+    }
+    missing_trial_nodes = sorted(required_trial_nodes - trial_node_names)
+    if missing_trial_nodes:
+        errors.append(
+            "missing required trial telemetry nodes: " + ", ".join(missing_trial_nodes)
+        )
+
+
+def _validate_response_contract(
+    state: TrialState,
+    run_metadata: RunMetadata,
+    errors: list[str],
+) -> None:
+    if not run_metadata.run_id:
+        errors.append("run.run_id must not be empty")
+    if run_metadata.case_id != state.case_file.case_id:
+        errors.append("run.case_id must match the request case_id")
+    if not run_metadata.graph_version:
+        errors.append("run.graph_version must not be empty")
+    if not run_metadata.prompt_version:
+        errors.append("run.prompt_version must not be empty")
+    if not run_metadata.model_name:
+        errors.append("run.model_name must not be empty")
+    if not run_metadata.judge_model_name:
+        errors.append("run.judge_model_name must not be empty")
+    if not run_metadata.environment:
+        errors.append("run.environment must not be empty")
+
+    started_at = _parse_iso8601(run_metadata.started_at, "run.started_at", errors)
+    completed_at = _parse_iso8601(run_metadata.completed_at, "run.completed_at", errors)
+    if started_at is not None and completed_at is not None:
+        expected_duration_ms = int((completed_at - started_at).total_seconds() * 1000)
+        if expected_duration_ms < 0:
+            errors.append("run.completed_at must not be earlier than run.started_at")
+        elif run_metadata.duration_ms != expected_duration_ms:
+            errors.append("run.duration_ms must match the timestamp delta")
+
+
+def validate_trial_run(state: TrialState, run_metadata: RunMetadata) -> None:
+    """Validate transcript, runtime telemetry, and public response invariants."""
+
+    errors: list[str] = []
+    _validate_transcript_structure(state, errors)
+    _validate_node_telemetry(state.node_telemetry, errors)
+    _validate_response_contract(state, run_metadata, errors)
+
+    if errors:
+        raise DeterministicValidationError(errors)

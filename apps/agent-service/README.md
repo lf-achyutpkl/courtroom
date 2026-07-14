@@ -25,3 +25,9 @@ Start the LangGraph dev server with:
 ```bash
 uv run langgraph dev
 ```
+
+## Running unit test
+
+```bash
+make test
+```

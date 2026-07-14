@@ -58,6 +58,9 @@ class MainGraphHelpersTest(unittest.TestCase):
         state = _build_initial_state(request)
 
         self.assertEqual(state.case_file.case_id, "case-1")
+        self.assertIsInstance(state.run_id, str)
+        self.assertTrue(state.run_id)
+        self.assertIsInstance(state.run_started_at, str)
         self.assertEqual(state.prosecution_witness_plan, [])
         self.assertEqual(state.defense_witness_plan, [])
         self.assertEqual(state.full_trial_transcript, [])

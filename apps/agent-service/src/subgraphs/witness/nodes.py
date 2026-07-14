@@ -52,12 +52,17 @@ def ask_question_node(state: WitnessExaminationState) -> dict:
         prior_questions_this_phase,
         transcript_so_far,
     )
+    telemetry: list[types.NodeTelemetry] = []
 
     result: types.ExaminationQuestion = invoke(
         system_prompt,
         user_prompt,
         types.ExaminationQuestion,
         node_name="ask_question",
+        telemetry_sink=telemetry.append,
+        stage="witness",
+        phase=phase,
+        witness_id=state.current_witness_id,
     )
 
     turn = types.TranscriptTurn(
@@ -68,6 +73,7 @@ def ask_question_node(state: WitnessExaminationState) -> dict:
 
     return {
         "current_witness_transcript": append_witness_turn(state, turn),
+        "node_telemetry": telemetry,
         "turn_count": current_phase_question_count(state) + 1,
         "attorney_is_done": result.is_final,
         "active_question_text": result.question_text,
@@ -80,17 +86,23 @@ def objection_check_node(state: WitnessExaminationState) -> dict:
     if TRIAL_CONFIG.skip_direct_objections and state.examination_phase == "direct":
         return {"objection_pending": False, "last_objection_type": None}
     system_prompt, user_prompt = objection_check_prompt(state, opposing, last_question)
+    telemetry: list[types.NodeTelemetry] = []
 
     result: types.ObjectionDecision = invoke(
         system_prompt,
         user_prompt,
         types.ObjectionDecision,
         node_name="objection_check",
+        telemetry_sink=telemetry.append,
+        stage="witness",
+        phase=state.examination_phase,
+        witness_id=state.current_witness_id,
     )
 
     return {
         "objection_pending": result.objection,
         "last_objection_type": result.objection_type,
+        "node_telemetry": telemetry,
     }
 
 
@@ -101,6 +113,7 @@ def judge_ruling_node(state: WitnessExaminationState) -> dict:
     system_prompt, user_prompt = judge_ruling_prompt(
         state, objection_type, question, chunks_text
     )
+    telemetry: list[types.NodeTelemetry] = []
 
     result: types.RulingOutput = invoke(
         system_prompt,
@@ -108,6 +121,10 @@ def judge_ruling_node(state: WitnessExaminationState) -> dict:
         types.RulingOutput,
         llm=llm.judge_llm,
         node_name="judge_ruling",
+        telemetry_sink=telemetry.append,
+        stage="witness",
+        phase=state.examination_phase,
+        witness_id=state.current_witness_id,
     )
 
     turn = types.TranscriptTurn(
@@ -121,6 +138,7 @@ def judge_ruling_node(state: WitnessExaminationState) -> dict:
         "last_ruling": result,
         "objection_pending": False,
         "current_witness_transcript": append_witness_turn(state, turn),
+        "node_telemetry": telemetry,
     }
 
 
@@ -136,12 +154,17 @@ def witness_answer_node(state: WitnessExaminationState) -> dict:
     system_prompt, user_prompt = witness_answer_prompt(
         state, witness, question, transcript_so_far
     )
+    telemetry: list[types.NodeTelemetry] = []
 
     result: types.WitnessAnswer = invoke(
         system_prompt,
         user_prompt,
         types.WitnessAnswer,
         node_name="witness_answer",
+        telemetry_sink=telemetry.append,
+        stage="witness",
+        phase=state.examination_phase,
+        witness_id=state.current_witness_id,
     )
 
     turn = types.TranscriptTurn(
@@ -151,6 +174,7 @@ def witness_answer_node(state: WitnessExaminationState) -> dict:
     )
     return {
         "current_witness_transcript": append_witness_turn(state, turn),
+        "node_telemetry": telemetry,
         "active_question_text": None,
     }
 

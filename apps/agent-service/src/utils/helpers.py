@@ -9,26 +9,65 @@ from .types import CaseFile, TranscriptTurn, WitnessProfile
 logger = logging.getLogger(__name__)
 
 AttorneySide = Literal["prosecution", "defense"]
+CaseContextProfile = Literal[
+    "case_core",
+    "case_with_evidence",
+    "case_with_parties",
+    "case_header",
+    "disputed_facts_only",
+    "facts_and_evidence",
+]
 
 
-def render_case_context(case_file: CaseFile) -> str:
-    evidence_lines = "\n".join(
-        f"- {evidence.evidence_id}: {evidence.description}"
-        for evidence in case_file.evidence
+def _render_bullets(items: list[str]) -> str:
+    return "\n".join(f"- {item}" for item in items)
+
+
+def _render_parties(case_file: CaseFile) -> str:
+    return (
+        f"Plaintiff/Prosecution: {case_file.parties.plaintiff_or_prosecution}\n"
+        f"Defendant: {case_file.parties.defendant}"
     )
-    facts_lines = "\n".join(f"- {fact}" for fact in case_file.disputed_facts)
-    return f"""CASE FILE
-Case ID: {case_file.case_id}
-Case type: {case_file.case_type}
-Jurisdiction: {case_file.jurisdiction}
-Charge/Claim: {case_file.charge_or_claim}
-Parties: {case_file.parties}
 
-Disputed facts:
-{facts_lines}
 
-Evidence on record:
-{evidence_lines}"""
+def render_case_context(
+    case_file: CaseFile, profile: CaseContextProfile = "case_with_evidence"
+) -> str:
+    sections: list[str] = []
+
+    if profile in {
+        "case_core",
+        "case_with_evidence",
+        "case_with_parties",
+        "case_header",
+    }:
+        header_lines = [
+            f"Case type: {case_file.case_type}",
+            f"Jurisdiction: {case_file.jurisdiction}",
+            f"Charge/Claim: {case_file.charge_or_claim}",
+        ]
+        sections.append("\n".join(header_lines))
+
+    if profile == "case_with_parties":
+        sections.append(f"Parties:\n{_render_parties(case_file)}")
+
+    if profile in {
+        "case_core",
+        "case_with_evidence",
+        "case_with_parties",
+        "disputed_facts_only",
+        "facts_and_evidence",
+    } and case_file.disputed_facts:
+        sections.append(f"Disputed facts:\n{_render_bullets(case_file.disputed_facts)}")
+
+    if profile in {"case_with_evidence", "facts_and_evidence"} and case_file.evidence:
+        evidence_lines = [
+            f"{evidence.evidence_id}: {evidence.description}"
+            for evidence in case_file.evidence
+        ]
+        sections.append(f"Evidence on record:\n{_render_bullets(evidence_lines)}")
+
+    return "\n\n".join(sections)
 
 
 def spoken_style_rules(max_sentences: int, role_hint: str) -> str:
@@ -71,7 +110,9 @@ def format_recent_transcript(
     include_scene: bool = False,
 ) -> str:
     relevant_turns = (
-        [turn for turn in turns if turn.scene in scenes] if scenes is not None else turns
+        [turn for turn in turns if turn.scene in scenes]
+        if scenes is not None
+        else turns
     )
     recent_turns = relevant_turns[-max_turns:]
     return "\n".join(

@@ -232,17 +232,9 @@ def closing_defense_node(state: TrialState) -> TranscriptUpdate:
 
 def verdict_node(state: TrialState) -> VerdictUpdate:
     summary = state.trial_summary or "(no summary available)"
-    prosecution_closing = (
-        state.full_trial_transcript[-2].text
-        if len(state.full_trial_transcript) >= 2
-        else ""
-    )
-    defense_closing = state.full_trial_transcript[-1].text if state.full_trial_transcript else ""
     system_prompt, user_prompt = verdict_prompt(
         state,
         summary,
-        prosecution_closing,
-        defense_closing,
         chunks_text="",
     )
     result = invoke_structured(

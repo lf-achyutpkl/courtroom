@@ -1,11 +1,14 @@
 UV_CACHE_DIR ?= /tmp/uv-cache
 
-.PHONY: test unit-test eval-baseline eval-baseline-rubric promptfoo-adversarial validate-promptfoo-suite
+.PHONY: test unit-test langgraph-dev eval-baseline eval-baseline-rubric promptfoo-adversarial validate-promptfoo-suite
 
 test:
 	OPENAI_API_KEY=dummy UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m unittest discover -s tests -p "test_*.py"
 
 unit-test: test
+
+langgraph-dev:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run langgraph dev
 
 eval-baseline:
 	OPENAI_API_KEY=$${OPENAI_API_KEY:-dummy} UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m src.evaluation.baseline

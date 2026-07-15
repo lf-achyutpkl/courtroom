@@ -4,7 +4,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from pydantic import BaseModel, Field
 
-from src.utils.types import NodeTelemetry
+from courtroom_domain import NodeTelemetry
 
 
 class ModelTokenRate(BaseModel, frozen=True):

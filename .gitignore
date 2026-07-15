@@ -1,2 +1,8 @@
 .DS_Store
+.env
+.env.*
+!.env.example
 apps/agent-service/evals/reports/
+*.egg-info/
+__pycache__/
+*.pyc

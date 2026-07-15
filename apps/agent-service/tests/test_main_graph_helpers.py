@@ -13,8 +13,7 @@ from src.utils.nodes import (
     route_after_witness_selection,
     select_next_witness_node,
 )
-from src.utils.state import TrialState
-from src.utils.types import CaseFile
+from courtroom_domain import CaseFile, TrialState
 
 
 def build_case_file() -> CaseFile:

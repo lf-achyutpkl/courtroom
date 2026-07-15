@@ -10,7 +10,8 @@ from src.evaluation.rubric import (
     TokenUsage,
     evaluate_rubric,
 )
-from src.utils.types import RunMetadata, RunTrialResponse, TranscriptTurn
+from courtroom_domain import TranscriptTurn
+from src.utils.types import RunMetadata, RunTrialResponse
 
 
 def response_for(deterministic_valid=True):

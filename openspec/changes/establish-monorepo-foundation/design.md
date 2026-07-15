@@ -1,6 +1,6 @@
 ## Context
 
-The current repository already contains a working Next.js courtroom prototype under `app/web-app`, but its runtime flow is concentrated in a small number of broad components, especially `components/courtroom-app.tsx`. The repo does not yet expose monorepo boundaries for a future Python/LangGraph service, and it lacks persistent instructions for coding agents beyond ad hoc app notes. The immediate need is to establish durable documentation and folder ownership so future implementation work can safely split the frontend into composable modules and add `app/agent-service` without cross-contaminating concerns.
+The current repository already contains a working Next.js courtroom prototype under `apps/web-app`, but its runtime flow is concentrated in a small number of broad components, especially `components/courtroom-app.tsx`. The repo does not yet expose monorepo boundaries for a future Python/LangGraph service, and it lacks persistent instructions for coding agents beyond ad hoc app notes. The immediate need is to establish durable documentation and folder ownership so future implementation work can safely split the frontend into composable modules and add `apps/agent-service` without cross-contaminating concerns.
 
 ## Goals / Non-Goals
 
@@ -8,11 +8,11 @@ The current repository already contains a working Next.js courtroom prototype un
 - Define repository-level and workspace-level operating rules through `AGENTS.md`.
 - Separate visual-system guidance from agent-execution guidance by introducing a dedicated design-system document for the web app.
 - Establish a target component architecture for the web app that decomposes the current orchestration-heavy client component.
-- Reserve a clear workspace contract for a future Python/LangGraph `app/agent-service` workspace.
+- Reserve a clear workspace contract for a future Python/LangGraph `apps/agent-service` workspace.
 - Provide a minimal top-level README that explains the product and technology stack.
 
 **Non-Goals:**
-- Fully implement the `app/agent-service` runtime, LangGraph graph topology, or RAG pipeline.
+- Fully implement the `apps/agent-service` runtime, LangGraph graph topology, or RAG pipeline.
 - Complete the full web-app refactor in this planning change alone.
 - Introduce a shared package system before a concrete shared-code need exists.
 - Lock in a final brand identity beyond the initial design-system baseline.
@@ -21,7 +21,7 @@ The current repository already contains a working Next.js courtroom prototype un
 
 ### 1. Use layered documentation rather than one oversized `AGENTS.md`
 
-The repo will use repo-level `AGENTS.md` for monorepo boundaries and child `AGENTS.md` files for workspace-specific rules. Design decisions will live in `app/web-app/docs/design-system.md`.
+The repo will use repo-level `AGENTS.md` for monorepo boundaries and child `AGENTS.md` files for workspace-specific rules. Design decisions will live in `apps/web-app/docs/design-system.md`.
 
 Why:
 - Agent instructions and design-system rules age differently and need different review habits.
@@ -31,9 +31,9 @@ Alternative considered:
 - Put brand, color, and UI rules directly into `AGENTS.md`.
 - Rejected because it mixes behavior guidance with product design and becomes noisy for implementation agents.
 
-### 2. Keep the monorepo contract simple until `app/agent-service` actually lands
+### 2. Keep the monorepo contract simple until `apps/agent-service` actually lands
 
-The repo should document `app/agent-service` as a reserved Python/LangGraph workspace now, but avoid introducing speculative package-sharing infrastructure before there is real integration pressure.
+The repo should document `apps/agent-service` as a reserved Python/LangGraph workspace now, but avoid introducing speculative package-sharing infrastructure before there is real integration pressure.
 
 Why:
 - The repo only has one implemented workspace today.
@@ -75,7 +75,7 @@ Alternative considered:
 ## Risks / Trade-offs
 
 - [Documentation leads implementation] → Mitigation: keep tasks tightly connected to concrete refactor steps and future folder creation.
-- [Monorepo boundaries may evolve once `app/agent-service` is real] → Mitigation: treat the initial contract as a stable starting point, then revise through new OpenSpec changes when integration details are known.
+- [Monorepo boundaries may evolve once `apps/agent-service` is real] → Mitigation: treat the initial contract as a stable starting point, then revise through new OpenSpec changes when integration details are known.
 - [Design-system guidance may outpace the current UI code] → Mitigation: tie new component work to shared tokens and avoid one-off styling additions during the refactor.
 - [Too many capability docs could feel heavy for a small repo] → Mitigation: keep each capability narrowly scoped and directly actionable.
 
@@ -83,11 +83,11 @@ Alternative considered:
 
 1. Land baseline repo docs and planning artifacts.
 2. Refactor the web app into component and feature boundaries without changing the product premise.
-3. Introduce `app/agent-service` as a new workspace once its service contract and initial runtime are ready.
+3. Introduce `apps/agent-service` as a new workspace once its service contract and initial runtime are ready.
 4. Add shared schemas or packages only when a concrete interface is repeated across workspaces.
 
 ## Open Questions
 
-- Will `app/agent-service` expose data to the web app through files, HTTP APIs, queue jobs, or a hybrid workflow?
+- Will `apps/agent-service` expose data to the web app through files, HTTP APIs, queue jobs, or a hybrid workflow?
 - Should shared trial schemas eventually live in a top-level `packages/` workspace or remain service-owned initially?
 - Will the web app remain a single route experience or expand into multi-page case management and playback flows?

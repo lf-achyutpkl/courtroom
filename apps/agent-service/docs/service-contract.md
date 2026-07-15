@@ -2,9 +2,26 @@
 
 ## Goal
 
-Define the first contract between `app/agent-service` outputs and `app/web-app` inputs.
+Define the first contract between `apps/agent-service` outputs and downstream consumers.
 
-## API Contract
+## Backend API Contract
+
+### Case File Storage
+
+The FastAPI implementation for this contract lives in `apps/api-service`.
+
+`POST /case-files` creates a new dummy `CaseFile`, stores it in Postgres, and
+returns:
+
+- `id`
+- `case_file`
+- `created_at`
+
+`id` is the storage UUID. `case_file` uses the shared `CaseFile` model from
+`packages/python-domain`.
+
+`GET /case-files/{id}` returns the same response shape for a stored case file or
+`404` when the storage UUID is unknown.
 
 ### Run Trial Request
 
@@ -205,7 +222,7 @@ This aligns with the current web app transcript input shape.
 
 ## Data Flow
 
-1. `app/agent-service` generates a trial run.
+1. `apps/agent-service` generates a trial run.
 2. The run emits structured case data and verdict data.
 3. Audio generation emits or references timed speech assets.
 4. The web app consumes the resulting manifest and displays the playback experience.

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from src.utils.types import NodeTelemetry, RunMetadata
+from courtroom_domain import NodeTelemetry
+from src.utils.types import RunMetadata
 
 
 class EvaluationContext(BaseModel):
@@ -73,4 +74,3 @@ def export_node_spans(telemetry: list[NodeTelemetry]) -> list[ExportedNodeSpan]:
         )
         for record in telemetry
     ]
-

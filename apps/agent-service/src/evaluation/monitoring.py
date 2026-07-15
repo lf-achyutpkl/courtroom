@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 
 from src.evaluation.evaluators import EvaluatorResult, Severity
 from src.evaluation.rubric import RubricEvaluationResult
-from src.utils.types import NodeTelemetry, RunMetadata
+from courtroom_domain import NodeTelemetry
+from src.utils.types import RunMetadata
 
 QueueReason = Literal[
     "sampled",
@@ -282,4 +283,3 @@ def alerts_for_node_telemetry(
             routing_target="observability-review",
         )
     ]
-

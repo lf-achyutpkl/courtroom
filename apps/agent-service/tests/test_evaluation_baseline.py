@@ -10,7 +10,8 @@ from src.evaluation.reports import (
     write_baseline_report,
 )
 from src.evaluation.rubric import RubricEvaluatorConfig, RubricScore, TokenUsage
-from src.utils.types import RunMetadata, RunTrialResponse, TranscriptTurn
+from courtroom_domain import TranscriptTurn
+from src.utils.types import RunMetadata, RunTrialResponse
 from src.utils.validation import DeterministicValidationError
 
 

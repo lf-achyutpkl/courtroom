@@ -2,15 +2,19 @@
 
 ## Workspace Ownership
 
-- `app/web-app` owns playback, rendering, interaction, and frontend presentation
-- `app/agent-service` owns case simulation runtime concerns, LangGraph flows, retrieval orchestration, and generated outputs
+- `apps/web-app` owns playback, rendering, interaction, and frontend presentation.
+- `apps/api-service` owns the FastAPI backend API, normal application persistence, and future job enqueueing.
+- `apps/agent-service` owns case simulation runtime concerns, LangGraph flows, retrieval orchestration, evaluation, and generated outputs.
+- `apps/worker-service` will own RQ worker processes once Redis-backed background jobs are implemented.
+- `infra/db/migrations` owns database schema migrations shared by backend and agent/runtime concerns.
 
 ## Initial Integration Contract
 
 The first service boundary is file-oriented and intentionally simple:
 
-- `app/agent-service` produces trial payloads, verdict metadata, and audio/manifest artifacts
-- `app/web-app` consumes those outputs as structured inputs for playback
+- `apps/agent-service` produces trial payloads, verdict metadata, and audio/manifest artifacts.
+- `apps/api-service` exposes backend APIs and will enqueue or coordinate runtime work.
+- `apps/web-app` consumes structured inputs for playback.
 
 ## Expected Output Families
 
@@ -34,4 +38,4 @@ Shared schemas can remain workspace-owned initially. Introduce a dedicated share
 - both workspaces modify the same schema regularly, or
 - validation logic must run in more than one runtime
 
-Until then, the contract source of truth should live in `app/agent-service/docs/service-contract.md` with the web app consuming the published shape.
+Until then, the agent runtime contract source of truth should live in `apps/agent-service/docs/service-contract.md`, while backend API contracts should live with `apps/api-service` or a future shared contract package.

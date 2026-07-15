@@ -5,7 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from src.evaluation.dataset import EvaluationCase, EvaluationReference
-from src.utils.types import RunTrialResponse, TranscriptTurn
+from courtroom_domain import TranscriptTurn
+from src.utils.types import RunTrialResponse
 
 EVALUATOR_VERSION = "v1"
 Severity = Literal["info", "low", "medium", "high", "critical"]
@@ -268,4 +269,3 @@ def evaluate_rule_reference(
         check_unsupported_legal_claims(transcript, case.reference),
         check_phase_coverage(transcript, case.reference),
     ]
-

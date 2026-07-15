@@ -1,16 +1,17 @@
 # Agent Service
 
-Reserved workspace for the Python and LangGraph runtime behind the courtroom simulator.
+Python and LangGraph runtime workspace behind the courtroom simulator.
 
 ## Intended Responsibilities
 
 - build and run multi-agent trial simulations
 - perform retrieval and evidence grounding
 - produce case, verdict, and playback artifacts for the frontend
+- own evaluation and monitoring logic for generated trials
 
 ## Status
 
-This workspace is actively being scaffolded.
+This workspace is actively being scaffolded. FastAPI route ownership now lives in `../api-service`, and future RQ worker process ownership is reserved for `../worker-service`.
 
 ## Local Development
 
@@ -20,10 +21,16 @@ Install dependencies and the LangGraph CLI with:
 uv sync
 ```
 
+Create a local environment file:
+
+```bash
+cp .env.example .env
+```
+
 Start the LangGraph dev server with:
 
 ```bash
-uv run langgraph dev
+make langgraph-dev
 ```
 
 ## Running Unit Tests
@@ -63,15 +70,15 @@ OPENAI_API_KEY=... make eval-baseline-rubric
 
 This target uses `gpt-4o` as the rubric judge and makes real OpenAI API calls.
 
-To see traces in LangSmith, export tracing configuration before running the eval:
+To see traces in LangSmith, set tracing configuration in `.env` before running the eval:
 
 ```bash
-export LANGSMITH_TRACING=true
-export LANGCHAIN_TRACING_V2=true
-export LANGSMITH_API_KEY=...
-export LANGSMITH_PROJECT=courtroom-simulation-local
-export LANGCHAIN_PROJECT=courtroom-simulation-local
-OPENAI_API_KEY=... make eval-baseline-rubric
+LANGSMITH_TRACING=true
+LANGCHAIN_TRACING_V2=true
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=courtroom-simulation-local
+LANGCHAIN_PROJECT=courtroom-simulation-local
+OPENAI_API_KEY=...
 ```
 
 When LangSmith tracing is enabled, the run metadata includes `langsmith_trace_id` so reports can be correlated with the trace.

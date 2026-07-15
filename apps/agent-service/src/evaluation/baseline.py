@@ -41,7 +41,8 @@ from src.evaluation.rubric import (
 )
 from src.service import _run_trial_with_state
 from src.utils.config import TRIAL_CONFIG
-from src.utils.types import NodeTelemetry, RunTrialRequest, RunTrialResponse
+from courtroom_domain import NodeTelemetry
+from src.utils.types import RunTrialRequest, RunTrialResponse
 from src.utils.validation import DeterministicValidationError
 
 DEFAULT_REPORT_DIR = Path(__file__).resolve().parents[2] / "evals" / "reports"

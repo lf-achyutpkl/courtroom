@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from src.utils.types import CaseFile
+from courtroom_domain import CaseFile
 
 DEFAULT_DATASET_VERSION = "domain-eval-v1"
 DEFAULT_DATASET_PATH = (
@@ -74,4 +74,3 @@ def load_dataset(path: Path = DEFAULT_DATASET_PATH) -> EvaluationDataset:
                 f"{case.eval_case_id} dataset_version does not match dataset"
             )
     return dataset
-

@@ -7,10 +7,12 @@ This file applies to the whole repository.
 ## Repo Shape
 
 - Treat this repository as a polyglot monorepo.
-- `app/web-app` contains the Next.js frontend.
-- `app/agent-service` is reserved for the future Python and LangGraph service.
-- Do not place backend orchestration, Python code, or LangGraph graphs inside `app/web-app`.
-- Do not place frontend UI code inside `app/agent-service`.
+- `apps/web-app` contains the Next.js frontend.
+- `apps/api-service` contains the FastAPI backend API boundary.
+- `apps/agent-service` contains Python and LangGraph simulation runtime code.
+- `apps/worker-service` is reserved for the future RQ/Redis worker process.
+- Do not place backend orchestration, Python code, or LangGraph graphs inside `apps/web-app`.
+- Do not place frontend UI code inside Python service workspaces.
 
 ## Source Of Truth
 
@@ -22,12 +24,12 @@ This file applies to the whole repository.
 ## Working Rules
 
 - Prefer small, composable modules over large orchestration files.
-- Preserve clear boundaries between playback UI, simulation logic, content assets, and future agent runtime code.
+- Preserve clear boundaries between playback UI, backend API code, simulation logic, content assets, and worker runtime code.
 - Update docs when introducing a new workspace, major folder, or cross-cutting convention.
 - If a change affects multiple workspaces, document the boundary and ownership explicitly in OpenSpec artifacts.
 
 ## Current Direction
 
 - The web app should move toward a component-based architecture.
-- The future `app/agent-service` workspace should be designed as an independent service contract that can feed the frontend with generated trial data, audio metadata, and verdict outputs.
+- The `apps/agent-service` workspace should be designed as an independent service contract that can feed downstream services with generated trial data, audio metadata, and verdict outputs.
 - Shared schemas and integration contracts should live in dedicated shared documentation or shared packages once they exist.

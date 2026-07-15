@@ -2,7 +2,8 @@ import unittest
 
 from src.evaluation.dataset import load_dataset
 from src.evaluation.evaluators import evaluate_rule_reference
-from src.utils.types import RunMetadata, RunTrialResponse, TranscriptTurn
+from courtroom_domain import TranscriptTurn
+from src.utils.types import RunMetadata, RunTrialResponse
 
 
 def response_for(turns, deterministic_valid=True):

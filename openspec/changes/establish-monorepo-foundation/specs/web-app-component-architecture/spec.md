@@ -4,7 +4,7 @@
 The web app SHALL provide workspace-specific instructions that require thin route files and a component-oriented separation between shell composition, playback logic, transcript UI, and stage rendering.
 
 #### Scenario: Agent plans a frontend change
-- **WHEN** an agent modifies the courtroom experience in `app/web-app`
+- **WHEN** an agent modifies the courtroom experience in `apps/web-app`
 - **THEN** it can determine that orchestration logic and presentation should be split into focused modules instead of expanded inside one large route or app component
 
 ### Requirement: Browser-only stage logic remains isolated

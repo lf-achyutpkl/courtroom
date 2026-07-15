@@ -12,7 +12,8 @@ from src.evaluation.traceability import (
     export_node_spans,
     export_run_record,
 )
-from src.utils.types import NodeTelemetry, RunMetadata
+from courtroom_domain import NodeTelemetry
+from src.utils.types import RunMetadata
 
 
 def run_metadata(deterministic_valid=True):

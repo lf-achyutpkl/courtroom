@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch
 
 from src.service import run_trial
-from src.utils.state import TrialState
-from src.utils.types import CaseFile, NodeTelemetry, RunTrialRequest, TranscriptTurn
+from courtroom_domain import CaseFile, NodeTelemetry, TranscriptTurn, TrialState
+from src.utils.types import RunTrialRequest
 from src.utils.validation import DeterministicValidationError, validate_trial_run
 
 

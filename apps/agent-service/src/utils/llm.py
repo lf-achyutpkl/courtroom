@@ -6,7 +6,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
+from .env import load_service_env
 from .types import NodeTelemetry
+
+load_service_env()
 
 logger = logging.getLogger(__name__)
 SchemaT = TypeVar("SchemaT", bound=BaseModel)

@@ -11,8 +11,8 @@ from .types import NodeTelemetry
 logger = logging.getLogger(__name__)
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 
-fast_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.9, max_retries=0)
-judge_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2, max_retries=0)
+fast_llm = ChatOpenAI(model="gpt-5-nano", temperature=0.9, max_retries=0)
+judge_llm = ChatOpenAI(model="gpt-5-nano", temperature=0.2, max_retries=0)
 
 NODE_MAX_COMPLETION_TOKENS = {
     "plan_prosecution_strategy": 180,
@@ -26,7 +26,7 @@ NODE_MAX_COMPLETION_TOKENS = {
     "summarize_trial_transcript": 260,
     "closing_prosecution": 170,
     "closing_defense": 170,
-    "verdict": 180,
+    "verdict": 240,
 }
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from .state import TrialState
-from .types import NodeTelemetry, RunMetadata, TranscriptTurn
+from .types import NodeTelemetry, RunMetadata, RunTrialResponse, TranscriptTurn
 
 TRIAL_NODE_SEQUENCE = [
     "plan_prosecution_strategy",
@@ -23,12 +23,36 @@ WITNESS_NODE_SEQUENCE = [
     "witness_answer",
 ]
 
+ATTORNEY_SPEAKERS = {"prosecution", "defense"}
+
+SCENE_PHASE_RANKS = {
+    "opening": 0,
+    "direct": 1,
+    "cross": 1,
+    "ruling": 1,
+    "closing": 2,
+    "verdict": 3,
+}
+
+TRIAL_NODE_ORDER_RANKS = {
+    "plan_prosecution_strategy": 0,
+    "plan_defense_strategy": 0,
+    "opening_prosecution": 1,
+    "opening_defense": 2,
+    "summarize_trial_transcript": 3,
+    "closing_prosecution": 4,
+    "closing_defense": 5,
+    "verdict": 6,
+}
+
 
 class DeterministicValidationError(ValueError):
     """Raised when a trial run violates deterministic response invariants."""
 
     def __init__(self, errors: list[str]) -> None:
         self.errors = errors
+        self.generated_output: RunTrialResponse | None = None
+        self.node_telemetry: list[NodeTelemetry] = []
         super().__init__("Deterministic validation failed: " + "; ".join(errors))
 
 
@@ -51,18 +75,12 @@ def _validate_transcript_structure(
 
     witness_ids = {witness.witness_id for witness in state.case_file.witnesses}
     valid_speakers = {"prosecution", "defense", "judge", *witness_ids}
-    scene_order = {
-        "opening": 0,
-        "direct": 1,
-        "cross": 2,
-        "closing": 3,
-        "ruling": 3,
-        "verdict": 4,
-    }
     required_scenes = {"opening", "closing", "verdict"}
     seen_scenes: set[str] = set()
-    last_scene_rank = -1
     witness_turn_without_question = False
+    question_before_ruling: TranscriptTurn | None = None
+    previous_turn: TranscriptTurn | None = None
+    last_phase_rank = -1
 
     for index, turn in enumerate(transcript):
         if turn.speaker_id not in valid_speakers:
@@ -71,12 +89,12 @@ def _validate_transcript_structure(
             )
 
         seen_scenes.add(turn.scene)
-        current_scene_rank = scene_order[turn.scene]
-        if current_scene_rank < last_scene_rank:
+        current_phase_rank = SCENE_PHASE_RANKS[turn.scene]
+        if current_phase_rank < last_phase_rank:
             errors.append(
-                f"turn {index} scene '{turn.scene}' regresses from prior scene order"
+                f"turn {index} scene '{turn.scene}' regresses from prior trial phase"
             )
-        last_scene_rank = max(last_scene_rank, current_scene_rank)
+        last_phase_rank = max(last_phase_rank, current_phase_rank)
 
         if turn.speaker_id != "judge" and (
             turn.ruling is not None or turn.objection_type is not None
@@ -88,19 +106,45 @@ def _validate_transcript_structure(
         if turn.scene == "verdict" and turn.speaker_id != "judge":
             errors.append("verdict scene must be spoken by the judge")
 
+        if turn.scene == "verdict" and index != len(transcript) - 1:
+            errors.append(f"turn {index} verdict scene must be final")
+
         if turn.scene == "ruling" and turn.speaker_id != "judge":
             errors.append("ruling scene must be spoken by the judge")
 
-        if turn.scene in {"direct", "cross"} and turn.speaker_id in witness_ids:
-            if index == 0:
-                witness_turn_without_question = True
+        if turn.scene == "ruling":
+            if previous_turn is not None and previous_turn.scene == "ruling":
+                errors.append(f"turn {index} ruling cannot follow another ruling")
+            if (
+                previous_turn is None
+                or previous_turn.scene not in {"direct", "cross"}
+                or previous_turn.speaker_id not in ATTORNEY_SPEAKERS
+            ):
+                errors.append(f"turn {index} ruling must follow an attorney question")
             else:
-                previous_turn = transcript[index - 1]
-                if (
-                    previous_turn.scene != turn.scene
-                    or previous_turn.speaker_id not in {"prosecution", "defense"}
-                ):
-                    witness_turn_without_question = True
+                question_before_ruling = previous_turn
+
+        if turn.scene in {"direct", "cross"} and turn.speaker_id in witness_ids:
+            prior_turn = transcript[index - 1] if index > 0 else None
+            direct_answer = (
+                prior_turn is not None
+                and prior_turn.scene == turn.scene
+                and prior_turn.speaker_id in ATTORNEY_SPEAKERS
+            )
+            answer_after_ruling = (
+                prior_turn is not None
+                and prior_turn.scene == "ruling"
+                and question_before_ruling is not None
+                and question_before_ruling.scene == turn.scene
+                and question_before_ruling.speaker_id in ATTORNEY_SPEAKERS
+            )
+            if not direct_answer and not answer_after_ruling:
+                witness_turn_without_question = True
+
+        if turn.scene != "ruling":
+            question_before_ruling = None
+
+        previous_turn = turn
 
     missing_scenes = sorted(required_scenes - seen_scenes)
     if missing_scenes:
@@ -150,7 +194,7 @@ def _validate_node_telemetry(telemetry: list[NodeTelemetry], errors: list[str]) 
                     f"node_telemetry[{index}] uses unknown trial node '{record.node_name}'"
                 )
             else:
-                trial_positions.append(TRIAL_NODE_SEQUENCE.index(record.node_name))
+                trial_positions.append(TRIAL_NODE_ORDER_RANKS[record.node_name])
         elif record.node_name in WITNESS_NODE_SEQUENCE:
             if record.phase not in {"direct", "cross"}:
                 errors.append(

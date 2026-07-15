@@ -43,25 +43,132 @@ The public response does not include internal node telemetry. That data remains 
 
 ## Evaluation Contract
 
-The agent-service validates trial runs in layers:
+The agent-service validates and evaluates trial runs in layers:
 
 1. Deterministic validation is a hard gate. Structural transcript defects, impossible runtime sequences, or broken response invariants fail the run before a successful response is returned.
-2. Future rule-based and reference-based checks may score valid runs once the deterministic gate passes.
-3. Future LLM-based evaluators and production monitoring will correlate against `run.run_id`, not against ad hoc logs alone.
+2. Rule/reference evaluators score deterministic-valid runs for evidence references, verdict support, contradiction probes, unsupported claims, and required phase coverage.
+3. Rubric LLM evaluators score deterministic-valid runs only after prerequisite rule/reference gates pass.
+4. Monitoring routes failed, sampled, escalated, or alert-worthy runs to local queue records and optional GitHub Issues sync.
 
-## Monitoring Roadmap
+### Evaluation Dataset
 
-This change only establishes the foundation layer:
+The default dataset lives at `evals/domain_evaluation_dataset.json` and is loaded through `src.evaluation.dataset`.
 
-- Stable run metadata in the public response
-- Internal node telemetry for graph execution
-- Deterministic validators enforced at the service boundary
+Each active case provides:
 
-Later phases may add:
+- `eval_case_id`
+- `dataset_version`
+- runtime `case_file`
+- evaluator-only `reference`
+- `tags`
+- `expected_signals`
 
-- LangSmith or similar online trace correlation
-- automated evaluator pipelines
-- user feedback and annotation workflows keyed by `run_id`
+The runtime `case_file` is the only payload passed to `run_trial`. The `reference` object is evaluator-only ground truth and may include expected phases, required evidence IDs, verdict evidence requirements, required fact phrases, forbidden unsupported claims, contradiction probes, unsafe-content policy notes, and evaluator notes.
+
+### Evaluator Result Schema
+
+Rule/reference evaluators return:
+
+- `evaluator_name`
+- `version`
+- `passed`
+- `severity`
+- `findings`
+- `related_turn_ids`
+- `related_evidence_ids`
+- `summary`
+
+Findings include a stable `code`, message, severity, and related turn or evidence IDs when available.
+
+### Rubric Result Schema
+
+Rubric evaluators return typed scores for:
+
+- legal grounding
+- procedural realism
+- role adherence
+- contradiction handling
+- verdict support
+- unsafe-content handling
+
+Each score includes `score`, `threshold`, `passed`, `rationale`, and cited turn IDs. The rubric result also records evaluator model, prompt version, latency, token usage when available, rationale, and cited turn IDs.
+
+Initial thresholds are:
+
+- legal grounding: `0.75`
+- procedural realism: `0.70`
+- role adherence: `0.80`
+- contradiction handling: `0.75`
+- verdict support: `0.80`
+- unsafe-content handling: `0.90`
+
+The default judge model is `gpt-4o`. Rubric orchestration must use an injected judge callable or object rather than depending directly on a provider client.
+
+### Baseline Report Shape
+
+Baseline reports are immutable timestamped JSON artifacts under `evals/reports/` by default. A report includes:
+
+- `report_id`
+- `dataset_version`
+- `graph_version`
+- `prompt_version`
+- `model_names`
+- `evaluator_versions`
+- per-case results with run IDs, case IDs, generated output artifact paths, evaluator results, failures, queue decisions, and alert summaries
+- aggregate metrics, including deterministic pass rate and overall pass rate
+- `created_at`
+
+### Queue Records
+
+Monitoring queue records provide:
+
+- `queue_id`
+- `run_id`
+- `case_id`
+- `route_reason`
+- `severity`
+- `source_evaluator`
+- `evidence_summary`
+- `created_at`
+- `status`
+- `github`
+
+Severity meanings:
+
+- `info`: diagnostic only
+- `low`: sampled or minor review item
+- `medium`: actionable review but not urgent
+- `high`: escalation-worthy evaluator or deterministic failure
+- `critical`: urgent failure requiring immediate owner attention
+
+The default sampling policy is explicit opt-in: `sample_rate=0.0` and no tag matches unless configured by the caller.
+
+### GitHub Issues Sync
+
+Queue records support external GitHub tracking fields:
+
+- provider
+- issue number
+- issue URL
+- sync status
+- last sync timestamp
+
+GitHub sync is isolated behind a client boundary that accepts a queue record and returns issue metadata. Tests should use a fake client; production configuration must provide the target repository, labels, assignees, and authentication outside the core queue contract.
+
+### Alert Records
+
+Alert records provide:
+
+- `alert_id`
+- `run_id` when available
+- `severity`
+- `trigger_name`
+- `source`
+- `summary`
+- `created_at`
+- `routing_target`
+
+Alert rules cover deterministic validation failures, severe evaluator failures, missing trace metadata, and missing node token or latency telemetry. Low-severity evaluator results are recorded without creating high-severity alerts.
 
 ## Artifact Output Model
 

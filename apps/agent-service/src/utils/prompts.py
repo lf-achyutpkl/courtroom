@@ -125,12 +125,15 @@ def verdict_prompt(
     case_context = render_case_context(state.case_file)
     system_prompt = f"""{case_context}
 You are the presiding judge rendering a verdict. Base your decision only on
-what was presented at trial and the retrieved rules or precedent.
+what was presented at trial and the evidence listed below.
+Your structured cited_chunk_ids must include the decisive evidence IDs from the
+case file that support the verdict. Do not cite IDs that are not listed. In the
+spoken reasoning, explicitly name the decisive facts tied to those evidence IDs.
 {spoken_style_rules(4, 'a judge delivering a verdict from the bench')}"""
     user_prompt = (
         f"Trial summary:\n{summary}\n\n"
         f"Prosecution closing:\n{prosecution_closing}\n\n"
         f"Defense closing:\n{defense_closing}\n\n"
-        f"Retrieved rules/precedent:\n{chunks_text}"
+        f"Evidence available for verdict citations:\n{chunks_text or '(none listed)'}"
     )
     return system_prompt, user_prompt

@@ -42,6 +42,8 @@ class TranscriptUpdate(TypedDict):
 
 class WitnessQueueUpdate(TypedDict):
     witness_queue: list[str]
+    prosecution_witness_plan: list[str]
+    defense_witness_plan: list[str]
 
 
 class WitnessSelectionUpdate(TypedDict):
@@ -155,10 +157,23 @@ def opening_defense_node(state: TrialState) -> TranscriptUpdate:
 
 
 def build_witness_queue_node(state: TrialState) -> WitnessQueueUpdate:
+    valid_witness_ids = {witness.witness_id for witness in state.case_file.witnesses}
+    prosecution_witness_plan = [
+        witness_id
+        for witness_id in state.prosecution_witness_plan
+        if witness_id in valid_witness_ids
+    ]
+    defense_witness_plan = [
+        witness_id
+        for witness_id in state.defense_witness_plan
+        if witness_id in valid_witness_ids
+    ]
     return {
+        "prosecution_witness_plan": prosecution_witness_plan,
+        "defense_witness_plan": defense_witness_plan,
         "witness_queue": build_witness_queue_from_plans(
-            state.prosecution_witness_plan,
-            state.defense_witness_plan,
+            prosecution_witness_plan,
+            defense_witness_plan,
         )
     }
 
@@ -279,13 +294,19 @@ def verdict_node(state: TrialState) -> VerdictUpdate:
         if len(state.full_trial_transcript) >= 2
         else ""
     )
-    defense_closing = state.full_trial_transcript[-1].text if state.full_trial_transcript else ""
+    defense_closing = (
+        state.full_trial_transcript[-1].text if state.full_trial_transcript else ""
+    )
+    evidence_for_citation = "\n".join(
+        f"- {evidence.evidence_id}: {evidence.description}"
+        for evidence in state.case_file.evidence
+    )
     system_prompt, user_prompt = verdict_prompt(
         state,
         summary,
         prosecution_closing,
         defense_closing,
-        chunks_text="",
+        chunks_text=evidence_for_citation,
     )
     telemetry: list[types.NodeTelemetry] = []
     result = invoke_structured(

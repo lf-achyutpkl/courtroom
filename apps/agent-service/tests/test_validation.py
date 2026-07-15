@@ -28,7 +28,14 @@ def build_case_file() -> CaseFile:
                     "persona": "Finance expert",
                     "called_by": "prosecution",
                     "knowledge_scope": "Saw the ledger",
-                }
+                },
+                {
+                    "witness_id": "W2",
+                    "name": "Witness Two",
+                    "persona": "Operations manager",
+                    "called_by": "defense",
+                    "knowledge_scope": "Reviewed the records",
+                },
             ],
         }
     )
@@ -70,38 +77,36 @@ def build_trial_telemetry() -> list[NodeTelemetry]:
     ]
 
 
+def make_transcript(
+    *items: tuple[str, str] | tuple[str, str, str],
+) -> list[TranscriptTurn]:
+    turns: list[TranscriptTurn] = []
+    for item in items:
+        scene, speaker_id = item[:2]
+        ruling = item[2] if len(item) == 3 else None
+        turns.append(
+            TranscriptTurn(
+                scene=scene,
+                speaker_id=speaker_id,
+                text="Transcript turn.",
+                ruling=ruling,
+            )
+        )
+    return turns
+
+
 def build_valid_state() -> TrialState:
     return TrialState(
         case_file=build_case_file(),
         run_id="run-123",
         run_started_at="2026-01-01T00:00:00+00:00",
-        full_trial_transcript=[
-            TranscriptTurn(
-                scene="opening",
-                speaker_id="prosecution",
-                text="Opening for the prosecution.",
-            ),
-            TranscriptTurn(
-                scene="opening",
-                speaker_id="defense",
-                text="Opening for the defense.",
-            ),
-            TranscriptTurn(
-                scene="closing",
-                speaker_id="prosecution",
-                text="Closing for the prosecution.",
-            ),
-            TranscriptTurn(
-                scene="closing",
-                speaker_id="defense",
-                text="Closing for the defense.",
-            ),
-            TranscriptTurn(
-                scene="verdict",
-                speaker_id="judge",
-                text="The court finds the defendant guilty.",
-            ),
-        ],
+        full_trial_transcript=make_transcript(
+            ("opening", "prosecution"),
+            ("opening", "defense"),
+            ("closing", "prosecution"),
+            ("closing", "defense"),
+            ("verdict", "judge"),
+        ),
         node_telemetry=build_trial_telemetry(),
     )
 
@@ -123,28 +128,12 @@ class DeterministicValidationTest(unittest.TestCase):
     def test_validate_trial_run_rejects_witness_answer_without_question(self) -> None:
         state = build_valid_state().model_copy(
             update={
-                "full_trial_transcript": [
-                    TranscriptTurn(
-                        scene="opening",
-                        speaker_id="prosecution",
-                        text="Opening for the prosecution.",
-                    ),
-                    TranscriptTurn(
-                        scene="direct",
-                        speaker_id="W1",
-                        text="I saw the ledger.",
-                    ),
-                    TranscriptTurn(
-                        scene="closing",
-                        speaker_id="defense",
-                        text="Closing for the defense.",
-                    ),
-                    TranscriptTurn(
-                        scene="verdict",
-                        speaker_id="judge",
-                        text="The court enters a verdict.",
-                    ),
-                ]
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("direct", "W1"),
+                    ("closing", "defense"),
+                    ("verdict", "judge"),
+                )
             }
         )
 
@@ -159,36 +148,101 @@ class DeterministicValidationTest(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_validate_trial_run_accepts_direct_cross_for_multiple_witnesses(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("opening", "defense"),
+                    ("direct", "prosecution"),
+                    ("direct", "W1"),
+                    ("cross", "defense"),
+                    ("cross", "W1"),
+                    ("direct", "defense"),
+                    ("direct", "W2"),
+                    ("cross", "prosecution"),
+                    ("cross", "W2"),
+                    ("closing", "prosecution"),
+                    ("closing", "defense"),
+                    ("verdict", "judge"),
+                )
+            }
+        )
+
+        validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+    def test_validate_trial_run_accepts_answer_after_overruled_ruling(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("direct", "prosecution"),
+                    ("ruling", "judge", "overruled"),
+                    ("direct", "W1"),
+                    ("closing", "prosecution"),
+                    ("verdict", "judge"),
+                )
+            }
+        )
+
+        validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+    def test_validate_trial_run_rejects_ruling_after_closing(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("closing", "prosecution"),
+                    ("ruling", "judge", "sustained"),
+                    ("verdict", "judge"),
+                )
+            }
+        )
+
+        with self.assertRaises(DeterministicValidationError) as context:
+            validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+        self.assertIn(
+            "scene 'ruling' regresses from prior trial phase", str(context.exception)
+        )
+
+    def test_validate_trial_run_rejects_consecutive_rulings(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("direct", "prosecution"),
+                    ("ruling", "judge", "sustained"),
+                    ("ruling", "judge", "overruled"),
+                    ("closing", "prosecution"),
+                    ("verdict", "judge"),
+                )
+            }
+        )
+
+        with self.assertRaises(DeterministicValidationError) as context:
+            validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+        self.assertIn("ruling cannot follow another ruling", str(context.exception))
+
+    def test_validate_trial_run_accepts_parallel_strategy_telemetry_order(self) -> None:
+        telemetry = build_trial_telemetry()
+        state = build_valid_state().model_copy(
+            update={"node_telemetry": [telemetry[1], telemetry[0], *telemetry[2:]]}
+        )
+
+        validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
     def test_run_trial_rejects_invalid_verdict_contract(self) -> None:
         invalid_state = build_valid_state().model_copy(
             update={
-                "full_trial_transcript": [
-                    TranscriptTurn(
-                        scene="opening",
-                        speaker_id="prosecution",
-                        text="Opening for the prosecution.",
-                    ),
-                    TranscriptTurn(
-                        scene="opening",
-                        speaker_id="defense",
-                        text="Opening for the defense.",
-                    ),
-                    TranscriptTurn(
-                        scene="closing",
-                        speaker_id="prosecution",
-                        text="Closing for the prosecution.",
-                    ),
-                    TranscriptTurn(
-                        scene="closing",
-                        speaker_id="defense",
-                        text="Closing for the defense.",
-                    ),
-                    TranscriptTurn(
-                        scene="verdict",
-                        speaker_id="defense",
-                        text="The defense announces the verdict.",
-                    ),
-                ]
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("opening", "defense"),
+                    ("closing", "prosecution"),
+                    ("closing", "defense"),
+                    ("verdict", "defense"),
+                )
             }
         )
         request = RunTrialRequest(case_file=invalid_state.case_file)
@@ -199,6 +253,13 @@ class DeterministicValidationTest(unittest.TestCase):
 
         self.assertIn(
             "verdict scene must be spoken by the judge", str(context.exception)
+        )
+        self.assertEqual(
+            context.exception.generated_output.run.case_id,
+            invalid_state.case_file.case_id,
+        )
+        self.assertFalse(
+            context.exception.generated_output.run.deterministic_validation_passed
         )
 
 

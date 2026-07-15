@@ -92,10 +92,21 @@ class RulingOutput(BaseModel):
 class VerdictOutput(BaseModel):
     outcome: Literal["guilty", "not guilty", "liable", "not liable"]
     reasoning: str = Field(
-        description="Short spoken verdict reasoning with inline delivery tags like [measured], [somber], or [firm]."
+        description=(
+            "Short spoken verdict reasoning with inline delivery tags like [measured], "
+            "[somber], or [firm]. It must name the decisive facts and explain how "
+            "the cited evidence supports the outcome."
+        )
     )
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
-    cited_chunk_ids: list[str] = Field(default_factory=list)
+    cited_chunk_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Evidence IDs from the case file that directly support the verdict. "
+            "Include every decisive evidence_id used in the reasoning, and do not "
+            "invent IDs."
+        ),
+    )
 
 
 class CaseFile(BaseModel):

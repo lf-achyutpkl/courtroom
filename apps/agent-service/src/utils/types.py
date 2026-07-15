@@ -2,6 +2,45 @@ from pydantic import BaseModel, Field
 from typing import Literal, Optional
 
 
+class NodeTelemetry(BaseModel):
+    """Structured telemetry for one graph node execution."""
+
+    node_name: str
+    stage: Literal["trial", "witness"]
+    started_at: str
+    completed_at: str
+    duration_ms: int
+    phase: Optional[str] = None
+    witness_id: Optional[str] = None
+    model_name: Optional[str] = None
+    prompt_tokens: Optional[int] = None
+    completion_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+    cached_tokens: Optional[int] = None
+    cache_write_tokens: Optional[int] = None
+    parse_success: Optional[bool] = None
+    error_type: Optional[str] = None
+
+
+class RunMetadata(BaseModel):
+    """Stable metadata envelope for one generated trial run."""
+
+    run_id: str = Field(description="Stable identifier for this trial run.")
+    case_id: str = Field(description="Case identifier from the input case file.")
+    graph_version: str = Field(description="Version label for the trial graph.")
+    prompt_version: str = Field(description="Version label for prompt templates.")
+    model_name: str = Field(description="Primary model used for most trial nodes.")
+    judge_model_name: str = Field(
+        description="Model used for judge/ruling/verdict-oriented nodes."
+    )
+    environment: str = "local"
+    langsmith_trace_id: Optional[str] = None
+    deterministic_validation_passed: bool = True
+    started_at: str = Field(description="Run start time in UTC ISO-8601 format.")
+    completed_at: str = Field(description="Run end time in UTC ISO-8601 format.")
+    duration_ms: int = Field(description="Elapsed runtime for the full trial run.")
+
+
 class Parties(BaseModel):
     plaintiff_or_prosecution: str
     defendant: str
@@ -37,6 +76,8 @@ class RunTrialRequest(BaseModel):
 
 class RunTrialResponse(BaseModel):
     full_trial_transcript: list[TranscriptTurn]
+    # Added as a separate object so callers can correlate outputs with traces and evals.
+    run: RunMetadata
 
 
 class RulingOutput(BaseModel):
@@ -51,10 +92,21 @@ class RulingOutput(BaseModel):
 class VerdictOutput(BaseModel):
     outcome: Literal["guilty", "not guilty", "liable", "not liable"]
     reasoning: str = Field(
-        description="Short spoken verdict reasoning with inline delivery tags like [measured], [somber], or [firm]."
+        description=(
+            "Short spoken verdict reasoning with inline delivery tags like [measured], "
+            "[somber], or [firm]. It must name the decisive facts and explain how "
+            "the cited evidence supports the outcome."
+        )
     )
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
-    cited_chunk_ids: list[str] = Field(default_factory=list)
+    cited_chunk_ids: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Evidence IDs from the case file that directly support the verdict. "
+            "Include every decisive evidence_id used in the reasoning, and do not "
+            "invent IDs."
+        ),
+    )
 
 
 class CaseFile(BaseModel):

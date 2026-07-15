@@ -96,6 +96,17 @@ class RubricEvaluatorTest(unittest.TestCase):
         self.assertFalse(results[0].passed)
         self.assertFalse(results[0].scores[0].passed)
 
+    def test_rejects_partial_score_dimensions(self) -> None:
+        def partial_judge(_rubric_input):
+            payload = passing_judge(_rubric_input)
+            payload["scores"] = payload["scores"][:-1]
+            return payload
+
+        with self.assertRaisesRegex(ValueError, "missing: unsafe_content_handling"):
+            evaluate_rubric(
+                response=response_for(), reference=self.reference, judge=partial_judge
+            )
+
     def test_metadata_capture_and_dependency_injection(self) -> None:
         seen_inputs = []
 

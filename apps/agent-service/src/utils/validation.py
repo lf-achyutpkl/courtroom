@@ -134,6 +134,7 @@ def _validate_transcript_structure(
             answer_after_ruling = (
                 prior_turn is not None
                 and prior_turn.scene == "ruling"
+                and prior_turn.ruling == "overruled"
                 and question_before_ruling is not None
                 and question_before_ruling.scene == turn.scene
                 and question_before_ruling.speaker_id in ATTORNEY_SPEAKERS

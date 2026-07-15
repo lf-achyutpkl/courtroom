@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+from collections import Counter
 from typing import Callable, Literal, Protocol
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -102,6 +103,36 @@ class RubricJudge(Protocol):
 JudgeCallable = Callable[[RubricInput], JudgeResponse | dict]
 
 
+def _validate_score_dimensions(
+    scores: list[RubricScore],
+    thresholds: dict[RubricDimension, float],
+) -> None:
+    expected_dimensions = set(thresholds)
+    returned_dimensions = [score.dimension for score in scores]
+    returned_dimension_set = set(returned_dimensions)
+    duplicate_dimensions = sorted(
+        dimension
+        for dimension, count in Counter(returned_dimensions).items()
+        if count > 1
+    )
+    missing_dimensions = sorted(expected_dimensions - returned_dimension_set)
+    unexpected_dimensions = sorted(returned_dimension_set - expected_dimensions)
+
+    if missing_dimensions or unexpected_dimensions or duplicate_dimensions:
+        details = []
+        if missing_dimensions:
+            details.append("missing: " + ", ".join(missing_dimensions))
+        if unexpected_dimensions:
+            details.append("unexpected: " + ", ".join(unexpected_dimensions))
+        if duplicate_dimensions:
+            details.append("duplicate: " + ", ".join(duplicate_dimensions))
+        raise ValueError(
+            "Rubric judge returned scores that do not match configured dimensions ("
+            + "; ".join(details)
+            + ")"
+        )
+
+
 def _build_rubric_input(
     response: RunTrialResponse,
     reference: EvaluationReference,
@@ -180,6 +211,7 @@ def evaluate_rubric(
     raw_judge_response = judge(rubric_input)
     latency_ms = int((time.perf_counter() - started) * 1000)
     judge_response = JudgeResponse.model_validate(raw_judge_response)
+    _validate_score_dimensions(judge_response.scores, config.thresholds)
 
     normalized_scores = [
         score.model_copy(

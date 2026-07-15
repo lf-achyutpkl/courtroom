@@ -23,22 +23,19 @@ def run_simulation(
         if case_file is None:
             raise RuntimeError(f"Case file not found: {job.case_file_id}")
 
-        result = _run_trial(case_file)
-        completions.enqueue_completion(
-            SimulationCompletion(
-                simulation_run_id=job.simulation_run_id,
-                status="completed",
-                result=result,
-            )
+        completion = SimulationCompletion(
+            simulation_run_id=job.simulation_run_id,
+            status="completed",
+            result=_run_trial(case_file),
         )
     except Exception as exc:
-        completions.enqueue_completion(
-            SimulationCompletion(
-                simulation_run_id=job.simulation_run_id,
-                status="failed",
-                error_message=str(exc),
-            )
+        completion = SimulationCompletion(
+            simulation_run_id=job.simulation_run_id,
+            status="failed",
+            error_message=str(exc),
         )
+
+    completions.enqueue_completion(completion)
 
 
 def _run_trial(case_file: CaseFile) -> dict[str, object]:

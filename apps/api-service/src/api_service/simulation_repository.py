@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal, Protocol
 from uuid import UUID, uuid4
 
-import psycopg
-from psycopg.rows import dict_row
-from psycopg.types.json import Jsonb
+from sqlalchemy.orm import Session
+
+from .db import get_session_factory
+from .orm import SimulationRunRecord
 
 
 SimulationRunStatus = Literal["pending", "running", "completed", "failed"]
@@ -49,99 +50,84 @@ class SimulationRunRepository(Protocol):
 
 class PostgresSimulationRunRepository:
     def __init__(self, database_url: str) -> None:
-        self.database_url = database_url
+        self.session_factory = get_session_factory(database_url)
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
-        run_id = uuid4()
-        with psycopg.connect(self.database_url, row_factory=dict_row) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO simulation_runs (id, case_file_id, status)
-                    VALUES (%(id)s, %(case_file_id)s, 'pending')
-                    RETURNING *
-                    """,
-                    {"id": run_id, "case_file_id": case_file_id},
-                )
-                row = cursor.fetchone()
-        if row is None:
-            raise RuntimeError("Postgres did not return the inserted simulation run.")
-        return _stored_simulation_run_from_row(row)
+        record = SimulationRunRecord(
+            id=uuid4(),
+            case_file_id=case_file_id,
+            status="pending",
+        )
+        with self.session_factory() as session:
+            session.add(record)
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
 
     def mark_running(self, simulation_run_id: UUID) -> StoredSimulationRun:
-        return self._update_status(
-            simulation_run_id,
-            """
-            UPDATE simulation_runs
-            SET status = 'running',
-                started_at = COALESCE(started_at, NOW()),
-                error_message = NULL
-            WHERE id = %(id)s
-            RETURNING *
-            """,
-            {"id": simulation_run_id},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "running"
+            record.started_at = record.started_at or _utc_now()
+            record.error_message = None
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
 
     def mark_completed(
         self,
         simulation_run_id: UUID,
         result: dict[str, object],
     ) -> StoredSimulationRun:
-        return self._update_status(
-            simulation_run_id,
-            """
-            UPDATE simulation_runs
-            SET status = 'completed',
-                result = %(result)s,
-                error_message = NULL,
-                completed_at = NOW()
-            WHERE id = %(id)s
-            RETURNING *
-            """,
-            {"id": simulation_run_id, "result": Jsonb(result)},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "completed"
+            record.result = result
+            record.error_message = None
+            record.completed_at = _utc_now()
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
 
     def mark_failed(
         self,
         simulation_run_id: UUID,
         error_message: str,
     ) -> StoredSimulationRun:
-        return self._update_status(
-            simulation_run_id,
-            """
-            UPDATE simulation_runs
-            SET status = 'failed',
-                error_message = %(error_message)s,
-                completed_at = NOW()
-            WHERE id = %(id)s
-            RETURNING *
-            """,
-            {"id": simulation_run_id, "error_message": error_message},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "failed"
+            record.error_message = error_message
+            record.completed_at = _utc_now()
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
 
-    def _update_status(
+    def _get_run(
         self,
+        session: Session,
         simulation_run_id: UUID,
-        query: str,
-        parameters: dict[str, object],
-    ) -> StoredSimulationRun:
-        with psycopg.connect(self.database_url, row_factory=dict_row) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(query, parameters)
-                row = cursor.fetchone()
-        if row is None:
+    ) -> SimulationRunRecord:
+        record = session.get(SimulationRunRecord, simulation_run_id)
+        if record is None:
             raise RuntimeError(f"Simulation run not found: {simulation_run_id}")
-        return _stored_simulation_run_from_row(row)
+        return record
 
 
-def _stored_simulation_run_from_row(row: dict[str, object]) -> StoredSimulationRun:
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _stored_simulation_run_from_record(
+    record: SimulationRunRecord,
+) -> StoredSimulationRun:
     return StoredSimulationRun(
-        id=UUID(str(row["id"])),
-        case_file_id=UUID(str(row["case_file_id"])),
-        status=row["status"],  # type: ignore[arg-type]
-        result=row["result"],  # type: ignore[arg-type]
-        error_message=row["error_message"],  # type: ignore[arg-type]
-        created_at=row["created_at"],  # type: ignore[arg-type]
-        started_at=row["started_at"],  # type: ignore[arg-type]
-        completed_at=row["completed_at"],  # type: ignore[arg-type]
+        id=record.id,
+        case_file_id=record.case_file_id,
+        status=record.status,  # type: ignore[arg-type]
+        result=record.result,
+        error_message=record.error_message,
+        created_at=record.created_at,
+        started_at=record.started_at,
+        completed_at=record.completed_at,
     )

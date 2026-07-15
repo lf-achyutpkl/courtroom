@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Protocol
 from uuid import UUID
 
-import psycopg
 from courtroom_domain import CaseFile
-from psycopg.rows import dict_row
-from psycopg.types.json import Jsonb
+from sqlalchemy.orm import Session
+
+from .db import get_session_factory
+from .orm import CaseFileRecord, SimulationRunRecord
 
 
 class CaseFileReader(Protocol):
@@ -31,69 +33,61 @@ class SimulationRunWriter(Protocol):
 
 class PostgresCaseFileReader:
     def __init__(self, database_url: str) -> None:
-        self.database_url = database_url
+        self.session_factory = get_session_factory(database_url)
 
     def get(self, case_file_id: UUID) -> CaseFile | None:
-        with psycopg.connect(self.database_url, row_factory=dict_row) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT case_file
-                    FROM case_files
-                    WHERE id = %(id)s
-                    """,
-                    {"id": case_file_id},
-                )
-                row = cursor.fetchone()
-        return CaseFile.model_validate(row["case_file"]) if row is not None else None
+        with self.session_factory() as session:
+            record = session.get(CaseFileRecord, case_file_id)
+            return (
+                CaseFile.model_validate(record.case_file)
+                if record is not None
+                else None
+            )
 
 
 class PostgresSimulationRunWriter:
     def __init__(self, database_url: str) -> None:
-        self.database_url = database_url
+        self.session_factory = get_session_factory(database_url)
 
     def mark_running(self, simulation_run_id: UUID) -> None:
-        self._execute(
-            """
-            UPDATE simulation_runs
-            SET status = 'running',
-                started_at = COALESCE(started_at, NOW()),
-                error_message = NULL
-            WHERE id = %(id)s
-            """,
-            {"id": simulation_run_id},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "running"
+            record.started_at = record.started_at or _utc_now()
+            record.error_message = None
+            session.commit()
 
     def mark_completed(
         self,
         simulation_run_id: UUID,
         result: dict[str, object],
     ) -> None:
-        self._execute(
-            """
-            UPDATE simulation_runs
-            SET status = 'completed',
-                result = %(result)s,
-                error_message = NULL,
-                completed_at = NOW()
-            WHERE id = %(id)s
-            """,
-            {"id": simulation_run_id, "result": Jsonb(result)},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "completed"
+            record.result = result
+            record.error_message = None
+            record.completed_at = _utc_now()
+            session.commit()
 
     def mark_failed(self, simulation_run_id: UUID, error_message: str) -> None:
-        self._execute(
-            """
-            UPDATE simulation_runs
-            SET status = 'failed',
-                error_message = %(error_message)s,
-                completed_at = NOW()
-            WHERE id = %(id)s
-            """,
-            {"id": simulation_run_id, "error_message": error_message},
-        )
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "failed"
+            record.error_message = error_message
+            record.completed_at = _utc_now()
+            session.commit()
 
-    def _execute(self, query: str, parameters: dict[str, object]) -> None:
-        with psycopg.connect(self.database_url) as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(query, parameters)
+    def _get_run(
+        self,
+        session: Session,
+        simulation_run_id: UUID,
+    ) -> SimulationRunRecord:
+        record = session.get(SimulationRunRecord, simulation_run_id)
+        if record is None:
+            raise RuntimeError(f"Simulation run not found: {simulation_run_id}")
+        return record
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)

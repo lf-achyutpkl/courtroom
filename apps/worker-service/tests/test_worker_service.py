@@ -47,6 +47,15 @@ class InMemoryCompletionQueue:
         self.messages.append(completion)
 
 
+class FailingCompletionQueue:
+    def __init__(self) -> None:
+        self.messages: list[SimulationCompletion] = []
+
+    def enqueue_completion(self, completion: SimulationCompletion) -> None:
+        self.messages.append(completion)
+        raise RuntimeError("publish failed")
+
+
 def build_case_file() -> CaseFile:
     return CaseFile.model_validate(
         {
@@ -89,6 +98,31 @@ class WorkerServiceTest(unittest.TestCase):
         self.assertEqual(len(completions.messages), 1)
         self.assertEqual(completions.messages[0].status, "completed")
         self.assertEqual(completions.messages[0].result, {"run": {"run_id": "trial-1"}})
+
+    def test_run_simulation_does_not_publish_failed_when_completed_publish_fails(
+        self,
+    ) -> None:
+        simulation_run_id = uuid4()
+        case_file_id = uuid4()
+        completions = FailingCompletionQueue()
+
+        with patch(
+            "worker_service.runner._run_trial",
+            return_value={"run": {"run_id": "trial-1"}},
+        ):
+            with self.assertRaisesRegex(RuntimeError, "publish failed"):
+                run_simulation(
+                    SimulationJob(
+                        simulation_run_id=simulation_run_id,
+                        case_file_id=case_file_id,
+                    ),
+                    case_files=InMemoryCaseFiles(build_case_file()),
+                    runs=InMemoryRuns(),
+                    completions=completions,
+                )
+
+        self.assertEqual(len(completions.messages), 1)
+        self.assertEqual(completions.messages[0].status, "completed")
 
     def test_run_simulation_publishes_failed_result(self) -> None:
         simulation_run_id = uuid4()

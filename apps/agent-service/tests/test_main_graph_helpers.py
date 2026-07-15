@@ -8,7 +8,11 @@ from src.utils.helpers import (
     get_witness_by_id,
     get_witnesses_by_side,
 )
-from src.utils.nodes import route_after_witness_selection, select_next_witness_node
+from src.utils.nodes import (
+    build_witness_queue_node,
+    route_after_witness_selection,
+    select_next_witness_node,
+)
 from src.utils.state import TrialState
 from src.utils.types import CaseFile
 
@@ -58,6 +62,9 @@ class MainGraphHelpersTest(unittest.TestCase):
         state = _build_initial_state(request)
 
         self.assertEqual(state.case_file.case_id, "case-1")
+        self.assertIsInstance(state.run_id, str)
+        self.assertTrue(state.run_id)
+        self.assertIsInstance(state.run_started_at, str)
         self.assertEqual(state.prosecution_witness_plan, [])
         self.assertEqual(state.defense_witness_plan, [])
         self.assertEqual(state.full_trial_transcript, [])
@@ -71,6 +78,20 @@ class MainGraphHelpersTest(unittest.TestCase):
 
     def test_build_witness_queue_preserves_plan_order(self) -> None:
         self.assertEqual(build_witness_queue(["W1", "W3"], ["W2"]), ["W1", "W3", "W2"])
+
+    def test_build_witness_queue_node_drops_unknown_planned_witnesses(self) -> None:
+        state = build_state().model_copy(
+            update={
+                "prosecution_witness_plan": ["W1"],
+                "defense_witness_plan": ["W-supervisor", "W2"],
+            }
+        )
+
+        update = build_witness_queue_node(state)
+
+        self.assertEqual(update["prosecution_witness_plan"], ["W1"])
+        self.assertEqual(update["defense_witness_plan"], ["W2"])
+        self.assertEqual(update["witness_queue"], ["W1", "W2"])
 
     def test_witness_examination_state_keeps_subgraph_runtime_fields(self) -> None:
         state = WitnessExaminationState(

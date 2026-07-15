@@ -12,6 +12,7 @@ dependencies = [
   "python-dotenv>=1.2.2",
   "redis>=5.0.0",
   "rq>=2.0.0",
+  "sqlalchemy>=2.0.0",
   "uvicorn[standard]>=0.35.0",
 ]
 

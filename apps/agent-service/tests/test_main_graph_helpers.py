@@ -23,7 +23,12 @@ def build_case_file() -> CaseFile:
             "case_id": "case-1",
             "case_type": "criminal",
             "charge_or_claim": "Test charge",
-            "jurisdiction": "US",
+            "jurisdiction": {
+                "country": "US",
+                "state": "California",
+                "court": "Superior Court",
+                "trial_type": "jury",
+            },
             "parties": {
                 "plaintiff_or_prosecution": "State",
                 "defendant": "Defendant",

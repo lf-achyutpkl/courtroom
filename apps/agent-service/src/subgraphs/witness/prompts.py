@@ -53,6 +53,7 @@ def objection_check_prompt(
 def judge_ruling_prompt(
     state: WitnessExaminationState,
     objection_type: str | None,
+    objection_text: str | None,
     question: str | None,
     chunks_text: str,
 ) -> tuple[str, str]:
@@ -65,6 +66,7 @@ def judge_ruling_prompt(
     user_prompt = (
         f"Examination phase: {state.examination_phase}\n"
         f"Examining attorney: {state.examining_attorney}\n"
+        f"Objection raised: {objection_text or objection_type or '(not provided)'}\n"
         f"Question objected to: {question}\n\n"
         f"Retrieved rules/precedent:\n{chunks_text or '(none retrieved)'}"
     )

@@ -84,7 +84,11 @@ def objection_check_node(state: WitnessExaminationState) -> dict:
     opposing = "defense" if state.examining_attorney == "prosecution" else "prosecution"
     last_question = state.active_question_text
     if TRIAL_CONFIG.skip_direct_objections and state.examination_phase == "direct":
-        return {"objection_pending": False, "last_objection_type": None}
+        return {
+            "objection_pending": False,
+            "last_objection_type": None,
+            "last_objection_text": None,
+        }
     system_prompt, user_prompt = objection_check_prompt(state, opposing, last_question)
     telemetry: list[types.NodeTelemetry] = []
 
@@ -99,19 +103,34 @@ def objection_check_node(state: WitnessExaminationState) -> dict:
         witness_id=state.current_witness_id,
     )
 
-    return {
+    update = {
         "objection_pending": result.objection,
         "last_objection_type": result.objection_type,
+        "last_objection_text": None,
         "node_telemetry": telemetry,
     }
+    if result.objection:
+        objection_label = (result.objection_type or "objection").replace("_", " ")
+        objection_text = f"[firm] Objection, {objection_label}. {result.reasoning}"
+        turn = types.TranscriptTurn(
+            scene="objection",
+            speaker_id=opposing,
+            text=objection_text,
+            objection_type=result.objection_type,
+        )
+        update["last_objection_text"] = objection_text
+        update["current_witness_transcript"] = append_witness_turn(state, turn)
+
+    return update
 
 
 def judge_ruling_node(state: WitnessExaminationState) -> dict:
     question = state.active_question_text
     objection_type = state.last_objection_type
+    objection_text = state.last_objection_text
     chunks_text = ""
     system_prompt, user_prompt = judge_ruling_prompt(
-        state, objection_type, question, chunks_text
+        state, objection_type, objection_text, question, chunks_text
     )
     telemetry: list[types.NodeTelemetry] = []
 
@@ -137,6 +156,7 @@ def judge_ruling_node(state: WitnessExaminationState) -> dict:
     return {
         "last_ruling": result,
         "objection_pending": False,
+        "last_objection_text": None,
         "current_witness_transcript": append_witness_turn(state, turn),
         "node_telemetry": telemetry,
     }
@@ -193,6 +213,7 @@ def swap_to_cross_node(state: WitnessExaminationState) -> dict:
         "attorney_is_done": False,
         "objection_pending": False,
         "last_objection_type": None,
+        "last_objection_text": None,
         "last_ruling": None,
         "active_question_text": None,
     }

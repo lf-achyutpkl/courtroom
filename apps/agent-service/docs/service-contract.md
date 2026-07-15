@@ -198,7 +198,7 @@ This aligns with the current web app transcript input shape.
 
 - ordered playback turns
 - turn ids and speaker ids
-- scene names
+- scene names (`opening`, `direct`, `cross`, `objection`, `ruling`, `closing`, `verdict`)
 - cleaned text
 - subtitle chunks with start and end timing
 - audio asset URLs or relative asset paths

@@ -29,6 +29,7 @@ SCENE_PHASE_RANKS = {
     "opening": 0,
     "direct": 1,
     "cross": 1,
+    "objection": 1,
     "ruling": 1,
     "closing": 2,
     "verdict": 3,
@@ -96,11 +97,15 @@ def _validate_transcript_structure(
             )
         last_phase_rank = max(last_phase_rank, current_phase_rank)
 
-        if turn.speaker_id != "judge" and (
-            turn.ruling is not None or turn.objection_type is not None
+        if turn.ruling is not None and turn.speaker_id != "judge":
+            errors.append(f"turn {index} uses ruling on non-judge speaker")
+
+        if turn.objection_type is not None and not (
+            turn.speaker_id == "judge"
+            or (turn.scene == "objection" and turn.speaker_id in ATTORNEY_SPEAKERS)
         ):
             errors.append(
-                f"turn {index} uses judge-only fields on non-judge speaker"
+                f"turn {index} uses objection_type outside an objection or ruling"
             )
 
         if turn.scene == "verdict" and turn.speaker_id != "judge":
@@ -112,10 +117,33 @@ def _validate_transcript_structure(
         if turn.scene == "ruling" and turn.speaker_id != "judge":
             errors.append("ruling scene must be spoken by the judge")
 
+        if turn.scene == "objection":
+            if turn.speaker_id not in ATTORNEY_SPEAKERS:
+                errors.append("objection scene must be spoken by an attorney")
+            if (
+                previous_turn is None
+                or previous_turn.scene not in {"direct", "cross"}
+                or previous_turn.speaker_id not in ATTORNEY_SPEAKERS
+            ):
+                errors.append(
+                    f"turn {index} objection must follow an attorney question"
+                )
+            elif previous_turn.speaker_id == turn.speaker_id:
+                errors.append(
+                    f"turn {index} objection must be raised by opposing counsel"
+                )
+            else:
+                question_before_ruling = previous_turn
+
         if turn.scene == "ruling":
             if previous_turn is not None and previous_turn.scene == "ruling":
                 errors.append(f"turn {index} ruling cannot follow another ruling")
-            if (
+            if previous_turn is not None and previous_turn.scene == "objection":
+                if question_before_ruling is None:
+                    errors.append(
+                        f"turn {index} ruling must follow an objection to an attorney question"
+                    )
+            elif (
                 previous_turn is None
                 or previous_turn.scene not in {"direct", "cross"}
                 or previous_turn.speaker_id not in ATTORNEY_SPEAKERS
@@ -142,7 +170,7 @@ def _validate_transcript_structure(
             if not direct_answer and not answer_after_ruling:
                 witness_turn_without_question = True
 
-        if turn.scene != "ruling":
+        if turn.scene not in {"objection", "ruling"}:
             question_before_ruling = None
 
         previous_turn = turn

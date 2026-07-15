@@ -13,7 +13,12 @@ def build_case_file() -> CaseFile:
             "case_id": "case-1",
             "case_type": "criminal",
             "charge_or_claim": "Test charge",
-            "jurisdiction": "US",
+            "jurisdiction": {
+                "country": "US",
+                "state": "California",
+                "court": "Superior Court",
+                "trial_type": "jury",
+            },
             "parties": {
                 "plaintiff_or_prosecution": "State",
                 "defendant": "Defendant",
@@ -186,6 +191,64 @@ class DeterministicValidationTest(unittest.TestCase):
         )
 
         validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+    def test_validate_trial_run_accepts_objection_before_overruled_ruling(
+        self,
+    ) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": [
+                    *make_transcript(
+                        ("opening", "prosecution"),
+                        ("direct", "prosecution"),
+                    ),
+                    TranscriptTurn(
+                        scene="objection",
+                        speaker_id="defense",
+                        text="Objection, relevance.",
+                        objection_type="relevance",
+                    ),
+                    *make_transcript(
+                        ("ruling", "judge", "overruled"),
+                        ("direct", "W1"),
+                        ("closing", "prosecution"),
+                        ("verdict", "judge"),
+                    ),
+                ]
+            }
+        )
+
+        validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+    def test_validate_trial_run_rejects_same_side_objection(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": [
+                    *make_transcript(
+                        ("opening", "prosecution"),
+                        ("direct", "prosecution"),
+                    ),
+                    TranscriptTurn(
+                        scene="objection",
+                        speaker_id="prosecution",
+                        text="Objection, relevance.",
+                        objection_type="relevance",
+                    ),
+                    *make_transcript(
+                        ("ruling", "judge", "sustained"),
+                        ("closing", "prosecution"),
+                        ("verdict", "judge"),
+                    ),
+                ]
+            }
+        )
+
+        with self.assertRaises(DeterministicValidationError) as context:
+            validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+        self.assertIn(
+            "objection must be raised by opposing counsel", str(context.exception)
+        )
 
     def test_validate_trial_run_rejects_answer_after_sustained_ruling(self) -> None:
         state = build_valid_state().model_copy(

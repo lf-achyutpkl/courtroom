@@ -61,8 +61,17 @@ class WitnessProfile(BaseModel):
     contradicts: str | None = None
 
 
+class CaseJurisdiction(BaseModel):
+    country: Literal["US"] = "US"
+    state: Literal["California"] = "California"
+    court: Literal["Superior Court"] = "Superior Court"
+    trial_type: Literal["jury"] = "jury"
+
+
 class TranscriptTurn(BaseModel):
-    scene: Literal["opening", "direct", "cross", "closing", "ruling", "verdict"]
+    scene: Literal[
+        "opening", "direct", "cross", "objection", "closing", "ruling", "verdict"
+    ]
     speaker_id: str
     text: str
     objection_type: Optional[str] = None
@@ -113,7 +122,7 @@ class CaseFile(BaseModel):
     case_id: str
     case_type: Literal["criminal", "civil"]
     charge_or_claim: str
-    jurisdiction: Literal["US"] = "US"
+    jurisdiction: CaseJurisdiction = Field(default_factory=CaseJurisdiction)
     parties: Parties
     ground_truth: str
     disputed_facts: list[str] = Field(default_factory=list)

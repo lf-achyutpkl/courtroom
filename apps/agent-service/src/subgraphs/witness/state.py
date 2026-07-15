@@ -18,6 +18,7 @@ class WitnessExaminationState(BaseModel):
     node_telemetry: Annotated[list[NodeTelemetry], add] = Field(default_factory=list)
     objection_pending: bool = False
     last_objection_type: str | None = None
+    last_objection_text: str | None = None
     last_ruling: Optional[RulingOutput] = None
     active_question_text: str | None = None
     attorney_is_done: bool = False

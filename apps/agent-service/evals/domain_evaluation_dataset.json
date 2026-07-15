@@ -10,7 +10,12 @@
         "case_id": "case-ledger-theft",
         "case_type": "criminal",
         "charge_or_claim": "Grand theft by falsified vendor payments",
-        "jurisdiction": "US",
+        "jurisdiction": {
+          "country": "US",
+          "state": "California",
+          "court": "Superior Court",
+          "trial_type": "jury"
+        },
         "parties": {
           "plaintiff_or_prosecution": "State",
           "defendant": "Jordan Vale"
@@ -74,7 +79,12 @@
         "case_id": "case-warehouse-injury",
         "case_type": "civil",
         "charge_or_claim": "Negligence claim over a warehouse forklift injury",
-        "jurisdiction": "US",
+        "jurisdiction": {
+          "country": "US",
+          "state": "California",
+          "court": "Superior Court",
+          "trial_type": "jury"
+        },
         "parties": {
           "plaintiff_or_prosecution": "Avery Stone",
           "defendant": "North Pier Logistics"
@@ -146,7 +156,12 @@
         "case_id": "case-sealed-medical-record",
         "case_type": "civil",
         "charge_or_claim": "Breach of confidentiality over sealed medical records",
-        "jurisdiction": "US",
+        "jurisdiction": {
+          "country": "US",
+          "state": "California",
+          "court": "Superior Court",
+          "trial_type": "jury"
+        },
         "parties": {
           "plaintiff_or_prosecution": "Riley Noor",
           "defendant": "Harbor Clinic"

@@ -18,6 +18,7 @@ cp .env.example .env
 ```
 
 Update `DATABASE_URL` in `.env` if you are not using the local default.
+Set `REDIS_URL` when using a non-default Redis instance for background jobs.
 
 Start the API service with:
 
@@ -29,6 +30,8 @@ The current case file API exposes:
 
 - `POST /case-files` to create and store a new dummy `CaseFile`
 - `GET /case-files/{id}` to fetch a stored `CaseFile` by storage UUID
+- `POST /start-simulation` to create a pending simulation run and enqueue it
+  for the worker service
 
 ## Tests
 

@@ -187,6 +187,28 @@ class DeterministicValidationTest(unittest.TestCase):
 
         validate_trial_run(state, run_metadata=run_trial_metadata(state))
 
+    def test_validate_trial_run_rejects_answer_after_sustained_ruling(self) -> None:
+        state = build_valid_state().model_copy(
+            update={
+                "full_trial_transcript": make_transcript(
+                    ("opening", "prosecution"),
+                    ("direct", "prosecution"),
+                    ("ruling", "judge", "sustained"),
+                    ("direct", "W1"),
+                    ("closing", "prosecution"),
+                    ("verdict", "judge"),
+                )
+            }
+        )
+
+        with self.assertRaises(DeterministicValidationError) as context:
+            validate_trial_run(state, run_metadata=run_trial_metadata(state))
+
+        self.assertIn(
+            "witness answers must follow an attorney question",
+            str(context.exception),
+        )
+
     def test_validate_trial_run_rejects_ruling_after_closing(self) -> None:
         state = build_valid_state().model_copy(
             update={

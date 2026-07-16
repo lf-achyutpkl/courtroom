@@ -33,7 +33,7 @@ class RqSimulationQueue:
         redis_connection = Redis.from_url(self.redis_url)
         queue = Queue(self.queue_name, connection=redis_connection)
         queue.enqueue(
-            "worker_service.jobs.run_simulation_job",
+            "worker_service.jobs.simulation.run_simulation_job",
             str(simulation_run_id),
             str(case_file_id),
         )

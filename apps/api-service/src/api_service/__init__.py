@@ -1,1 +1,1 @@
-"""FastAPI backend API package."""
+"""API service source root."""

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from .models import SimulationCompletion
+from ..models.completions import SimulationCompletion
 
 
 class CompletionQueue(Protocol):
@@ -26,6 +26,6 @@ class RqCompletionQueue:
         redis_connection = Redis.from_url(self.redis_url)
         queue = Queue(self.queue_name, connection=redis_connection)
         queue.enqueue(
-            "worker_service.completion.apply_completion_message",
+            "worker_service.jobs.completion.apply_completion_message",
             completion.model_dump(mode="json"),
         )

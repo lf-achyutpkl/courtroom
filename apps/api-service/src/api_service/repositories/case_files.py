@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 
 from courtroom_domain import CaseFile
 
-from .db import get_session_factory
-from .orm import CaseFileRecord
+from ..db.base import CaseFileRecord
+from ..db.session import get_session_factory
 
 
 @dataclass(frozen=True)

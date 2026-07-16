@@ -6,9 +6,10 @@ from uuid import UUID, uuid4
 
 from courtroom_domain import CaseFile
 
-from worker_service.completion import apply_completion
-from worker_service.models import SimulationCompletion, SimulationJob
-from worker_service.runner import run_simulation
+from worker_service.jobs.completion import apply_completion
+from worker_service.models.completions import SimulationCompletion
+from worker_service.models.jobs import SimulationJob
+from worker_service.main import run_simulation
 
 
 class InMemoryCaseFiles:
@@ -81,7 +82,7 @@ class WorkerServiceTest(unittest.TestCase):
         completions = InMemoryCompletionQueue()
 
         with patch(
-            "worker_service.runner._run_trial",
+            "worker_service.services.simulation_runner._run_trial",
             return_value={"run": {"run_id": "trial-1"}},
         ):
             run_simulation(
@@ -107,7 +108,7 @@ class WorkerServiceTest(unittest.TestCase):
         completions = FailingCompletionQueue()
 
         with patch(
-            "worker_service.runner._run_trial",
+            "worker_service.services.simulation_runner._run_trial",
             return_value={"run": {"run_id": "trial-1"}},
         ):
             with self.assertRaisesRegex(RuntimeError, "publish failed"):

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from .env import load_service_env
 
-
 load_service_env()
 
 

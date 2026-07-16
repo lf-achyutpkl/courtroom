@@ -109,7 +109,9 @@ class MonitoringTest(unittest.TestCase):
             summary="Minor issue.",
         )
 
-        self.assertEqual(alerts_for_evaluator_results(run=run_metadata(), results=[result]), [])
+        self.assertEqual(
+            alerts_for_evaluator_results(run=run_metadata(), results=[result]), []
+        )
 
     def test_rubric_threshold_failure_routes_to_queue(self) -> None:
         rubric_result = RubricEvaluationResult(

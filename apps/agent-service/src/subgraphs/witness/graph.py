@@ -2,13 +2,13 @@ from langgraph.graph import START, StateGraph
 
 from .nodes import (
     ask_question_node,
-    swap_to_cross_node,
-    witness_answer_node,
     judge_ruling_node,
     objection_check_node,
+    route_after_answer,
     route_after_objection_check,
     route_after_ruling,
-    route_after_answer,
+    swap_to_cross_node,
+    witness_answer_node,
 )
 from .state import WitnessExaminationState
 

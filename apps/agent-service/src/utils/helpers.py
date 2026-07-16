@@ -41,8 +41,10 @@ def spoken_style_rules(max_sentences: int, role_hint: str) -> str:
         "This output will be used directly in the frontend/TTS transcript. "
         f"Write it as spoken dialogue for {role_hint}. "
         f"Keep it to at most {max_sentences} short sentences. "
-        "Every sentence must include at least one inline delivery tag in square brackets, "
-        "such as [steady], [firm], [measured], [tense], [frustrated], [quiet], or [somber]. "
+        "Every sentence must include at least one inline delivery tag in square "
+        "brackets, "
+        "such as [steady], [firm], [measured], [tense], [frustrated], [quiet], "
+        "or [somber]. "
         "Use realistic emotional delivery, not exaggerated stage directions. "
         "Do not describe actions outside the dialogue."
     )
@@ -76,7 +78,9 @@ def format_recent_transcript(
     include_scene: bool = False,
 ) -> str:
     relevant_turns = (
-        [turn for turn in turns if turn.scene in scenes] if scenes is not None else turns
+        [turn for turn in turns if turn.scene in scenes]
+        if scenes is not None
+        else turns
     )
     recent_turns = relevant_turns[-max_turns:]
     return "\n".join(

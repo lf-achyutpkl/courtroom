@@ -1,6 +1,17 @@
 UV_CACHE_DIR ?= /tmp/uv-cache
 
-.PHONY: test unit-test langgraph-dev eval-baseline eval-baseline-rubric promptfoo-adversarial validate-promptfoo-suite
+.PHONY: check lint format-check typecheck test unit-test langgraph-dev eval-baseline eval-baseline-rubric promptfoo-adversarial validate-promptfoo-suite
+
+check: lint format-check typecheck
+
+lint:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run ruff check .
+
+format-check:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run ruff format --check .
+
+typecheck:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run pyright
 
 test:
 	OPENAI_API_KEY=dummy UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m unittest discover -s tests -p "test_*.py"

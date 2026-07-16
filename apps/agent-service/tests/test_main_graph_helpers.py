@@ -1,5 +1,7 @@
 import unittest
 
+from courtroom_domain import CaseFile, TrialState
+
 from src.service import RunTrialRequest, _build_initial_state
 from src.subgraphs.witness.state import WitnessExaminationState
 from src.utils.config import TRIAL_CONFIG
@@ -13,7 +15,6 @@ from src.utils.nodes import (
     route_after_witness_selection,
     select_next_witness_node,
 )
-from courtroom_domain import CaseFile, TrialState
 
 
 def build_case_file() -> CaseFile:

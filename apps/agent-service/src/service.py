@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import os
 from datetime import datetime, timezone
+from typing import Sequence
 from uuid import uuid4
 
 from langchain_core.tracers.context import collect_runs
 
+from .utils import llm
 from .utils.config import TRIAL_CONFIG
 from .utils.graph import build_graph
-from .utils import llm
 from .utils.state import TrialState
 from .utils.types import RunMetadata, RunTrialRequest, RunTrialResponse
 from .utils.validation import DeterministicValidationError, validate_trial_run
-
 
 _trial_graph = build_graph()
 
@@ -21,7 +21,7 @@ def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _root_trace_id(traced_runs: list[object]) -> str | None:
+def _root_trace_id(traced_runs: Sequence[object]) -> str | None:
     for run in traced_runs:
         if getattr(run, "parent_run_id", None) is None:
             run_id = getattr(run, "id", None)

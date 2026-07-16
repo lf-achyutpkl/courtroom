@@ -122,9 +122,13 @@ def invoke_structured(
                         duration_ms=int(
                             (completed_at - started_at).total_seconds() * 1000
                         ),
+                        prompt_tokens=usage_stats.get("prompt_tokens"),
+                        completion_tokens=usage_stats.get("completion_tokens"),
+                        total_tokens=usage_stats.get("total_tokens"),
+                        cached_tokens=usage_stats.get("cached_tokens"),
+                        cache_write_tokens=usage_stats.get("cache_write_tokens"),
                         parse_success=False,
                         error_type=type(parsing_error).__name__,
-                        **usage_stats,
                     )
                 )
                 telemetry_emitted = True
@@ -141,8 +145,12 @@ def invoke_structured(
                     started_at=started_at.isoformat(),
                     completed_at=completed_at.isoformat(),
                     duration_ms=int((completed_at - started_at).total_seconds() * 1000),
+                    prompt_tokens=usage_stats.get("prompt_tokens"),
+                    completion_tokens=usage_stats.get("completion_tokens"),
+                    total_tokens=usage_stats.get("total_tokens"),
+                    cached_tokens=usage_stats.get("cached_tokens"),
+                    cache_write_tokens=usage_stats.get("cache_write_tokens"),
                     parse_success=True,
-                    **usage_stats,
                 )
             )
             telemetry_emitted = True

@@ -6,6 +6,8 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Callable
 
+from courtroom_domain import NodeTelemetry
+
 from src.evaluation.costs import (
     DEFAULT_MODEL_TOKEN_RATES,
     CostEstimateSummary,
@@ -33,15 +35,14 @@ from src.evaluation.reports import (
 )
 from src.evaluation.rubric import (
     DEFAULT_JUDGE_MODEL,
+    JudgeCallable,
     RubricEvaluationResult,
     RubricEvaluatorConfig,
-    RubricJudge,
     build_openai_rubric_judge,
     evaluate_rubric,
 )
 from src.service import _run_trial_with_state
 from src.utils.config import TRIAL_CONFIG
-from courtroom_domain import NodeTelemetry
 from src.utils.types import RunTrialRequest, RunTrialResponse
 from src.utils.validation import DeterministicValidationError
 
@@ -159,7 +160,7 @@ def _run_case(
     case: EvaluationCase,
     runner: TrialRunner,
     *,
-    rubric_judge: RubricJudge | None = None,
+    rubric_judge: JudgeCallable | None = None,
     rubric_config: RubricEvaluatorConfig | None = None,
 ) -> PerCaseEvaluationResult:
     try:
@@ -413,9 +414,7 @@ def calculate_aggregate_metrics(
             or result.evaluation_status["rubric"].state in {"passed", "not_run"}
         )
     )
-    deterministic_pass_rate = (
-        deterministic_passed / total_cases if total_cases else 0.0
-    )
+    deterministic_pass_rate = deterministic_passed / total_cases if total_cases else 0.0
     overall_pass_rate = overall_passed / total_cases if total_cases else 0.0
 
     return AggregateMetrics(
@@ -487,7 +486,7 @@ def sum_cost_estimate_tokens(
 def build_baseline_report(
     *,
     runner: TrialRunner = _default_eval_runner,
-    rubric_judge: RubricJudge | None = None,
+    rubric_judge: JudgeCallable | None = None,
     rubric_config: RubricEvaluatorConfig | None = None,
     progress: ProgressReporter | None = None,
 ) -> BaselineReport:
@@ -537,7 +536,7 @@ def run_baseline(
     *,
     output_dir: Path = DEFAULT_REPORT_DIR,
     runner: TrialRunner = _default_eval_runner,
-    rubric_judge: RubricJudge | None = None,
+    rubric_judge: JudgeCallable | None = None,
     rubric_config: RubricEvaluatorConfig | None = None,
     progress: ProgressReporter | None = None,
 ) -> Path:

@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Literal, Protocol
 
+from courtroom_domain import NodeTelemetry
 from pydantic import BaseModel, Field
 
 from src.evaluation.evaluators import EvaluatorResult, Severity
 from src.evaluation.rubric import RubricEvaluationResult
-from courtroom_domain import NodeTelemetry
 from src.utils.types import RunMetadata
 
 QueueReason = Literal[
@@ -69,8 +69,7 @@ class GitHubIssueResult(BaseModel):
 
 
 class GitHubIssueClient(Protocol):
-    def create_or_update_issue(self, record: QueueRecord) -> GitHubIssueResult:
-        ...
+    def create_or_update_issue(self, record: QueueRecord) -> GitHubIssueResult: ...
 
 
 def should_sample(

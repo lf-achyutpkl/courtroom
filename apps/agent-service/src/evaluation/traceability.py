@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from courtroom_domain import NodeTelemetry
 from pydantic import BaseModel, Field
 
-from courtroom_domain import NodeTelemetry
 from src.utils.types import RunMetadata
 
 

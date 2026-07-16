@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from typing import Literal, TypedDict
 
+from courtroom_domain import VerdictOutput
+
+from ..subgraphs.witness.graph import build_witness_graph
+from ..subgraphs.witness.state import WitnessExaminationState
 from . import types
 from .helpers import (
     build_witness_queue as build_witness_queue_from_plans,
+)
+from .helpers import (
     get_witness_by_id,
     get_witnesses_by_side,
     log_graph_event,
 )
+from .llm import invoke_structured, judge_llm
 from .prompts import (
     closing_defense_prompt,
     closing_prosecution_prompt,
@@ -19,9 +26,6 @@ from .prompts import (
     summarize_trial_transcript_prompt,
     verdict_prompt,
 )
-from ..subgraphs.witness.graph import build_witness_graph
-from ..subgraphs.witness.state import WitnessExaminationState
-from .llm import judge_llm, invoke_structured
 from .state import TrialState
 
 
@@ -62,7 +66,7 @@ class SummaryUpdate(TypedDict):
 
 
 class VerdictUpdate(TypedDict):
-    verdict: types.VerdictOutput
+    verdict: VerdictOutput
     full_trial_transcript: list[types.TranscriptTurn]
     node_telemetry: list[types.NodeTelemetry]
 
@@ -174,7 +178,7 @@ def build_witness_queue_node(state: TrialState) -> WitnessQueueUpdate:
         "witness_queue": build_witness_queue_from_plans(
             prosecution_witness_plan,
             defense_witness_plan,
-        )
+        ),
     }
 
 
@@ -312,7 +316,7 @@ def verdict_node(state: TrialState) -> VerdictUpdate:
     result = invoke_structured(
         system_prompt,
         user_prompt,
-        types.VerdictOutput,
+        VerdictOutput,
         llm=judge_llm,
         node_name="verdict",
         telemetry_sink=telemetry.append,

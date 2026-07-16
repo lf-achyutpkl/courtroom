@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 from src.evaluation.costs import CostEstimateSummary, TokenUsageSummary
 from src.utils.types import RunMetadata, RunTrialResponse
 
-
 EvaluationStageState = Literal["passed", "failed", "skipped", "not_run"]
 
 

@@ -8,7 +8,7 @@ This file applies to `apps/agent-service`.
 
 - Keep Python runtime code, LangGraph flows, prompts, evaluations, and simulation orchestration here.
 - Keep FastAPI route ownership in `apps/api-service`.
-- Keep future RQ worker process ownership in `apps/worker-service`.
+- Keep RQ worker process ownership in `apps/api-service`.
 - Do not place frontend rendering or Next.js code in this workspace.
 
 ## Structure

@@ -19,27 +19,34 @@ The system SHALL persist simulation run lifecycle state in Postgres.
 - **THEN** the system stores a row with `pending` status and the source case file id
 
 #### Scenario: Simulation run completes
-- **WHEN** the completion consumer receives a successful result message
+- **WHEN** the dependent persistence job receives a generated result from the prior stage
 - **THEN** the system stores the result payload and marks the simulation run `completed`
 
 #### Scenario: Simulation run fails
-- **WHEN** enqueueing, worker execution, or completion processing fails
+- **WHEN** enqueueing or any worker stage fails
 - **THEN** the system records `failed` status with an error message
 
-### Requirement: Execute simulations through worker service
-The worker service SHALL consume queued simulation jobs, call the agent-service LangGraph runtime through its public Python contract, and publish completion messages to a separate results queue.
+### Requirement: Execute simulations through API-owned workers
+The API service SHALL own the RQ worker job entrypoints, call the agent-service LangGraph runtime through its public Python contract, and process dependent queue stages inside the same workspace.
 
-#### Scenario: Worker publishes success
-- **WHEN** LangGraph execution returns a trial result
-- **THEN** the worker publishes a completion message with `completed` status and the result payload
+#### Scenario: Generation job succeeds
+- **WHEN** the LLM worker stage returns a trial result
+- **THEN** the system stores the generated result and allows the dependent persistence job to run
 
-#### Scenario: Worker publishes failure
+#### Scenario: Worker stage fails
 - **WHEN** case-file loading or LangGraph execution raises an error
-- **THEN** the worker publishes a completion message with `failed` status and an error message
+- **THEN** the worker marks the simulation run `failed` with an error message and dependent jobs do not complete the run
+
+### Requirement: Chain stage-specific queue jobs
+The system SHALL use dependent jobs across stage-specific queues so later pipeline stages only run after earlier stages succeed.
+
+#### Scenario: Persistence waits for generation
+- **WHEN** the API enqueues the simulation pipeline
+- **THEN** the DB persistence job depends on the LLM generation job
 
 ### Requirement: Keep LangGraph queue-agnostic
 The agent-service LangGraph runtime MUST NOT depend on Redis, RQ, database writers, or queue callback functions for v1 simulation completion.
 
 #### Scenario: Graph execution finishes
 - **WHEN** the worker invokes the agent-service runtime
-- **THEN** completion publication is performed by the worker wrapper after the runtime returns or raises
+- **THEN** queue chaining and persistence are handled by API-service worker layers after the runtime returns or raises

@@ -18,8 +18,8 @@ This is a polyglot monorepo:
 
 - `apps/web-app` contains the Next.js playback frontend.
 - `apps/api-service` contains the FastAPI backend API.
+- `apps/api-service` also owns Redis/RQ background workers and queue orchestration.
 - `apps/agent-service` contains LangGraph simulation runtime, prompts, and evaluation logic.
-- `apps/worker-service` is reserved for the future RQ/Redis worker process.
 - `infra/db/migrations` contains shared Postgres schema migrations.
 - `packages/contracts` is reserved for future shared contracts.
 - `packages/python-domain` contains shared Python domain models used by multiple services.

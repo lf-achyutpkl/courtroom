@@ -8,12 +8,12 @@ from ...api.deps import (
     get_simulation_run_repository,
 )
 from ...repositories.case_files import CaseFileRepository
+from ...queue.simulation_pipeline import SimulationQueue
 from ...repositories.simulation_runs import (
     SimulationRunRepository,
     StoredSimulationRun,
 )
 from ...schemas.simulations import StartSimulationRequest, StartSimulationResponse
-from ...services.simulation_queue import SimulationQueue
 
 
 router = APIRouter()

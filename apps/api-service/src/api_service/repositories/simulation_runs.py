@@ -27,11 +27,21 @@ class StoredSimulationRun:
 
 
 class SimulationRunRepository(Protocol):
+    def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
+        """Return a stored simulation run by id."""
+
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         """Create a pending simulation run for a stored case file."""
 
     def mark_running(self, simulation_run_id: UUID) -> StoredSimulationRun:
         """Mark a simulation run as running."""
+
+    def store_result(
+        self,
+        simulation_run_id: UUID,
+        result: dict[str, object],
+    ) -> StoredSimulationRun:
+        """Store an intermediate result while the pipeline remains in progress."""
 
     def mark_completed(
         self,
@@ -52,6 +62,15 @@ class PostgresSimulationRunRepository:
     def __init__(self, database_url: str) -> None:
         self.session_factory = get_session_factory(database_url)
 
+    def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
+        with self.session_factory() as session:
+            record = session.get(SimulationRunRecord, simulation_run_id)
+            return (
+                _stored_simulation_run_from_record(record)
+                if record is not None
+                else None
+            )
+
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         record = SimulationRunRecord(
             id=uuid4(),
@@ -60,6 +79,19 @@ class PostgresSimulationRunRepository:
         )
         with self.session_factory() as session:
             session.add(record)
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
+
+    def store_result(
+        self,
+        simulation_run_id: UUID,
+        result: dict[str, object],
+    ) -> StoredSimulationRun:
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.result = result
+            record.error_message = None
             session.commit()
             session.refresh(record)
             return _stored_simulation_run_from_record(record)

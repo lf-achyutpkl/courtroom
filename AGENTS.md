@@ -10,7 +10,7 @@ This file applies to the whole repository.
 - `apps/web-app` contains the Next.js frontend.
 - `apps/api-service` contains the FastAPI backend API boundary.
 - `apps/agent-service` contains Python and LangGraph simulation runtime code.
-- `apps/worker-service` is reserved for the future RQ/Redis worker process.
+- `apps/api-service` also owns Redis/RQ worker process code and queue orchestration.
 - Do not place backend orchestration, Python code, or LangGraph graphs inside `apps/web-app`.
 - Do not place frontend UI code inside Python service workspaces.
 

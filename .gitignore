@@ -6,3 +6,4 @@ apps/agent-service/evals/reports/
 *.egg-info/
 __pycache__/
 *.pyc
+.pnpm-store/

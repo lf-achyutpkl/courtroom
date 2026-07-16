@@ -48,7 +48,9 @@ def _build_initial_state(request: RunTrialRequest) -> TrialState:
     )
 
 
-def _run_trial_with_state(request: RunTrialRequest) -> tuple[RunTrialResponse, TrialState]:
+def _run_trial_with_state(
+    request: RunTrialRequest,
+) -> tuple[RunTrialResponse, TrialState]:
     initial_state = _build_initial_state(request)
     with collect_runs() as runs_cb:
         result = _trial_graph.invoke(initial_state)

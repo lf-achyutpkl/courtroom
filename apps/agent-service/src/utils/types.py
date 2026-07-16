@@ -3,7 +3,9 @@ from typing import Literal, Optional
 
 from courtroom_domain import (
     CaseFile,
+    NodeTelemetry,
     TranscriptTurn,
+    WitnessProfile,
 )
 
 

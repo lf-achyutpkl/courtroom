@@ -3,13 +3,7 @@ from typing import Literal, Optional
 
 from courtroom_domain import (
     CaseFile,
-    CaseJurisdiction,
-    Evidence,
-    NodeTelemetry,
-    Parties,
     TranscriptTurn,
-    VerdictOutput,
-    WitnessProfile,
 )
 
 

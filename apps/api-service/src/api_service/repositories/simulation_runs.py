@@ -7,8 +7,8 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
-from .db import get_session_factory
-from .orm import SimulationRunRecord
+from ..db.base import SimulationRunRecord
+from ..db.session import get_session_factory
 
 
 SimulationRunStatus = Literal["pending", "running", "completed", "failed"]

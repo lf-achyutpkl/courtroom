@@ -6,9 +6,11 @@ from typing import Callable
 
 from courtroom_domain import CaseFile
 
-from .models import SimulationCompletion, SimulationJob
-from .queues import CompletionQueue
-from .repositories import CaseFileReader, SimulationRunWriter
+from ..models.completions import SimulationCompletion
+from ..models.jobs import SimulationJob
+from ..queues.simulation_results import CompletionQueue
+from ..repositories.case_files import CaseFileReader
+from ..repositories.simulation_runs import SimulationRunWriter
 
 
 def run_simulation(

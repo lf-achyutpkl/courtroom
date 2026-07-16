@@ -6,11 +6,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class SimulationJob(BaseModel):
-    simulation_run_id: UUID
-    case_file_id: UUID
-
-
 class SimulationCompletion(BaseModel):
     simulation_run_id: UUID
     status: Literal["completed", "failed"]

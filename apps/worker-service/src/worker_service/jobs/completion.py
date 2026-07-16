@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .config import get_database_url
-from .models import SimulationCompletion
-from .repositories import PostgresSimulationRunWriter, SimulationRunWriter
+from ..core.config import get_database_url
+from ..models.completions import SimulationCompletion
+from ..repositories.simulation_runs import PostgresSimulationRunWriter
 
 
 def apply_completion_message(payload: dict[str, object]) -> None:
@@ -14,7 +14,7 @@ def apply_completion_message(payload: dict[str, object]) -> None:
 
 def apply_completion(
     completion: SimulationCompletion,
-    runs: SimulationRunWriter,
+    runs: PostgresSimulationRunWriter,
 ) -> None:
     if completion.status == "completed":
         if completion.result is None:

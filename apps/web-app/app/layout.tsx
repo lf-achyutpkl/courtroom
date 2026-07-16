@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Courtroom Simulation",
-  description: "Transcript-driven courtroom playback with Kokoro-ready speech and PixiJS animation.",
+  description: "Transcript-driven courtroom playback with preview timing and PixiJS animation.",
 };
 
 export default function RootLayout({

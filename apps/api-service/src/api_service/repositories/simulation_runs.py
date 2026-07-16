@@ -11,7 +11,14 @@ from ..db.base import SimulationRunRecord
 from ..db.session import get_session_factory
 
 
-SimulationRunStatus = Literal["pending", "running", "completed", "failed"]
+SimulationRunStatus = Literal[
+    "pending",
+    "running",
+    "hearing_completed",
+    "generating_audio",
+    "completed",
+    "failed",
+]
 
 
 @dataclass(frozen=True)
@@ -20,6 +27,8 @@ class StoredSimulationRun:
     case_file_id: UUID
     status: SimulationRunStatus
     result: dict[str, object] | None
+    audio_manifest: list[dict[str, object]] | None
+    audio_storage: dict[str, object] | None
     error_message: str | None
     created_at: datetime
     started_at: datetime | None
@@ -41,14 +50,24 @@ class SimulationRunRepository(Protocol):
         simulation_run_id: UUID,
         result: dict[str, object],
     ) -> StoredSimulationRun:
-        """Store an intermediate result while the pipeline remains in progress."""
+        """Store the generated trial result and mark the hearing as completed."""
+
+    def mark_generating_audio(self, simulation_run_id: UUID) -> StoredSimulationRun:
+        """Mark a simulation run as generating audio."""
+
+    def store_audio_artifacts(
+        self,
+        simulation_run_id: UUID,
+        audio_manifest: list[dict[str, object]],
+        audio_storage: dict[str, object],
+    ) -> StoredSimulationRun:
+        """Store generated audio manifest and storage references."""
 
     def mark_completed(
         self,
         simulation_run_id: UUID,
-        result: dict[str, object],
     ) -> StoredSimulationRun:
-        """Mark a simulation run as completed with the final result."""
+        """Mark a simulation run as completed."""
 
     def mark_failed(
         self,
@@ -90,7 +109,32 @@ class PostgresSimulationRunRepository:
     ) -> StoredSimulationRun:
         with self.session_factory() as session:
             record = self._get_run(session, simulation_run_id)
+            record.status = "hearing_completed"
             record.result = result
+            record.error_message = None
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
+
+    def mark_generating_audio(self, simulation_run_id: UUID) -> StoredSimulationRun:
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.status = "generating_audio"
+            record.error_message = None
+            session.commit()
+            session.refresh(record)
+            return _stored_simulation_run_from_record(record)
+
+    def store_audio_artifacts(
+        self,
+        simulation_run_id: UUID,
+        audio_manifest: list[dict[str, object]],
+        audio_storage: dict[str, object],
+    ) -> StoredSimulationRun:
+        with self.session_factory() as session:
+            record = self._get_run(session, simulation_run_id)
+            record.audio_manifest = audio_manifest
+            record.audio_storage = audio_storage
             record.error_message = None
             session.commit()
             session.refresh(record)
@@ -109,12 +153,10 @@ class PostgresSimulationRunRepository:
     def mark_completed(
         self,
         simulation_run_id: UUID,
-        result: dict[str, object],
     ) -> StoredSimulationRun:
         with self.session_factory() as session:
             record = self._get_run(session, simulation_run_id)
             record.status = "completed"
-            record.result = result
             record.error_message = None
             record.completed_at = _utc_now()
             session.commit()
@@ -158,6 +200,8 @@ def _stored_simulation_run_from_record(
         case_file_id=record.case_file_id,
         status=record.status,  # type: ignore[arg-type]
         result=record.result,
+        audio_manifest=record.audio_manifest,  # type: ignore[arg-type]
+        audio_storage=record.audio_storage,  # type: ignore[arg-type]
         error_message=record.error_message,
         created_at=record.created_at,
         started_at=record.started_at,

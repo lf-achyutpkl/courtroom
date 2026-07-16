@@ -12,10 +12,11 @@ from api_service.queue.simulation_pipeline import (
     RqSimulationQueue,
 )
 from api_service.repositories.simulation_runs import StoredSimulationRun
+from api_service.services.tts.service import SimulationAudioService
 from api_service.workflows.simulation_pipeline import (
     SimulationGenerationJob,
+    execute_audio_generation_stage,
     execute_generation_stage,
-    finalize_generation_stage,
 )
 
 
@@ -38,9 +39,13 @@ class InMemoryRuns:
     def __init__(self) -> None:
         self.records: dict[UUID, StoredSimulationRun] = {}
         self.running: list[UUID] = []
-        self.completed: list[tuple[UUID, dict[str, object]]] = []
+        self.generating_audio: list[UUID] = []
+        self.completed: list[UUID] = []
         self.failed: list[tuple[UUID, str]] = []
         self.stored_results: list[tuple[UUID, dict[str, object]]] = []
+        self.stored_audio_artifacts: list[
+            tuple[UUID, list[dict[str, object]], dict[str, object]]
+        ] = []
 
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         return self.records.get(simulation_run_id)
@@ -53,6 +58,8 @@ class InMemoryRuns:
             case_file_id=record.case_file_id,
             status="running",
             result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=None,
             created_at=record.created_at,
             started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
@@ -71,8 +78,53 @@ class InMemoryRuns:
         updated = StoredSimulationRun(
             id=record.id,
             case_file_id=record.case_file_id,
-            status=record.status,
+            status="hearing_completed",
             result=result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
+            error_message=None,
+            created_at=record.created_at,
+            started_at=record.started_at,
+            completed_at=record.completed_at,
+        )
+        self.records[simulation_run_id] = updated
+        return updated
+
+    def mark_generating_audio(self, simulation_run_id: UUID) -> StoredSimulationRun:
+        self.generating_audio.append(simulation_run_id)
+        record = self.records[simulation_run_id]
+        updated = StoredSimulationRun(
+            id=record.id,
+            case_file_id=record.case_file_id,
+            status="generating_audio",
+            result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
+            error_message=None,
+            created_at=record.created_at,
+            started_at=record.started_at,
+            completed_at=record.completed_at,
+        )
+        self.records[simulation_run_id] = updated
+        return updated
+
+    def store_audio_artifacts(
+        self,
+        simulation_run_id: UUID,
+        audio_manifest: list[dict[str, object]],
+        audio_storage: dict[str, object],
+    ) -> StoredSimulationRun:
+        self.stored_audio_artifacts.append(
+            (simulation_run_id, audio_manifest, audio_storage)
+        )
+        record = self.records[simulation_run_id]
+        updated = StoredSimulationRun(
+            id=record.id,
+            case_file_id=record.case_file_id,
+            status=record.status,
+            result=record.result,
+            audio_manifest=audio_manifest,
+            audio_storage=audio_storage,
             error_message=None,
             created_at=record.created_at,
             started_at=record.started_at,
@@ -84,15 +136,16 @@ class InMemoryRuns:
     def mark_completed(
         self,
         simulation_run_id: UUID,
-        result: dict[str, object],
     ) -> StoredSimulationRun:
-        self.completed.append((simulation_run_id, result))
+        self.completed.append(simulation_run_id)
         record = self.records[simulation_run_id]
         updated = StoredSimulationRun(
             id=record.id,
             case_file_id=record.case_file_id,
             status="completed",
-            result=result,
+            result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=None,
             created_at=record.created_at,
             started_at=record.started_at,
@@ -113,6 +166,8 @@ class InMemoryRuns:
             case_file_id=record.case_file_id,
             status="failed",
             result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=error_message,
             created_at=record.created_at,
             started_at=record.started_at,
@@ -145,6 +200,8 @@ def build_pending_run(simulation_run_id: UUID, case_file_id: UUID) -> StoredSimu
         case_file_id=case_file_id,
         status="pending",
         result=None,
+        audio_manifest=None,
+        audio_storage=None,
         error_message=None,
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         started_at=None,
@@ -153,6 +210,43 @@ def build_pending_run(simulation_run_id: UUID, case_file_id: UUID) -> StoredSimu
 
 
 class SimulationPipelineTest(unittest.TestCase):
+    def build_audio_service(self) -> SimulationAudioService:
+        audio_service = MagicMock(spec=SimulationAudioService)
+        audio_service.generate_for_run.return_value = (
+            [
+                {
+                    "turnId": 1,
+                    "speakerId": "judge",
+                    "scene": "verdict",
+                    "text": "Rendered speech.",
+                    "cleanText": "Rendered speech.",
+                    "emotion": None,
+                    "audioUrl": "https://cdn.example/run/1.wav",
+                    "durationMs": 1500,
+                    "subtitleChunks": [
+                        {"text": "Rendered speech.", "startMs": 0, "endMs": 1500}
+                    ],
+                }
+            ],
+            {
+                "provider": "r2",
+                "turns": [
+                    {
+                        "turnId": 1,
+                        "speakerId": "judge",
+                        "bucket": "courtroom-audio",
+                        "key": "simulation-runs/run-1/audio/1.wav",
+                        "url": "https://cdn.example/run/1.wav",
+                        "contentType": "audio/wav",
+                        "sizeBytes": 1024,
+                        "voice": "af_sarah",
+                        "stylePreset": "measured",
+                    }
+                ],
+            },
+        )
+        return audio_service
+
     def test_generation_stage_marks_running_and_stores_result(self) -> None:
         simulation_run_id = uuid4()
         case_file_id = uuid4()
@@ -180,6 +274,10 @@ class SimulationPipelineTest(unittest.TestCase):
             runs.stored_results,
             [(simulation_run_id, {"run": {"run_id": "trial-1"}})],
         )
+        self.assertEqual(
+            runs.records[simulation_run_id].status,
+            "hearing_completed",
+        )
 
     def test_generation_stage_marks_failed_when_case_file_is_missing(self) -> None:
         simulation_run_id = uuid4()
@@ -203,48 +301,131 @@ class SimulationPipelineTest(unittest.TestCase):
         self.assertEqual(len(runs.failed), 1)
         self.assertIn("Case file not found", runs.failed[0][1])
 
-    def test_finalize_generation_stage_marks_completed(self) -> None:
+    def test_audio_generation_stage_marks_generating_audio_before_synthesis(self) -> None:
         simulation_run_id = uuid4()
         case_file_id = uuid4()
         runs = InMemoryRuns()
         runs.records[simulation_run_id] = StoredSimulationRun(
             id=simulation_run_id,
             case_file_id=case_file_id,
-            status="running",
+            status="hearing_completed",
             result={"run": {"run_id": "trial-1"}},
+            audio_manifest=None,
+            audio_storage=None,
             error_message=None,
             created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             completed_at=None,
         )
 
-        finalize_generation_stage(simulation_run_id, runs=runs)
-
-        self.assertEqual(
-            runs.completed,
-            [(simulation_run_id, {"run": {"run_id": "trial-1"}})],
+        execute_audio_generation_stage(
+            simulation_run_id,
+            case_files=InMemoryCaseFiles(build_case_file()),
+            runs=runs,
+            audio_service=self.build_audio_service(),
         )
 
-    def test_finalize_generation_stage_marks_failed_when_result_is_missing(self) -> None:
+        self.assertEqual(runs.generating_audio, [simulation_run_id])
+
+    def test_audio_generation_stage_stores_artifacts_and_completes(self) -> None:
         simulation_run_id = uuid4()
         case_file_id = uuid4()
         runs = InMemoryRuns()
         runs.records[simulation_run_id] = StoredSimulationRun(
             id=simulation_run_id,
             case_file_id=case_file_id,
-            status="running",
-            result=None,
+            status="generating_audio",
+            result={
+                "full_trial_transcript": [
+                    {
+                        "scene": "verdict",
+                        "speaker_id": "judge",
+                        "text": "Rendered speech.",
+                    }
+                ]
+            },
+            audio_manifest=None,
+            audio_storage=None,
             error_message=None,
             created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             completed_at=None,
         )
 
-        with self.assertRaisesRegex(RuntimeError, "has no generated result"):
-            finalize_generation_stage(simulation_run_id, runs=runs)
+        execute_audio_generation_stage(
+            simulation_run_id,
+            case_files=InMemoryCaseFiles(build_case_file()),
+            runs=runs,
+            audio_service=self.build_audio_service(),
+        )
+
+        self.assertEqual(len(runs.stored_audio_artifacts), 1)
+        self.assertEqual(runs.completed, [simulation_run_id])
+
+    def test_audio_generation_stage_marks_failed_when_result_is_missing(self) -> None:
+        simulation_run_id = uuid4()
+        case_file_id = uuid4()
+        runs = InMemoryRuns()
+        runs.records[simulation_run_id] = StoredSimulationRun(
+            id=simulation_run_id,
+            case_file_id=case_file_id,
+            status="generating_audio",
+            result=None,
+            audio_manifest=None,
+            audio_storage=None,
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=None,
+        )
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "has no generated result for audio synthesis",
+        ):
+            execute_audio_generation_stage(
+                simulation_run_id,
+                case_files=InMemoryCaseFiles(build_case_file()),
+                runs=runs,
+                audio_service=self.build_audio_service(),
+            )
 
         self.assertEqual(len(runs.failed), 1)
-        self.assertIn("has no generated result", runs.failed[0][1])
+
+    def test_audio_generation_stage_marks_failed_when_case_file_is_missing(self) -> None:
+        simulation_run_id = uuid4()
+        case_file_id = uuid4()
+        runs = InMemoryRuns()
+        runs.records[simulation_run_id] = StoredSimulationRun(
+            id=simulation_run_id,
+            case_file_id=case_file_id,
+            status="generating_audio",
+            result={
+                "full_trial_transcript": [
+                    {
+                        "scene": "verdict",
+                        "speaker_id": "judge",
+                        "text": "Rendered speech.",
+                    }
+                ]
+            },
+            audio_manifest=None,
+            audio_storage=None,
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=None,
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "Case file not found"):
+            execute_audio_generation_stage(
+                simulation_run_id,
+                case_files=InMemoryCaseFiles(None),
+                runs=runs,
+                audio_service=self.build_audio_service(),
+            )
+
+        self.assertEqual(len(runs.failed), 1)
 
     @patch("redis.Redis.from_url")
     @patch("rq.Queue")
@@ -257,10 +438,11 @@ class SimulationPipelineTest(unittest.TestCase):
         redis_from_url.return_value = redis_connection
         llm_queue = MagicMock()
         db_queue = MagicMock()
+        tts_queue = MagicMock()
         generation_job = MagicMock()
         generation_job.delete = MagicMock()
         llm_queue.enqueue.return_value = generation_job
-        queue_cls.side_effect = [llm_queue, db_queue]
+        queue_cls.side_effect = [llm_queue, tts_queue]
 
         queue = RqSimulationQueue("redis://localhost:6379/0")
         simulation_run_id = uuid4()
@@ -274,8 +456,8 @@ class SimulationPipelineTest(unittest.TestCase):
             str(case_file_id),
             job_timeout=RUN_TRIAL_JOB_TIMEOUT_SECONDS,
         )
-        db_queue.enqueue.assert_called_once_with(
-            "api_service.jobs.simulations.persist_generation_stage",
+        tts_queue.enqueue.assert_called_once_with(
+            "api_service.jobs.simulations.generate_audio_stage",
             str(simulation_run_id),
             depends_on=generation_job,
         )

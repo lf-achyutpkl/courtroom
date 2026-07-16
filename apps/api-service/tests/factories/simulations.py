@@ -15,6 +15,8 @@ def build_stored_simulation_run(
         case_file_id=case_file_id,
         status=status,  # type: ignore[arg-type]
         result=None,
+        audio_manifest=None,
+        audio_storage=None,
         error_message=None,
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         started_at=None,

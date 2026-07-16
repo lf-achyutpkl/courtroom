@@ -1,0 +1,41 @@
+{
+  "speaker_presets": {
+    "prosecution": {
+      "voice": "af_sarah",
+      "speed": 1.0,
+      "stylePreset": "authoritative"
+    },
+    "defense": {
+      "voice": "am_michael",
+      "speed": 1.0,
+      "stylePreset": "controlled"
+    },
+    "judge": {
+      "voice": "am_adam",
+      "speed": 0.95,
+      "stylePreset": "measured"
+    }
+  },
+  "speaker_class_presets": {
+    "prosecution_witness": {
+      "voice": "af_bella",
+      "speed": 1.0,
+      "stylePreset": "precise"
+    },
+    "defense_witness": {
+      "voice": "am_liam",
+      "speed": 1.0,
+      "stylePreset": "guarded"
+    },
+    "witness_default": {
+      "voice": "af_nicole",
+      "speed": 1.0,
+      "stylePreset": "neutral"
+    },
+    "default": {
+      "voice": "af_sarah",
+      "speed": 1.0,
+      "stylePreset": "neutral"
+    }
+  }
+}

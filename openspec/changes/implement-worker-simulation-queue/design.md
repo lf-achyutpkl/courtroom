@@ -1,14 +1,15 @@
 ## Context
 
-The API service already owns public FastAPI routes and Postgres persistence. The worker service is reserved for Redis/RQ background workers. The agent service owns LangGraph runtime code and exposes `run_trial` as the internal execution contract.
+The API service already owns public FastAPI routes and Postgres persistence. Redis/RQ background workers also live in the API service workspace, but run as separate processes. The agent service owns LangGraph runtime code and exposes `run_trial` as the internal execution contract.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Add a simple async start endpoint that records `pending` status and returns immediately.
-- Keep queueing, worker execution, and result persistence modular.
+- Keep queueing, worker execution, and result persistence modular inside one Python workspace.
 - Keep LangGraph isolated from queue and database side effects.
 - Provide testable protocol boundaries for repositories and queues.
+- Support dependent-job chaining across stage-specific queues so later TTS work can extend the pipeline without another workspace split.
 
 **Non-Goals:**
 - Add a full job dashboard or polling API beyond the persisted run record.
@@ -23,11 +24,11 @@ The API service owns public HTTP APIs. The endpoint validates the case file, cre
 
 ### 2. Use a worker wrapper for LangGraph completion
 
-The worker wrapper calls `agent_service.service.run_trial` and publishes either a success or failure message to the completion queue. LangGraph returns domain output and does not receive queue writers or persistence callbacks.
+The worker wrapper calls `agent_service.service.run_trial` and stores intermediate output on the simulation run. LangGraph returns domain output and does not receive queue writers or persistence callbacks.
 
-### 3. Persist results through a completion queue
+### 3. Use dependent jobs instead of a completion queue
 
-The simulation worker publishes completion messages to a second queue. A completion consumer updates `simulation_runs` to `completed` or `failed`.
+The API service enqueues a generation job on the LLM queue and a dependent persistence job on the DB queue. The first stage marks the run `running` and stores the generated result. The second stage, which only runs after generation succeeds, marks the run `completed`. Failures in either stage mark the run `failed`.
 
 ### 4. Store initial results as JSONB
 
@@ -38,12 +39,13 @@ The first table stores `result JSONB` and `error_message TEXT` so the contract c
 1. Client posts `{ "case_file_id": UUID }` to `POST /start-simulation`.
 2. API verifies the case file exists.
 3. API inserts `simulation_runs.status = 'pending'`.
-4. API enqueues `{ simulation_run_id, case_file_id }` to `simulation_jobs`.
-5. Simulation worker marks the run `running`, loads the case file, runs LangGraph, and publishes a completion message.
-6. Completion consumer writes the final result or failure to `simulation_runs`.
+4. API enqueues `{ simulation_run_id, case_file_id }` to the `simulation_llm` queue and creates a dependent DB job on `simulation_db`.
+5. LLM worker marks the run `running`, loads the case file, runs LangGraph, and stores the generated result on the run record.
+6. DB worker reads the stored result and marks the simulation run `completed`.
+7. Any worker-stage failure marks the run `failed` with an error message.
 
 ## Risks / Trade-offs
 
 - Redis/RQ introduces local infrastructure. Mitigation: keep adapters thin and inject protocols in tests.
-- The completion consumer is an extra moving part. Mitigation: make payloads small and database updates idempotent by run id.
+- Chained jobs across multiple queues are slightly harder to enqueue atomically. Mitigation: keep the enqueue adapter thin and use best-effort cleanup if the second enqueue fails.
 - JSONB result storage is broad. Mitigation: treat it as a v1 persistence envelope until a stronger shared schema is needed.

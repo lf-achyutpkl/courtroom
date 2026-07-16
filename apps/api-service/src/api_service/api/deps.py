@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from ..core.config import get_database_url, get_redis_url
+from ..queue.simulation_pipeline import RqSimulationQueue, SimulationQueue
 from ..repositories.case_files import CaseFileRepository, PostgresCaseFileRepository
 from ..repositories.simulation_runs import (
     PostgresSimulationRunRepository,
     SimulationRunRepository,
 )
-from ..services.simulation_queue import RqSimulationQueue, SimulationQueue
 
 
 def get_case_file_repository() -> CaseFileRepository:

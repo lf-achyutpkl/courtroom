@@ -11,7 +11,7 @@ Python and LangGraph runtime workspace behind the courtroom simulator.
 
 ## Status
 
-This workspace is actively being scaffolded. FastAPI route ownership now lives in `../api-service`, and future RQ worker process ownership is reserved for `../worker-service`.
+This workspace is actively being scaffolded. FastAPI route ownership and RQ worker process ownership live in `../api-service`.
 
 ## Local Development
 

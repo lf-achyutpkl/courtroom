@@ -1,4 +1,4 @@
-.PHONY: help web-dev web-build web-start web-lint api-dev api-test agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker-dev
+.PHONY: help web-dev web-build web-start web-lint api-dev api-test agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker-dev worker-llm worker-db
 
 help:
 	@echo "Available targets:"
@@ -11,7 +11,9 @@ help:
 	@echo "  agent-dev            Start the LangGraph dev server"
 	@echo "  agent-test           Run agent-service tests"
 	@echo "  agent-eval-baseline  Run the agent baseline evaluation"
-	@echo "  worker-dev           Start the worker service placeholder"
+	@echo "  worker-dev           Start API-owned background workers"
+	@echo "  worker-llm           Start the simulation LLM worker"
+	@echo "  worker-db            Start the simulation DB worker"
 
 web-dev:
 	pnpm --dir apps/web-app dev
@@ -41,4 +43,10 @@ agent-eval-baseline:
 	$(MAKE) -C apps/agent-service eval-baseline
 
 worker-dev:
-	$(MAKE) -C apps/worker-service dev
+	$(MAKE) -C apps/api-service worker-all
+
+worker-llm:
+	$(MAKE) -C apps/api-service worker-llm
+
+worker-db:
+	$(MAKE) -C apps/api-service worker-db

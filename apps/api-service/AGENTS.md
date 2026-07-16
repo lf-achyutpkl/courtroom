@@ -7,7 +7,7 @@ This file applies to `apps/api-service`.
 ## Purpose
 
 - Keep FastAPI HTTP API code, request/response routing, and backend application boundaries here.
-- Own normal product data access patterns and enqueue background jobs through the worker boundary.
+- Own normal product data access patterns, Redis/RQ worker entrypoints, and queue orchestration.
 - Do not place LangGraph graph orchestration, prompts, or simulation-agent internals here.
 - Do not place frontend UI code here.
 

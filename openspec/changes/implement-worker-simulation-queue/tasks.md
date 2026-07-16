@@ -10,15 +10,15 @@
 - [x] 2.3 Add `POST /start-simulation`
 - [x] 2.4 Add tests for success, missing case file, and enqueue failure
 
-## 3. Worker Service
+## 3. API-Owned Workers
 
-- [x] 3.1 Add worker-service Python package scaffold
-- [x] 3.2 Add queue payload models and queue adapters
-- [x] 3.3 Add simulation job handler that calls the agent-service runtime
-- [x] 3.4 Add completion consumer that updates simulation run status
+- [x] 3.1 Move worker job code into `apps/api-service`
+- [x] 3.2 Replace the completion queue with dependent LLM and DB jobs
+- [x] 3.3 Add API-service worker commands and pipeline orchestration
+- [x] 3.4 Delete the standalone `apps/worker-service` workspace
 
 ## 4. Verification
 
 - [x] 4.1 Run API service unit tests
-- [x] 4.2 Add focused worker unit tests for success and failure paths
+- [x] 4.2 Add focused pipeline unit tests for success and failure paths
 - [x] 4.3 Update local docs and environment examples

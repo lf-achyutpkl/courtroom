@@ -7,7 +7,10 @@ from uuid import UUID, uuid4
 
 from courtroom_domain import CaseFile
 
-from api_service.queue.simulation_pipeline import RqSimulationQueue
+from api_service.queue.simulation_pipeline import (
+    RUN_TRIAL_JOB_TIMEOUT_SECONDS,
+    RqSimulationQueue,
+)
 from api_service.repositories.simulation_runs import StoredSimulationRun
 from api_service.workflows.simulation_pipeline import (
     SimulationGenerationJob,
@@ -269,6 +272,7 @@ class SimulationPipelineTest(unittest.TestCase):
             "api_service.jobs.simulations.run_generation_stage",
             str(simulation_run_id),
             str(case_file_id),
+            job_timeout=RUN_TRIAL_JOB_TIMEOUT_SECONDS,
         )
         db_queue.enqueue.assert_called_once_with(
             "api_service.jobs.simulations.persist_generation_stage",

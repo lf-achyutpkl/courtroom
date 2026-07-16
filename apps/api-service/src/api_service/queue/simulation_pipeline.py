@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Protocol
 from uuid import UUID
 
+RUN_TRIAL_JOB_TIMEOUT_SECONDS = 15 * 60  # 15 minutes
+
 
 class SimulationQueue(Protocol):
     def enqueue_simulation(
@@ -42,6 +44,7 @@ class RqSimulationQueue:
                 "api_service.jobs.simulations.run_generation_stage",
                 str(simulation_run_id),
                 str(case_file_id),
+                job_timeout=RUN_TRIAL_JOB_TIMEOUT_SECONDS,
             )
             db_queue.enqueue(
                 "api_service.jobs.simulations.persist_generation_stage",

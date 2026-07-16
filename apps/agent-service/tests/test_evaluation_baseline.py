@@ -3,14 +3,20 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from courtroom_domain import TranscriptTurn
+
 from src.evaluation.baseline import build_baseline_report, calculate_aggregate_metrics
 from src.evaluation.reports import (
     PerCaseEvaluationResult,
     build_report_path,
     write_baseline_report,
 )
-from src.evaluation.rubric import RubricEvaluatorConfig, RubricScore, TokenUsage
-from courtroom_domain import TranscriptTurn
+from src.evaluation.rubric import (
+    RubricDimension,
+    RubricEvaluatorConfig,
+    RubricScore,
+    TokenUsage,
+)
 from src.utils.types import RunMetadata, RunTrialResponse
 from src.utils.validation import DeterministicValidationError
 
@@ -85,7 +91,15 @@ def rule_passing_runner(request):
     )
 
 
-def passing_rubric_judge(_rubric_input):
+def passing_rubric_judge(rubric_input):
+    dimensions: tuple[RubricDimension, ...] = (
+        "legal_grounding",
+        "procedural_realism",
+        "role_adherence",
+        "contradiction_handling",
+        "verdict_support",
+        "unsafe_content_handling",
+    )
     return {
         "scores": [
             RubricScore(
@@ -95,16 +109,9 @@ def passing_rubric_judge(_rubric_input):
                 passed=True,
                 rationale=f"{dimension} passed.",
             )
-            for dimension in [
-                "legal_grounding",
-                "procedural_realism",
-                "role_adherence",
-                "contradiction_handling",
-                "verdict_support",
-                "unsafe_content_handling",
-            ]
+            for dimension in dimensions
         ],
-        "rationale": "Rubric passed.",
+        "rationale": f"Rubric passed for {rubric_input.judge_model}.",
         "token_usage": TokenUsage(
             prompt_tokens=100,
             completion_tokens=20,
@@ -251,13 +258,18 @@ class BaselineWorkflowTest(unittest.TestCase):
             rubric_config=RubricEvaluatorConfig(judge_model="gpt-4o"),
         )
 
-        rubric_usage = report.case_results[0].cost_estimate.node_usage[0]
+        cost_estimate = report.case_results[0].cost_estimate
+        if cost_estimate is None:
+            raise AssertionError("expected cost estimate to be populated")
+        rubric_usage = cost_estimate.node_usage[0]
 
         self.assertEqual(rubric_usage.node_name, "llm_rubric")
         self.assertEqual(rubric_usage.stage, "eval")
         self.assertEqual(rubric_usage.model_name, "gpt-4o")
         self.assertEqual(rubric_usage.call_count, 1)
         self.assertEqual(rubric_usage.token_usage.total_tokens, 120)
+        if rubric_usage.cost is None:
+            raise AssertionError("expected rubric usage cost to be populated")
         self.assertEqual(str(rubric_usage.cost.total_cost_usd), "0.00045000")
         self.assertEqual(report.aggregate_metrics.llm_call_count, 3)
         self.assertEqual(report.aggregate_metrics.token_usage.total_tokens, 360)

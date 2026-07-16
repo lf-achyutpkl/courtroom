@@ -1,8 +1,7 @@
 from operator import add
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field
-from typing import Annotated
 
 from ...utils.types import CaseFile, NodeTelemetry, RulingOutput, TranscriptTurn
 

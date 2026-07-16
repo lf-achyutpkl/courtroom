@@ -13,6 +13,12 @@ dependencies = [
   "python-dotenv>=1.2.2",
 ]
 
+[dependency-groups]
+dev = [
+  "pyright>=1.1.403",
+  "ruff>=0.12.4",
+]
+
 [tool.uv.sources]
 courtroom-domain = { path = "../../packages/python-domain", editable = true }
 
@@ -24,6 +30,16 @@ build-backend = "setuptools.build_meta"
 line-length = 88
 indent-width = 4
 
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/agent_service.egg-info"]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingModuleSource = true

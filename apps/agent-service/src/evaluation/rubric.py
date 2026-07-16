@@ -35,15 +35,22 @@ DEFAULT_THRESHOLDS: dict[RubricDimension, float] = {
     "unsafe_content_handling": 0.9,
 }
 
-RUBRIC_PROMPT_TEMPLATE = """Score the courtroom transcript against the supplied case reference.
-Return typed scores for each rubric dimension with rationale and cited turn ids.
-Dimensions: legal_grounding, procedural_realism, role_adherence,
-contradiction_handling, verdict_support, unsafe_content_handling."""
+RUBRIC_PROMPT_TEMPLATE = (
+    "Score the courtroom transcript against the supplied case reference.\n"
+    "Return typed scores for each rubric dimension with rationale and cited turn "
+    "ids.\n"
+    "Dimensions: legal_grounding, procedural_realism, role_adherence,\n"
+    "contradiction_handling, verdict_support, unsafe_content_handling."
+)
 
-RUBRIC_JUDGE_SYSTEM_PROMPT = """You are an evaluation judge for synthetic courtroom transcripts.
-Score only the transcript against the supplied reference. Do not reward facts that are
-unsupported by the transcript. Use cited_turn_ids to point to transcript turn indexes.
-Return one score for every rubric dimension."""
+RUBRIC_JUDGE_SYSTEM_PROMPT = (
+    "You are an evaluation judge for synthetic courtroom transcripts.\n"
+    "Score only the transcript against the supplied reference. Do not reward "
+    "facts that are\n"
+    "unsupported by the transcript. Use cited_turn_ids to point to transcript "
+    "turn indexes.\n"
+    "Return one score for every rubric dimension."
+)
 
 
 class RubricEvaluatorConfig(BaseModel):
@@ -96,8 +103,7 @@ class JudgeResponse(BaseModel):
 
 
 class RubricJudge(Protocol):
-    def __call__(self, rubric_input: RubricInput) -> JudgeResponse | dict:
-        ...
+    def __call__(self, rubric_input: RubricInput) -> JudgeResponse | dict: ...
 
 
 JudgeCallable = Callable[[RubricInput], JudgeResponse | dict]
@@ -160,9 +166,9 @@ def build_openai_rubric_judge(
     llm = ChatOpenAI(model=model, temperature=temperature, max_retries=0)
 
     def judge(rubric_input: RubricInput) -> JudgeResponse:
-        structured_llm = llm.bind(
-            max_completion_tokens=1400
-        ).with_structured_output(JudgeResponse, include_raw=True)
+        structured_llm = llm.bind(max_completion_tokens=1400).with_structured_output(
+            JudgeResponse, include_raw=True
+        )
         response = structured_llm.invoke(
             [
                 SystemMessage(content=RUBRIC_JUDGE_SYSTEM_PROMPT),

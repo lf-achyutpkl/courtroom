@@ -1,9 +1,11 @@
 import unittest
+from typing import Literal, cast
 from unittest.mock import patch
 
-from src.service import run_trial
 from courtroom_domain import CaseFile, NodeTelemetry, TranscriptTurn, TrialState
-from src.utils.types import RunTrialRequest
+
+from src.service import run_trial
+from src.utils.types import RunMetadata, RunTrialRequest
 from src.utils.validation import DeterministicValidationError, validate_trial_run
 
 
@@ -91,10 +93,21 @@ def make_transcript(
         ruling = item[2] if len(item) == 3 else None
         turns.append(
             TranscriptTurn(
-                scene=scene,
+                scene=cast(
+                    Literal[
+                        "opening",
+                        "direct",
+                        "cross",
+                        "objection",
+                        "closing",
+                        "ruling",
+                        "verdict",
+                    ],
+                    scene,
+                ),
                 speaker_id=speaker_id,
                 text="Transcript turn.",
-                ruling=ruling,
+                ruling=cast(Literal["sustained", "overruled"] | None, ruling),
             )
         )
     return turns
@@ -153,7 +166,9 @@ class DeterministicValidationTest(unittest.TestCase):
             str(context.exception),
         )
 
-    def test_validate_trial_run_accepts_direct_cross_for_multiple_witnesses(self) -> None:
+    def test_validate_trial_run_accepts_direct_cross_for_multiple_witnesses(
+        self,
+    ) -> None:
         state = build_valid_state().model_copy(
             update={
                 "full_trial_transcript": make_transcript(
@@ -339,18 +354,17 @@ class DeterministicValidationTest(unittest.TestCase):
         self.assertIn(
             "verdict scene must be spoken by the judge", str(context.exception)
         )
+        generated_output = context.exception.generated_output
+        if generated_output is None:
+            raise AssertionError("expected generated output on validation failure")
         self.assertEqual(
-            context.exception.generated_output.run.case_id,
+            generated_output.run.case_id,
             invalid_state.case_file.case_id,
         )
-        self.assertFalse(
-            context.exception.generated_output.run.deterministic_validation_passed
-        )
+        self.assertFalse(generated_output.run.deterministic_validation_passed)
 
 
-def run_trial_metadata(state: TrialState):
-    from src.utils.types import RunMetadata
-
+def run_trial_metadata(state: TrialState) -> RunMetadata:
     return RunMetadata(
         run_id=state.run_id or "run-123",
         case_id=state.case_file.case_id,

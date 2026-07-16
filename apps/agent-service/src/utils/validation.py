@@ -85,9 +85,7 @@ def _validate_transcript_structure(
 
     for index, turn in enumerate(transcript):
         if turn.speaker_id not in valid_speakers:
-            errors.append(
-                f"turn {index} uses invalid speaker_id '{turn.speaker_id}'"
-            )
+            errors.append(f"turn {index} uses invalid speaker_id '{turn.speaker_id}'")
 
         seen_scenes.add(turn.scene)
         current_phase_rank = SCENE_PHASE_RANKS[turn.scene]
@@ -141,7 +139,9 @@ def _validate_transcript_structure(
             if previous_turn is not None and previous_turn.scene == "objection":
                 if question_before_ruling is None:
                     errors.append(
-                        f"turn {index} ruling must follow an objection to an attorney question"
+                        "turn "
+                        f"{index} ruling must follow an objection to an attorney "
+                        "question"
                     )
             elif (
                 previous_turn is None
@@ -177,14 +177,17 @@ def _validate_transcript_structure(
 
     missing_scenes = sorted(required_scenes - seen_scenes)
     if missing_scenes:
-        errors.append(f"transcript missing required scenes: {', '.join(missing_scenes)}")
+        errors.append(
+            f"transcript missing required scenes: {', '.join(missing_scenes)}"
+        )
 
     if transcript[-1].scene != "verdict":
         errors.append("final transcript turn must be the verdict")
 
     if witness_turn_without_question:
         errors.append(
-            "witness answers must follow an attorney question in the same examination phase"
+            "witness answers must follow an attorney question in the same "
+            "examination phase"
         )
 
 
@@ -204,40 +207,50 @@ def _validate_node_telemetry(telemetry: list[NodeTelemetry], errors: list[str]) 
             and completed_at < started_at
         ):
             errors.append(
-                f"node_telemetry[{index}] completed before it started for '{record.node_name}'"
+                "node_telemetry["
+                f"{index}] completed before it started for '{record.node_name}'"
             )
 
         if record.duration_ms < 0:
             errors.append(
-                f"node_telemetry[{index}] has negative duration for '{record.node_name}'"
+                "node_telemetry["
+                f"{index}] has negative duration for '{record.node_name}'"
             )
 
         if record.parse_success is False:
             errors.append(
-                f"node_telemetry[{index}] reports parse failure for '{record.node_name}'"
+                "node_telemetry["
+                f"{index}] reports parse failure for '{record.node_name}'"
             )
 
         if record.stage == "trial":
             if record.node_name not in TRIAL_NODE_SEQUENCE:
                 errors.append(
-                    f"node_telemetry[{index}] uses unknown trial node '{record.node_name}'"
+                    "node_telemetry["
+                    f"{index}] uses unknown trial node '{record.node_name}'"
                 )
             else:
                 trial_positions.append(TRIAL_NODE_ORDER_RANKS[record.node_name])
         elif record.node_name in WITNESS_NODE_SEQUENCE:
             if record.phase not in {"direct", "cross"}:
                 errors.append(
-                    f"node_telemetry[{index}] witness node '{record.node_name}' is missing a direct/cross phase"
+                    "node_telemetry["
+                    f"{index}] witness node '{record.node_name}' is missing a "
+                    "direct/cross phase"
                 )
             if not record.witness_id:
                 errors.append(
-                    f"node_telemetry[{index}] witness node '{record.node_name}' is missing witness_id"
+                    "node_telemetry["
+                    f"{index}] witness node '{record.node_name}' is missing "
+                    "witness_id"
                 )
 
     if trial_positions != sorted(trial_positions):
         errors.append("trial node telemetry is out of order")
 
-    trial_node_names = {record.node_name for record in telemetry if record.stage == "trial"}
+    trial_node_names = {
+        record.node_name for record in telemetry if record.stage == "trial"
+    }
     required_trial_nodes = {
         "plan_prosecution_strategy",
         "plan_defense_strategy",

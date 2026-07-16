@@ -1,12 +1,19 @@
-from pydantic import BaseModel, Field
 from typing import Literal, Optional
 
 from courtroom_domain import (
     CaseFile,
-    NodeTelemetry,
     TranscriptTurn,
-    WitnessProfile,
 )
+from courtroom_domain import (
+    NodeTelemetry as DomainNodeTelemetry,
+)
+from courtroom_domain import (
+    WitnessProfile as DomainWitnessProfile,
+)
+from pydantic import BaseModel, Field
+
+NodeTelemetry = DomainNodeTelemetry
+WitnessProfile = DomainWitnessProfile
 
 
 class RunMetadata(BaseModel):
@@ -41,7 +48,10 @@ class RunTrialResponse(BaseModel):
 class RulingOutput(BaseModel):
     decision: Literal["sustained", "overruled"]
     reasoning: str = Field(
-        description="Short spoken judicial reasoning with inline delivery tags like [measured], [firm], or [calm]."
+        description=(
+            "Short spoken judicial reasoning with inline delivery tags like "
+            "[measured], [firm], or [calm]."
+        )
     )
     retrieved_chunk_ids: list[str] = Field(default_factory=list)
     cited_chunk_ids: list[str] = Field(default_factory=list)
@@ -56,7 +66,10 @@ class WitnessPlan(BaseModel):
 
 class OpeningStatement(BaseModel):
     statement: str = Field(
-        description="Short spoken courtroom statement with inline delivery tags like [steady], [firm], or [measured]."
+        description=(
+            "Short spoken courtroom statement with inline delivery tags like "
+            "[steady], [firm], or [measured]."
+        )
     )
 
 
@@ -65,7 +78,10 @@ class ExaminationQuestion(BaseModel):
     references_evidence_id: Optional[str] = None
     is_final: bool = Field(
         default=False,
-        description="True if this attorney has no more questions for this witness in this phase.",
+        description=(
+            "True if this attorney has no more questions for this witness in "
+            "this phase."
+        ),
     )
 
 
@@ -86,7 +102,10 @@ class ObjectionDecision(BaseModel):
 
 class WitnessAnswer(BaseModel):
     answer_text: str = Field(
-        description="Short spoken witness answer with inline delivery tags like [nervous], [careful], or [flat]."
+        description=(
+            "Short spoken witness answer with inline delivery tags like "
+            "[nervous], [careful], or [flat]."
+        )
     )
 
 
@@ -96,5 +115,8 @@ class TrialSummary(BaseModel):
 
 class ClosingArgument(BaseModel):
     statement: str = Field(
-        description="Short spoken closing argument with inline delivery tags like [firm], [controlled], or [urgent]."
+        description=(
+            "Short spoken closing argument with inline delivery tags like "
+            "[firm], [controlled], or [urgent]."
+        )
     )

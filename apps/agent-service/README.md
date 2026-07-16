@@ -39,6 +39,28 @@ make langgraph-dev
 make test
 ```
 
+## Static Checks
+
+Install dev tooling with:
+
+```bash
+uv sync --group dev
+```
+
+Run lint, formatting, and import/type validation with:
+
+```bash
+make check
+```
+
+Run individual checks with:
+
+```bash
+make lint
+make format-check
+make typecheck
+```
+
 ## Evaluation Dataset
 
 The domain evaluation dataset lives at `evals/domain_evaluation_dataset.json`.

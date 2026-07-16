@@ -10,13 +10,13 @@ test:
 	OPENAI_API_KEY=dummy UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m unittest discover -s tests -p "test_*.py"
 
 worker-all:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run rq worker --url $(REDIS_URL) simulation_llm simulation_db
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m api_service.worker --url $(REDIS_URL) simulation_llm simulation_db
 
 worker-llm:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run rq worker --url $(REDIS_URL) simulation_llm
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m api_service.worker --url $(REDIS_URL) simulation_llm
 
 worker-db:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run rq worker --url $(REDIS_URL) simulation_db
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m api_service.worker --url $(REDIS_URL) simulation_db
 
 worker-tts:
-	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run rq worker --url $(REDIS_URL) simulation_tts
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m api_service.worker --url $(REDIS_URL) simulation_tts

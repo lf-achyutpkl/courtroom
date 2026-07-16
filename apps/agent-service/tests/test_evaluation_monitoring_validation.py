@@ -1,18 +1,23 @@
 import unittest
 
+from courtroom_domain import NodeTelemetry
+
 from src.evaluation.evaluators import EvaluatorResult
 from src.evaluation.monitoring import (
     alerts_for_deterministic_failure,
     alerts_for_evaluator_results,
     route_monitoring_records,
 )
-from src.evaluation.reports import AggregateMetrics, BaselineReport, PerCaseEvaluationResult
+from src.evaluation.reports import (
+    AggregateMetrics,
+    BaselineReport,
+    PerCaseEvaluationResult,
+)
 from src.evaluation.traceability import (
     EvaluationContext,
     export_node_spans,
     export_run_record,
 )
-from courtroom_domain import NodeTelemetry
 from src.utils.types import RunMetadata
 
 
@@ -53,7 +58,10 @@ class MonitoringValidationTest(unittest.TestCase):
         self.assertTrue(record.started_at)
         self.assertTrue(record.completed_at)
         self.assertTrue(record.deterministic_validation_passed)
-        self.assertEqual(record.evaluation_context.dataset_version, "domain-eval-v1")
+        evaluation_context = record.evaluation_context
+        if evaluation_context is None:
+            raise AssertionError("expected evaluation context to be present")
+        self.assertEqual(evaluation_context.dataset_version, "domain-eval-v1")
 
     def test_node_spans_include_latency_tokens_parse_and_error_fields(self) -> None:
         spans = export_node_spans(
@@ -102,8 +110,13 @@ class MonitoringValidationTest(unittest.TestCase):
             run=run_metadata(), results=[threshold_result]
         )
 
-        self.assertEqual(deterministic_records[0].route_reason, "deterministic_failure")
-        self.assertEqual(deterministic_alerts[0].trigger_name, "deterministic_validation_failed")
+        self.assertEqual(
+            deterministic_records[0].route_reason,
+            "deterministic_failure",
+        )
+        self.assertEqual(
+            deterministic_alerts[0].trigger_name, "deterministic_validation_failed"
+        )
         self.assertEqual(threshold_records[0].route_reason, "rule_reference_failure")
         self.assertEqual(threshold_alerts[0].trigger_name, "severe_evaluator_failure")
 
@@ -143,8 +156,14 @@ class MonitoringValidationTest(unittest.TestCase):
             created_at="2026-01-01T00:00:00+00:00",
         )
 
-        self.assertEqual(report.case_results[0].queue_decisions[0].route_reason, "deterministic_failure")
-        self.assertEqual(report.case_results[0].alert_summaries[0].routing_target, "evaluation-escalations")
+        self.assertEqual(
+            report.case_results[0].queue_decisions[0].route_reason,
+            "deterministic_failure",
+        )
+        self.assertEqual(
+            report.case_results[0].alert_summaries[0].routing_target,
+            "evaluation-escalations",
+        )
 
 
 if __name__ == "__main__":

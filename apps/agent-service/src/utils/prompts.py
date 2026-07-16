@@ -42,8 +42,7 @@ order. Calling zero witnesses is a valid strategic choice."""
         + "\n".join(render_witness_private(witness) for witness in own_witnesses)
         + "\n\nProsecution's witnesses on record (public knowledge only):\n"
         + "\n".join(
-            render_witness_public(witness)
-            for witness in opposing_public_witnesses
+            render_witness_public(witness) for witness in opposing_public_witnesses
         )
     )
     return system_prompt, user_prompt
@@ -107,7 +106,7 @@ def closing_defense_prompt(
 You are the defense. Deliver a closing argument based only on what was
 actually presented at trial with no new evidence. You may respond to the
 prosecution's closing argument below.
-{spoken_style_rules(5, 'a defense attorney delivering closing')}"""
+{spoken_style_rules(5, "a defense attorney delivering closing")}"""
     user_prompt = (
         f"Trial summary:\n{summary}\n\n"
         f"Prosecution's closing argument:\n{prosecution_closing}"
@@ -129,7 +128,7 @@ what was presented at trial and the evidence listed below.
 Your structured cited_chunk_ids must include the decisive evidence IDs from the
 case file that support the verdict. Do not cite IDs that are not listed. In the
 spoken reasoning, explicitly name the decisive facts tied to those evidence IDs.
-{spoken_style_rules(4, 'a judge delivering a verdict from the bench')}"""
+{spoken_style_rules(4, "a judge delivering a verdict from the bench")}"""
     user_prompt = (
         f"Trial summary:\n{summary}\n\n"
         f"Prosecution closing:\n{prosecution_closing}\n\n"

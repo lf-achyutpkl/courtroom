@@ -28,7 +28,8 @@ def ask_question_prompt(
       [pressing] in the question itself."""
 
     user_prompt = (
-        f"Questions asked by {attorney} in this phase so far: {prior_questions_this_phase}\n"
+        "Questions asked by "
+        f"{attorney} in this phase so far: {prior_questions_this_phase}\n"
         f"Recent examination transcript:\n{transcript_so_far or '(none yet)'}"
     )
     return system_prompt, user_prompt
@@ -37,10 +38,15 @@ def ask_question_prompt(
 def objection_check_prompt(
     state: WitnessExaminationState, opposing: str, last_question: str | None
 ) -> tuple[str, str]:
-    system_prompt = f"""You are {opposing}'s attorney. Evaluate the question just asked and decide
-      whether to object. Objection types: hearsay, leading, relevance, speculation,
-      character_evidence, argumentative. Only object when genuinely warranted.
-      Return a terse decision."""
+    system_prompt = (
+        f"You are {opposing}'s attorney. Evaluate the question just asked and "
+        "decide\n"
+        "  whether to object. Objection types: hearsay, leading, relevance, "
+        "speculation,\n"
+        "  character_evidence, argumentative. Only object when genuinely "
+        "warranted.\n"
+        "  Return a terse decision."
+    )
 
     user_prompt = (
         f"Examination phase: {state.examination_phase}\n"
@@ -57,11 +63,17 @@ def judge_ruling_prompt(
     question: str | None,
     chunks_text: str,
 ) -> tuple[str, str]:
-    system_prompt = f"""You are the presiding judge ruling on a {objection_type} objection.
-      Apply ordinary courtroom evidence principles conservatively. If retrieved
-      rules/precedent are provided, base your ruling and reasoning on them and cite
-      only chunk_ids that appear below. Keep the ruling concise.
-      The spoken ruling must include inline delivery tags for TTS/frontend use."""
+    system_prompt = (
+        "You are the presiding judge ruling on a "
+        f"{objection_type} objection.\n"
+        "  Apply ordinary courtroom evidence principles conservatively. If "
+        "retrieved\n"
+        "  rules/precedent are provided, base your ruling and reasoning on "
+        "them and cite\n"
+        "  only chunk_ids that appear below. Keep the ruling concise.\n"
+        "  The spoken ruling must include inline delivery tags for TTS/frontend "
+        "use."
+    )
 
     user_prompt = (
         f"Examination phase: {state.examination_phase}\n"

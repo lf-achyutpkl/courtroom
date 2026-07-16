@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
-
-from pydantic import BaseModel, Field
+from decimal import ROUND_HALF_UP, Decimal
 
 from courtroom_domain import NodeTelemetry
+from pydantic import BaseModel, Field
 
 
 class ModelTokenRate(BaseModel, frozen=True):
@@ -172,12 +171,11 @@ def combine_cost_estimate_summaries(
     summaries = [summary for summary in summaries if summary is not None]
     rates = model_rates or DEFAULT_MODEL_TOKEN_RATES
     total_cost = sum(
-        (summary.total_cost_usd or Decimal("0")) for summary in summaries
+        ((summary.total_cost_usd or Decimal("0")) for summary in summaries),
+        Decimal("0"),
     )
     node_usage = [
-        node_usage
-        for summary in summaries
-        for node_usage in summary.node_usage
+        node_usage for summary in summaries for node_usage in summary.node_usage
     ]
 
     return CostEstimateSummary(
@@ -191,7 +189,9 @@ def combine_cost_estimate_summaries(
                 summary.token_usage.completion_tokens for summary in summaries
             ),
             total_tokens=sum(summary.token_usage.total_tokens for summary in summaries),
-            cached_tokens=sum(summary.token_usage.cached_tokens for summary in summaries),
+            cached_tokens=sum(
+                summary.token_usage.cached_tokens for summary in summaries
+            ),
             cache_write_tokens=sum(
                 summary.token_usage.cache_write_tokens for summary in summaries
             ),
@@ -201,11 +201,7 @@ def combine_cost_estimate_summaries(
         ),
         total_cost_usd=total_cost.quantize(_COST_QUANT, rounding=ROUND_HALF_UP),
         unpriced_models=sorted(
-            {
-                model
-                for summary in summaries
-                for model in summary.unpriced_models
-            }
+            {model for summary in summaries for model in summary.unpriced_models}
         ),
         node_usage=node_usage,
     )

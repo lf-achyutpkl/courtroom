@@ -1,8 +1,9 @@
 import unittest
 
+from courtroom_domain import TranscriptTurn
+
 from src.evaluation.dataset import load_dataset
 from src.evaluation.evaluators import evaluate_rule_reference
-from courtroom_domain import TranscriptTurn
 from src.utils.types import RunMetadata, RunTrialResponse
 
 
@@ -34,7 +35,9 @@ class RuleReferenceEvaluatorTest(unittest.TestCase):
     def test_passing_transcript(self) -> None:
         response = response_for(
             [
-                TranscriptTurn(scene="opening", speaker_id="prosecution", text="Opening."),
+                TranscriptTurn(
+                    scene="opening", speaker_id="prosecution", text="Opening."
+                ),
                 TranscriptTurn(
                     scene="direct",
                     speaker_id="W-auditor",
@@ -75,7 +78,11 @@ class RuleReferenceEvaluatorTest(unittest.TestCase):
 
         results = evaluate_rule_reference(response=response, case=self.normal_case)
         evidence_result = next(
-            result for result in results if result.evaluator_name == "evidence_reference"
+            (
+                result
+                for result in results
+                if result.evaluator_name == "evidence_reference"
+            )
         )
 
         self.assertFalse(evidence_result.passed)
@@ -84,7 +91,9 @@ class RuleReferenceEvaluatorTest(unittest.TestCase):
     def test_verdict_missing_required_support_fails(self) -> None:
         response = response_for(
             [
-                TranscriptTurn(scene="opening", speaker_id="prosecution", text="Opening."),
+                TranscriptTurn(
+                    scene="opening", speaker_id="prosecution", text="Opening."
+                ),
                 TranscriptTurn(scene="closing", speaker_id="defense", text="Closing."),
                 TranscriptTurn(
                     scene="verdict",

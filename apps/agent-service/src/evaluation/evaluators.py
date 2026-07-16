@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Literal
 
+from courtroom_domain import TranscriptTurn
 from pydantic import BaseModel, Field
 
 from src.evaluation.dataset import EvaluationCase, EvaluationReference
-from courtroom_domain import TranscriptTurn
 from src.utils.types import RunTrialResponse
 
 EVALUATOR_VERSION = "v1"
@@ -35,9 +35,7 @@ def _all_text(transcript: list[TranscriptTurn]) -> str:
     return " ".join(turn.text for turn in transcript).lower()
 
 
-def _turn_ids_with_phrase(
-    transcript: list[TranscriptTurn], phrase: str
-) -> list[int]:
+def _turn_ids_with_phrase(transcript: list[TranscriptTurn], phrase: str) -> list[int]:
     phrase_lower = phrase.lower()
     return [
         index
@@ -91,7 +89,9 @@ def check_evidence_references(
                 findings.append(
                     EvaluatorFinding(
                         code="unsupported_evidence_reference",
-                        message=f"Turn {index} cites unknown evidence id {evidence_id}.",
+                        message=(
+                            f"Turn {index} cites unknown evidence id {evidence_id}."
+                        ),
                         severity="high",
                         related_turn_ids=[index],
                         related_evidence_ids=[evidence_id],
@@ -127,7 +127,9 @@ def check_verdict_support(
 ) -> EvaluatorResult:
     findings: list[EvaluatorFinding] = []
     verdict_turns = [
-        (index, turn) for index, turn in enumerate(transcript) if turn.scene == "verdict"
+        (index, turn)
+        for index, turn in enumerate(transcript)
+        if turn.scene == "verdict"
     ]
     verdict_citations = {
         evidence_id
@@ -153,7 +155,9 @@ def check_verdict_support(
             findings.append(
                 EvaluatorFinding(
                     code="verdict_missing_required_fact",
-                    message=f"Verdict did not reference required fact phrase '{phrase}'.",
+                    message=(
+                        f"Verdict did not reference required fact phrase '{phrase}'."
+                    ),
                     severity="medium",
                     related_turn_ids=[index for index, _ in verdict_turns],
                 )
@@ -216,7 +220,9 @@ def check_unsupported_legal_claims(
             findings.append(
                 EvaluatorFinding(
                     code="unsupported_legal_or_fact_claim",
-                    message=f"Transcript contains forbidden unsupported claim '{phrase}'.",
+                    message=(
+                        f"Transcript contains forbidden unsupported claim '{phrase}'."
+                    ),
                     severity="high",
                     related_turn_ids=turn_ids,
                 )
@@ -258,9 +264,7 @@ def evaluate_rule_reference(
     if not response.run.deterministic_validation_passed:
         return []
 
-    valid_evidence_ids = {
-        evidence.evidence_id for evidence in case.case_file.evidence
-    }
+    valid_evidence_ids = {evidence.evidence_id for evidence in case.case_file.evidence}
     transcript = response.full_trial_transcript
     return [
         check_evidence_references(transcript, case.reference, valid_evidence_ids),

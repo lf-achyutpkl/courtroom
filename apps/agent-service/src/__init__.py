@@ -1,6 +1,13 @@
+from typing import TYPE_CHECKING, Any
+
 from .utils import types
 from .utils.state import TrialState
 from .utils.types import RunTrialRequest, RunTrialResponse
+
+if TYPE_CHECKING:
+    from .service import run_trial
+    from .utils import llm
+    from .utils.llm import invoke_structured as invoke
 
 __all__ = [
     "types",
@@ -13,7 +20,7 @@ __all__ = [
 ]
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> Any:
     if name == "llm":
         from .utils import llm
 

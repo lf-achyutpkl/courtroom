@@ -27,6 +27,12 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.2.2" },
 ]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyright", specifier = ">=1.1.403" },
+    { name = "ruff", specifier = ">=0.12.4" },
+]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"

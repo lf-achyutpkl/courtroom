@@ -1,16 +1,18 @@
 import unittest
 
+from courtroom_domain import TranscriptTurn
+
 from src.evaluation.dataset import load_dataset
 from src.evaluation.evaluators import EvaluatorResult
 from src.evaluation.rubric import (
     DEFAULT_JUDGE_MODEL,
     RUBRIC_PROMPT_VERSION,
+    RubricDimension,
     RubricEvaluatorConfig,
     RubricScore,
     TokenUsage,
     evaluate_rubric,
 )
-from courtroom_domain import TranscriptTurn
 from src.utils.types import RunMetadata, RunTrialResponse
 
 
@@ -41,7 +43,7 @@ def response_for(deterministic_valid=True):
     )
 
 
-def score(dimension, value):
+def score(dimension: RubricDimension, value: float) -> RubricScore:
     return RubricScore(
         dimension=dimension,
         score=value,
@@ -82,7 +84,10 @@ class RubricEvaluatorTest(unittest.TestCase):
         self.assertEqual(results[0].evaluator_model, DEFAULT_JUDGE_MODEL)
         self.assertEqual(results[0].evaluator_prompt_version, RUBRIC_PROMPT_VERSION)
         self.assertTrue(results[0].passed)
-        self.assertEqual(results[0].token_usage.total_tokens, 120)
+        token_usage = results[0].token_usage
+        if token_usage is None:
+            raise AssertionError("expected rubric token usage to be present")
+        self.assertEqual(token_usage.total_tokens, 120)
 
     def test_threshold_failure(self) -> None:
         def failing_judge(_rubric_input):

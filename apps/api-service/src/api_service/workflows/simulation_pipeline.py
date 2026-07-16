@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Callable
 from uuid import UUID
@@ -74,12 +77,38 @@ def _run_trial(case_file: CaseFile) -> dict[str, object]:
     return response.model_dump(mode="json")
 
 
+@lru_cache(maxsize=1)
 def _load_agent_service_contract() -> tuple[Callable[[object], object], type]:
-    agent_service_root = Path(__file__).resolve().parents[4] / "agent-service"
-    if agent_service_root.exists():
-        sys.path.insert(0, str(agent_service_root))
+    try:
+        service_module = importlib.import_module("src.service")
+        types_module = importlib.import_module("src.utils.types")
+    except ModuleNotFoundError as exc:
+        agent_service_root = Path(__file__).resolve().parents[4] / "agent-service"
+        if not agent_service_root.exists():
+            raise RuntimeError(
+                f"Agent service workspace not found at {agent_service_root}."
+            ) from exc
 
-    from src.service import run_trial
-    from src.utils.types import RunTrialRequest
+        package_name = "_agent_service_runtime"
+        package_root = agent_service_root / "src"
+        package_init = package_root / "__init__.py"
+        package = sys.modules.get(package_name)
+        if package is None:
+            spec = importlib.util.spec_from_file_location(
+                package_name,
+                package_init,
+                submodule_search_locations=[str(package_root)],
+            )
+            if spec is None or spec.loader is None:
+                raise RuntimeError(
+                    f"Unable to load agent service package from {package_root}."
+                ) from exc
 
-    return run_trial, RunTrialRequest
+            package = importlib.util.module_from_spec(spec)
+            sys.modules[package_name] = package
+            spec.loader.exec_module(package)
+
+        service_module = importlib.import_module(f"{package_name}.service")
+        types_module = importlib.import_module(f"{package_name}.utils.types")
+
+    return service_module.run_trial, types_module.RunTrialRequest

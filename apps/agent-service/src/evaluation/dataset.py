@@ -4,9 +4,8 @@ import json
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from courtroom_domain import CaseFile
+from pydantic import BaseModel, Field
 
 DEFAULT_DATASET_VERSION = "domain-eval-v1"
 DEFAULT_DATASET_PATH = (

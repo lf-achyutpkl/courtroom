@@ -1,25 +1,26 @@
 from typing import Literal
 
+from ...utils import llm, types
 from ...utils.config import TRIAL_CONFIG
 from ...utils.helpers import (
     get_witness_by_id,
     render_witness_private,
     render_witness_public,
 )
+from ...utils.llm import invoke_structured
 from .helpers import (
-    format_recent_testimony,
     append_witness_turn,
     current_phase_question_count,
-    should_end_phase,
+    format_recent_testimony,
     phase_complete_next_node,
+    should_end_phase,
 )
 from .prompts import (
     ask_question_prompt,
-    objection_check_prompt,
     judge_ruling_prompt,
+    objection_check_prompt,
     witness_answer_prompt,
 )
-from ... import invoke, llm, types
 from .state import WitnessExaminationState
 
 
@@ -54,7 +55,7 @@ def ask_question_node(state: WitnessExaminationState) -> dict:
     )
     telemetry: list[types.NodeTelemetry] = []
 
-    result: types.ExaminationQuestion = invoke(
+    result: types.ExaminationQuestion = invoke_structured(
         system_prompt,
         user_prompt,
         types.ExaminationQuestion,
@@ -92,7 +93,7 @@ def objection_check_node(state: WitnessExaminationState) -> dict:
     system_prompt, user_prompt = objection_check_prompt(state, opposing, last_question)
     telemetry: list[types.NodeTelemetry] = []
 
-    result: types.ObjectionDecision = invoke(
+    result: types.ObjectionDecision = invoke_structured(
         system_prompt,
         user_prompt,
         types.ObjectionDecision,
@@ -134,7 +135,7 @@ def judge_ruling_node(state: WitnessExaminationState) -> dict:
     )
     telemetry: list[types.NodeTelemetry] = []
 
-    result: types.RulingOutput = invoke(
+    result: types.RulingOutput = invoke_structured(
         system_prompt,
         user_prompt,
         types.RulingOutput,
@@ -176,7 +177,7 @@ def witness_answer_node(state: WitnessExaminationState) -> dict:
     )
     telemetry: list[types.NodeTelemetry] = []
 
-    result: types.WitnessAnswer = invoke(
+    result: types.WitnessAnswer = invoke_structured(
         system_prompt,
         user_prompt,
         types.WitnessAnswer,
@@ -234,6 +235,9 @@ def route_after_objection_check(
 
 
 def route_after_ruling(state: WitnessExaminationState):
+    if state.last_ruling is None:
+        raise ValueError("last_ruling must be set before routing after a ruling")
+
     if state.last_ruling.decision != "sustained":
         next_node = "witness_answer"
     elif should_end_phase(state):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import uuid4
 
 from courtroom_domain import CaseFile
@@ -117,7 +118,8 @@ def test_audio_service_builds_manifest_and_storage_metadata() -> None:
 
     assert len(manifest) == 1
     assert manifest[0]["cleanText"] == "I reviewed the ledger entries."
-    assert manifest[0]["audioUrl"] == audio_storage["turns"][0]["url"]
+    stored_turns = cast(list[dict[str, object]], audio_storage["turns"])
+    assert manifest[0]["audioUrl"] == stored_turns[0]["url"]
     assert storage.keys[0].endswith("/audio/1.wav")
     assert provider.calls[0][1] == "af_bella"
 

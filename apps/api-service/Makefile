@@ -1,7 +1,18 @@
 UV_CACHE_DIR ?= /tmp/uv-cache
 REDIS_URL ?= redis://localhost:6379/0
 
-.PHONY: dev test worker-all worker-llm worker-tts
+.PHONY: check lint format-check typecheck dev test worker-all worker-llm worker-tts
+
+check: lint format-check typecheck
+
+lint:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run ruff check .
+
+format-check:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run ruff format --check .
+
+typecheck:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run pyright
 
 dev:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run uvicorn api_service.main:app --reload

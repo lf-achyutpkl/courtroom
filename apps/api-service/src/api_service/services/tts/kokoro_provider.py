@@ -3,6 +3,8 @@ from __future__ import annotations
 import io
 import wave
 from functools import cached_property
+from importlib import import_module
+from typing import Any
 
 from .base import GeneratedSpeech, TtsProvider
 
@@ -12,15 +14,18 @@ SAMPLE_RATE_HZ = 24000
 
 class KokoroTtsProvider(TtsProvider):
     @cached_property
-    def _pipeline(self):
+    def _pipeline(self) -> Any:
         try:
-            from kokoro import KPipeline
+            kokoro_module = import_module("kokoro")
         except ImportError as exc:
             raise RuntimeError(
                 "Kokoro is not installed. Install the api-service TTS dependencies before running the audio worker."
             ) from exc
 
-        return KPipeline(lang_code="a")
+        pipeline_cls = getattr(kokoro_module, "KPipeline", None)
+        if pipeline_cls is None:
+            raise RuntimeError("Kokoro KPipeline implementation is unavailable.")
+        return pipeline_cls(lang_code="a")
 
     def synthesize(
         self,
@@ -53,4 +58,6 @@ class KokoroTtsProvider(TtsProvider):
             wav_file.writeframes((samples * 32767).astype(np.int16).tobytes())
 
         duration_ms = round((len(samples) / SAMPLE_RATE_HZ) * 1000)
-        return GeneratedSpeech(audio_bytes=wav_buffer.getvalue(), duration_ms=duration_ms)
+        return GeneratedSpeech(
+            audio_bytes=wav_buffer.getvalue(), duration_ms=duration_ms
+        )

@@ -13,6 +13,7 @@ class SimulationQueue(Protocol):
         case_file_id: UUID,
     ) -> None:
         """Enqueue the chained simulation pipeline."""
+        ...
 
 
 class RqSimulationQueue:

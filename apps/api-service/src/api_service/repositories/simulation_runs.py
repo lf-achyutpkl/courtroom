@@ -38,12 +38,15 @@ class StoredSimulationRun:
 class SimulationRunRepository(Protocol):
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         """Return a stored simulation run by id."""
+        ...
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         """Create a pending simulation run for a stored case file."""
+        ...
 
     def mark_running(self, simulation_run_id: UUID) -> StoredSimulationRun:
         """Mark a simulation run as running."""
+        ...
 
     def store_result(
         self,
@@ -51,9 +54,11 @@ class SimulationRunRepository(Protocol):
         result: dict[str, object],
     ) -> StoredSimulationRun:
         """Store the generated trial result and mark the hearing as completed."""
+        ...
 
     def mark_generating_audio(self, simulation_run_id: UUID) -> StoredSimulationRun:
         """Mark a simulation run as generating audio."""
+        ...
 
     def store_audio_artifacts(
         self,
@@ -62,12 +67,14 @@ class SimulationRunRepository(Protocol):
         audio_storage: dict[str, object],
     ) -> StoredSimulationRun:
         """Store generated audio manifest and storage references."""
+        ...
 
     def mark_completed(
         self,
         simulation_run_id: UUID,
     ) -> StoredSimulationRun:
         """Mark a simulation run as completed."""
+        ...
 
     def mark_failed(
         self,
@@ -75,6 +82,7 @@ class SimulationRunRepository(Protocol):
         error_message: str,
     ) -> StoredSimulationRun:
         """Mark a simulation run as failed with a human-readable error."""
+        ...
 
 
 class PostgresSimulationRunRepository:

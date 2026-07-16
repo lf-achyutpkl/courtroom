@@ -11,6 +11,7 @@ from api_service.queue.simulation_pipeline import (
     RUN_TRIAL_JOB_TIMEOUT_SECONDS,
     RqSimulationQueue,
 )
+from api_service.repositories.case_files import StoredCaseFile
 from api_service.repositories.simulation_runs import StoredSimulationRun
 from api_service.services.tts.service import SimulationAudioService
 from api_service.workflows.simulation_pipeline import (
@@ -24,15 +25,22 @@ class InMemoryCaseFiles:
     def __init__(self, case_file: CaseFile | None) -> None:
         self.case_file = case_file
 
-    def get(self, case_file_id: UUID):
+    def create(self, case_file: CaseFile) -> StoredCaseFile:
+        return StoredCaseFile(
+            id=uuid4(),
+            case_file=case_file,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
+
+    def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         if self.case_file is None:
             return None
 
-        return type(
-            "StoredCaseFile",
-            (),
-            {"id": case_file_id, "case_file": self.case_file},
-        )()
+        return StoredCaseFile(
+            id=case_file_id,
+            case_file=self.case_file,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        )
 
 
 class InMemoryRuns:
@@ -49,6 +57,12 @@ class InMemoryRuns:
 
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         return self.records.get(simulation_run_id)
+
+    def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
+        simulation_run_id = uuid4()
+        record = build_pending_run(simulation_run_id, case_file_id)
+        self.records[simulation_run_id] = record
+        return record
 
     def mark_running(self, simulation_run_id: UUID) -> StoredSimulationRun:
         self.running.append(simulation_run_id)
@@ -194,7 +208,9 @@ def build_case_file() -> CaseFile:
     )
 
 
-def build_pending_run(simulation_run_id: UUID, case_file_id: UUID) -> StoredSimulationRun:
+def build_pending_run(
+    simulation_run_id: UUID, case_file_id: UUID
+) -> StoredSimulationRun:
     return StoredSimulationRun(
         id=simulation_run_id,
         case_file_id=case_file_id,
@@ -301,7 +317,9 @@ class SimulationPipelineTest(unittest.TestCase):
         self.assertEqual(len(runs.failed), 1)
         self.assertIn("Case file not found", runs.failed[0][1])
 
-    def test_audio_generation_stage_marks_generating_audio_before_synthesis(self) -> None:
+    def test_audio_generation_stage_marks_generating_audio_before_synthesis(
+        self,
+    ) -> None:
         simulation_run_id = uuid4()
         case_file_id = uuid4()
         runs = InMemoryRuns()
@@ -392,7 +410,9 @@ class SimulationPipelineTest(unittest.TestCase):
 
         self.assertEqual(len(runs.failed), 1)
 
-    def test_audio_generation_stage_marks_failed_when_case_file_is_missing(self) -> None:
+    def test_audio_generation_stage_marks_failed_when_case_file_is_missing(
+        self,
+    ) -> None:
         simulation_run_id = uuid4()
         case_file_id = uuid4()
         runs = InMemoryRuns()
@@ -437,7 +457,6 @@ class SimulationPipelineTest(unittest.TestCase):
         redis_connection = object()
         redis_from_url.return_value = redis_connection
         llm_queue = MagicMock()
-        db_queue = MagicMock()
         tts_queue = MagicMock()
         generation_job = MagicMock()
         generation_job.delete = MagicMock()

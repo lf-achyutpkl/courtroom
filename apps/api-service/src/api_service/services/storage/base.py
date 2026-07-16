@@ -22,3 +22,4 @@ class ObjectStorageService(Protocol):
         content_type: str,
     ) -> StoredObject:
         """Upload a blob and return its stable storage reference."""
+        ...

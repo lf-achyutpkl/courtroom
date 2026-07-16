@@ -19,6 +19,7 @@ cp .env.example .env
 
 Update `DATABASE_URL` in `.env` if you are not using the local default.
 Set `REDIS_URL` when using a non-default Redis instance for background jobs.
+Set the `R2_*` variables and `TTS_PROVIDER` before starting the audio worker.
 
 Start the API service with:
 
@@ -36,8 +37,13 @@ Or start queue-specific workers:
 
 ```bash
 make worker-llm
-make worker-db
+make worker-tts
 ```
+
+The simulation pipeline now runs in two worker-owned stages:
+
+1. `simulation_llm` generates the trial result, stores it immediately, and marks the run `hearing_completed`
+2. `simulation_tts` marks the run `generating_audio`, synthesizes speech, uploads turn audio to Cloudflare R2, and only then marks the run `completed`
 
 The current case file API exposes:
 

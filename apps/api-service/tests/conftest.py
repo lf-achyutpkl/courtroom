@@ -38,6 +38,8 @@ def simulation_run_factory(fixed_datetime: datetime):
             case_file_id=case_file_id,
             status="pending",
             result=None,
+            audio_manifest=None,
+            audio_storage=None,
             error_message=None,
             created_at=fixed_datetime,
             started_at=None,

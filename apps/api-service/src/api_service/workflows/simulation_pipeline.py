@@ -13,6 +13,7 @@ from courtroom_domain import CaseFile
 
 from ..repositories.case_files import CaseFileRepository
 from ..repositories.simulation_runs import SimulationRunRepository
+from ..services.tts import SimulationAudioService
 
 
 @dataclass(frozen=True)
@@ -41,9 +42,12 @@ def execute_generation_stage(
         raise
 
 
-def finalize_generation_stage(
+def execute_audio_generation_stage(
     simulation_run_id: UUID,
+    *,
+    case_files: CaseFileRepository,
     runs: SimulationRunRepository,
+    audio_service: SimulationAudioService,
 ) -> None:
     try:
         run = runs.get(simulation_run_id)
@@ -51,10 +55,25 @@ def finalize_generation_stage(
             raise RuntimeError(f"Simulation run not found: {simulation_run_id}")
         if run.result is None:
             raise RuntimeError(
-                f"Simulation run {simulation_run_id} has no generated result to persist."
+                f"Simulation run {simulation_run_id} has no generated result for audio synthesis."
             )
 
-        runs.mark_completed(simulation_run_id, run.result)
+        case_file = case_files.get(run.case_file_id)
+        if case_file is None:
+            raise RuntimeError(f"Case file not found: {run.case_file_id}")
+
+        runs.mark_generating_audio(simulation_run_id)
+        audio_manifest, audio_storage = audio_service.generate_for_run(
+            simulation_run_id=simulation_run_id,
+            case_file=case_file.case_file,
+            simulation_result=run.result,
+        )
+        runs.store_audio_artifacts(
+            simulation_run_id,
+            audio_manifest=audio_manifest,
+            audio_storage=audio_storage,
+        )
+        runs.mark_completed(simulation_run_id)
     except Exception as exc:
         _mark_failed(runs, simulation_run_id, exc)
         raise

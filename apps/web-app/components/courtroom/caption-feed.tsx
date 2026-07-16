@@ -10,7 +10,7 @@ export function CaptionFeed({
       <div className="flex items-center justify-center text-center gap-4">
         <p className="max-w-3xl text-center text-sm leading-6 text-[var(--foreground)]/88 sm:text-[0.96rem] lg:text-[0.92rem] lg:leading-[1.55]">
           {currentSubtitle?.text ??
-            "Generate Kokoro audio into public/audio and the player will swap from preview pacing to real speech automatically."}
+            "Preview playback uses estimated timing until backend-generated audio is connected."}
         </p>
       </div>
     </div>

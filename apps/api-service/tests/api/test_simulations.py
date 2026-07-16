@@ -44,6 +44,8 @@ class InMemorySimulationRunRepository:
             case_file_id=case_file_id,
             status="pending",
             result=None,
+            audio_manifest=None,
+            audio_storage=None,
             error_message=None,
             created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
             started_at=None,
@@ -59,6 +61,8 @@ class InMemorySimulationRunRepository:
             case_file_id=record.case_file_id,
             status="running",
             result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=None,
             created_at=record.created_at,
             started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
@@ -67,7 +71,7 @@ class InMemorySimulationRunRepository:
         self.records[simulation_run_id] = updated
         return updated
 
-    def mark_completed(
+    def store_result(
         self,
         simulation_run_id: UUID,
         result: dict[str, object],
@@ -76,8 +80,69 @@ class InMemorySimulationRunRepository:
         updated = StoredSimulationRun(
             id=record.id,
             case_file_id=record.case_file_id,
-            status="completed",
+            status="hearing_completed",
             result=result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
+            error_message=None,
+            created_at=record.created_at,
+            started_at=record.started_at,
+            completed_at=record.completed_at,
+        )
+        self.records[simulation_run_id] = updated
+        return updated
+
+    def mark_generating_audio(self, simulation_run_id: UUID) -> StoredSimulationRun:
+        record = self.records[simulation_run_id]
+        updated = StoredSimulationRun(
+            id=record.id,
+            case_file_id=record.case_file_id,
+            status="generating_audio",
+            result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
+            error_message=None,
+            created_at=record.created_at,
+            started_at=record.started_at,
+            completed_at=record.completed_at,
+        )
+        self.records[simulation_run_id] = updated
+        return updated
+
+    def store_audio_artifacts(
+        self,
+        simulation_run_id: UUID,
+        audio_manifest: list[dict[str, object]],
+        audio_storage: dict[str, object],
+    ) -> StoredSimulationRun:
+        record = self.records[simulation_run_id]
+        updated = StoredSimulationRun(
+            id=record.id,
+            case_file_id=record.case_file_id,
+            status=record.status,
+            result=record.result,
+            audio_manifest=audio_manifest,
+            audio_storage=audio_storage,
+            error_message=None,
+            created_at=record.created_at,
+            started_at=record.started_at,
+            completed_at=record.completed_at,
+        )
+        self.records[simulation_run_id] = updated
+        return updated
+
+    def mark_completed(
+        self,
+        simulation_run_id: UUID,
+    ) -> StoredSimulationRun:
+        record = self.records[simulation_run_id]
+        updated = StoredSimulationRun(
+            id=record.id,
+            case_file_id=record.case_file_id,
+            status="completed",
+            result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=None,
             created_at=record.created_at,
             started_at=record.started_at,
@@ -97,6 +162,8 @@ class InMemorySimulationRunRepository:
             case_file_id=record.case_file_id,
             status="failed",
             result=record.result,
+            audio_manifest=record.audio_manifest,
+            audio_storage=record.audio_storage,
             error_message=error_message,
             created_at=record.created_at,
             started_at=record.started_at,

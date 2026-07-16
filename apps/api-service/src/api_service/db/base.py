@@ -41,6 +41,8 @@ class SimulationRunRecord(Base):
     )
     status: Mapped[str] = mapped_column(String, nullable=False)
     result: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    audio_manifest: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    audio_storage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     error_message: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

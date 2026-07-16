@@ -5,9 +5,11 @@ description = "FastAPI backend API for the courtroom simulator."
 requires-python = ">=3.11"
 dependencies = [
   "agent-service",
+  "boto3>=1.39.0",
   "courtroom-domain",
   "fastapi>=0.116.0",
   "httpx2>=0.28.0",
+  "numpy>=2.3.0",
   "pydantic>=2.13.4",
   "psycopg[binary]>=3.2.0",
   "python-dotenv>=1.2.2",

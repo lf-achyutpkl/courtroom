@@ -16,15 +16,15 @@ components/
     stage/
       courtroom-stage.tsx   # PixiJS-only rendering
 hooks/
-  use-courtroom-manifest.ts # fallback + generated manifest loading
+  use-simulation-run.ts     # backend simulation-run payload loading
   use-courtroom-playback.ts # playback state and transport
 lib/
-  courtroom.ts              # transcript parsing and shared helpers
+  courtroom.ts              # playback payload types, transcript parsing, and shared helpers
 ```
 
 ## Concern Mapping From `components/courtroom-app.tsx`
 
-- Manifest bootstrap and source labeling move to `hooks/use-courtroom-manifest.ts`
+- Simulation-run payload bootstrap and source labeling move to `hooks/use-simulation-run.ts`
 - Playback transport, timeline fallback, and progress calculation move to `hooks/use-courtroom-playback.ts`
 - Header content moves to `components/courtroom/courtroom-header.tsx`
 - Caption surface moves to `components/courtroom/caption-feed.tsx`

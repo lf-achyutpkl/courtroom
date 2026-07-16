@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "generate:manifest": "node scripts/generate-starter-manifest.mjs",
-    "generate:kokoro": "python3 scripts/generate-kokoro-assets.py"
+    "lint": "eslint"
   },
   "dependencies": {
     "next": "16.2.10",

@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Protocol
 from uuid import UUID
 
 from courtroom_domain import CaseFile
@@ -20,6 +20,10 @@ from ..services.tts import SimulationAudioService
 class SimulationGenerationJob:
     simulation_run_id: UUID
     case_file_id: UUID
+
+
+class SupportsModelDump(Protocol):
+    def model_dump(self, *, mode: str) -> dict[str, object]: ...
 
 
 def execute_generation_stage(
@@ -91,13 +95,15 @@ def _mark_failed(
 
 
 def _run_trial(case_file: CaseFile) -> dict[str, object]:
-    run_trial, request_type = _load_agent_service_contract()
-    response = run_trial(request_type(case_file=case_file))
+    run_trial, request_factory = _load_agent_service_contract()
+    response = run_trial(request_factory(case_file=case_file))
     return response.model_dump(mode="json")
 
 
 @lru_cache(maxsize=1)
-def _load_agent_service_contract() -> tuple[Callable[[object], object], type]:
+def _load_agent_service_contract() -> tuple[
+    Callable[[object], SupportsModelDump], Callable[..., object]
+]:
     try:
         service_module = importlib.import_module("src.service")
         types_module = importlib.import_module("src.utils.types")

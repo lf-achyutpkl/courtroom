@@ -9,7 +9,7 @@ from rq import SimpleWorker, Worker
 from .workflows.simulation_pipeline import _load_agent_service_contract
 
 
-def _worker_class() -> type[Worker]:
+def _worker_class() -> type[Worker] | type[SimpleWorker]:
     # macOS RQ work horses fork per job, which is not reliable once the agent stack
     # has initialized Objective-C-backed libraries. SimpleWorker runs jobs inline.
     if platform.system() == "Darwin":

@@ -48,14 +48,18 @@ def get_r2_access_key_id() -> str:
 def get_r2_secret_access_key() -> str:
     value = os.getenv("R2_SECRET_ACCESS_KEY")
     if not value:
-        raise RuntimeError("R2_SECRET_ACCESS_KEY must be set for simulation audio uploads.")
+        raise RuntimeError(
+            "R2_SECRET_ACCESS_KEY must be set for simulation audio uploads."
+        )
     return value
 
 
 def get_r2_public_base_url() -> str:
     value = os.getenv("R2_PUBLIC_BASE_URL")
     if not value:
-        raise RuntimeError("R2_PUBLIC_BASE_URL must be set for simulation audio uploads.")
+        raise RuntimeError(
+            "R2_PUBLIC_BASE_URL must be set for simulation audio uploads."
+        )
     return value.rstrip("/")
 
 

@@ -20,3 +20,4 @@ class TtsProvider(Protocol):
         speed: float,
     ) -> GeneratedSpeech:
         """Convert a text turn into a single audio asset."""
+        ...

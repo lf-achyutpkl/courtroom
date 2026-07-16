@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from courtroom_domain import CaseFile
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from api_service.api.deps import (
@@ -188,16 +189,36 @@ class InMemorySimulationQueue:
         self.enqueued.append((simulation_run_id, case_file_id))
 
 
+def build_client(
+    *,
+    case_file_repository: InMemoryCaseFileRepository | None = None,
+    simulation_repository: InMemorySimulationRunRepository | None = None,
+    simulation_queue: InMemorySimulationQueue | None = None,
+) -> TestClient:
+    app: FastAPI = create_app()
+    if case_file_repository is not None:
+        app.dependency_overrides[get_case_file_repository] = lambda: (
+            case_file_repository
+        )
+    if simulation_repository is not None:
+        app.dependency_overrides[get_simulation_run_repository] = lambda: (
+            simulation_repository
+        )
+    if simulation_queue is not None:
+        app.dependency_overrides[get_simulation_queue] = lambda: simulation_queue
+    return TestClient(app)
+
+
 class SimulationApiTest(unittest.TestCase):
     def test_start_simulation_creates_pending_run_and_enqueues_job(self) -> None:
         repository = InMemoryCaseFileRepository()
         simulation_repository = InMemorySimulationRunRepository()
         simulation_queue = InMemorySimulationQueue()
-        client = TestClient(create_app())
-        overrides = client.app.dependency_overrides
-        overrides[get_case_file_repository] = lambda: repository
-        overrides[get_simulation_run_repository] = lambda: simulation_repository
-        overrides[get_simulation_queue] = lambda: simulation_queue
+        client = build_client(
+            case_file_repository=repository,
+            simulation_repository=simulation_repository,
+            simulation_queue=simulation_queue,
+        )
         created_case_file = client.post("/case-files").json()
 
         response = client.post(
@@ -212,13 +233,16 @@ class SimulationApiTest(unittest.TestCase):
         self.assertEqual(payload["case_file_id"], created_case_file["id"])
         self.assertEqual(payload["status"], "pending")
         self.assertEqual(simulation_queue.enqueued, [(simulation_run_id, case_file_id)])
-        self.assertEqual(simulation_repository.records[simulation_run_id].status, "pending")
+        self.assertEqual(
+            simulation_repository.records[simulation_run_id].status, "pending"
+        )
 
     def test_start_simulation_returns_404_for_unknown_case_file(self) -> None:
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: InMemoryCaseFileRepository()
-        client.app.dependency_overrides[get_simulation_run_repository] = lambda: InMemorySimulationRunRepository()
-        client.app.dependency_overrides[get_simulation_queue] = lambda: InMemorySimulationQueue()
+        client = build_client(
+            case_file_repository=InMemoryCaseFileRepository(),
+            simulation_repository=InMemorySimulationRunRepository(),
+            simulation_queue=InMemorySimulationQueue(),
+        )
 
         response = client.post(
             "/start-simulation",
@@ -230,10 +254,11 @@ class SimulationApiTest(unittest.TestCase):
     def test_start_simulation_marks_run_failed_when_enqueue_fails(self) -> None:
         repository = InMemoryCaseFileRepository()
         simulation_repository = InMemorySimulationRunRepository()
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: repository
-        client.app.dependency_overrides[get_simulation_run_repository] = lambda: simulation_repository
-        client.app.dependency_overrides[get_simulation_queue] = lambda: InMemorySimulationQueue(fail=True)
+        client = build_client(
+            case_file_repository=repository,
+            simulation_repository=simulation_repository,
+            simulation_queue=InMemorySimulationQueue(fail=True),
+        )
         created_case_file = client.post("/case-files").json()
 
         response = client.post(

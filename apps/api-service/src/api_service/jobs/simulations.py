@@ -24,6 +24,7 @@ def run_generation_stage(simulation_run_id: str, case_file_id: str) -> None:
         runs=PostgresSimulationRunRepository(database_url),
     )
 
+
 def generate_audio_stage(simulation_run_id: str) -> None:
     database_url = get_database_url()
     execute_audio_generation_stage(

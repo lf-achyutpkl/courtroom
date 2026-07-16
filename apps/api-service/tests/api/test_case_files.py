@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from courtroom_domain import CaseFile
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from api_service.api.deps import get_case_file_repository
@@ -29,11 +30,16 @@ class InMemoryCaseFileRepository:
         return self.records.get(case_file_id)
 
 
+def build_client(repository: InMemoryCaseFileRepository) -> TestClient:
+    app: FastAPI = create_app()
+    app.dependency_overrides[get_case_file_repository] = lambda: repository
+    return TestClient(app)
+
+
 class CaseFileApiTest(unittest.TestCase):
     def test_create_case_file_stores_dummy_case_file_with_uuid_id(self) -> None:
         repository = InMemoryCaseFileRepository()
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: repository
+        client = build_client(repository)
 
         response = client.post("/case-files")
 
@@ -48,8 +54,7 @@ class CaseFileApiTest(unittest.TestCase):
 
     def test_create_case_file_uses_new_uuid_each_time(self) -> None:
         repository = InMemoryCaseFileRepository()
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: repository
+        client = build_client(repository)
 
         first = client.post("/case-files").json()["id"]
         second = client.post("/case-files").json()["id"]
@@ -58,8 +63,7 @@ class CaseFileApiTest(unittest.TestCase):
 
     def test_get_case_file_returns_stored_case_file(self) -> None:
         repository = InMemoryCaseFileRepository()
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: repository
+        client = build_client(repository)
         created = client.post("/case-files").json()
 
         response = client.get(f"/case-files/{created['id']}")
@@ -69,8 +73,7 @@ class CaseFileApiTest(unittest.TestCase):
 
     def test_get_case_file_returns_404_for_unknown_id(self) -> None:
         repository = InMemoryCaseFileRepository()
-        client = TestClient(create_app())
-        client.app.dependency_overrides[get_case_file_repository] = lambda: repository
+        client = build_client(repository)
 
         response = client.get("/case-files/00000000-0000-0000-0000-000000000000")
 

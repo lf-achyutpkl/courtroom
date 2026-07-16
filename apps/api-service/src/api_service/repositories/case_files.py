@@ -21,9 +21,11 @@ class StoredCaseFile:
 class CaseFileRepository(Protocol):
     def create(self, case_file: CaseFile) -> StoredCaseFile:
         """Persist a case file and return the stored record."""
+        ...
 
     def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         """Return a stored case file by storage id."""
+        ...
 
 
 class PostgresCaseFileRepository:

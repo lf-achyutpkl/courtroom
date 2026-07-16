@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
+from typing import Any
 
 from .base import ObjectStorageService, StoredObject
 
@@ -24,11 +25,11 @@ class R2ObjectStorageService(ObjectStorageService):
         self.region_name = region_name
 
     @cached_property
-    def _client(self):
-        import boto3
+    def _client(self) -> Any:
+        from boto3.session import Session
         from botocore.client import Config
 
-        session = boto3.session.Session()
+        session = Session()
         return session.client(
             "s3",
             endpoint_url=self.endpoint_url,

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { CaseSummary } from "@/components/courtroom/case-summary";
 import { CaptionFeed } from "@/components/courtroom/caption-feed";
 import { CourtroomHeader } from "@/components/courtroom/courtroom-header";
@@ -15,14 +17,14 @@ import {
 } from "@/hooks/use-courtroom-playback";
 import { useSimulationRun } from "@/hooks/use-simulation-run";
 
-const DEFAULT_SIMULATION_RUN_ID = process.env.NEXT_PUBLIC_DEFAULT_SIMULATION_RUN_ID ?? null;
-
 function CourtroomPageStatus({
   title,
   description,
+  simulationRunId,
 }: {
   title: string;
   description: string;
+  simulationRunId?: string;
 }) {
   return (
     <main className="relative flex min-h-screen flex-col px-3 pt-3 pb-8 sm:px-5 sm:pt-4 sm:pb-10 lg:min-h-dvh lg:px-6 lg:pt-3 lg:pb-6">
@@ -38,6 +40,19 @@ function CourtroomPageStatus({
             <p className="mt-4 text-sm leading-7 text-[var(--muted)] sm:text-[0.98rem]">
               {description}
             </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/"
+                className="rounded-full border border-[var(--border)] px-4 py-2 text-xs uppercase tracking-[0.24em] text-[var(--accent-soft)] transition hover:border-[rgba(212,168,103,0.38)] hover:bg-white/[0.04]"
+              >
+                Browse simulations
+              </Link>
+              {simulationRunId ? (
+                <span className="rounded-full border border-white/10 px-4 py-2 font-mono text-[0.68rem] uppercase tracking-[0.2em] text-[var(--muted)]">
+                  {simulationRunId}
+                </span>
+              ) : null}
+            </div>
           </div>
         </section>
       </section>
@@ -48,9 +63,11 @@ function CourtroomPageStatus({
 function CourtroomPageContent({
   simulationRun,
   manifestSource,
+  simulationRunId,
 }: {
   simulationRun: SimulationRunPayload;
   manifestSource: string;
+  simulationRunId: string;
 }) {
   const { playbackManifest: manifest, transcript } = simulationRun;
   const {
@@ -93,6 +110,18 @@ function CourtroomPageContent({
   return (
     <main className="relative flex min-h-screen flex-col px-3 pt-3 pb-8 sm:px-5 sm:pt-4 sm:pb-10 lg:min-h-dvh lg:px-6 lg:pt-3 lg:pb-6">
       <section className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 lg:min-h-0">
+        <div className="flex items-center justify-between gap-3 px-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white/[0.03] px-4 py-2 text-[0.68rem] uppercase tracking-[0.28em] text-[var(--accent-soft)] transition hover:border-[rgba(212,168,103,0.38)] hover:bg-white/[0.05]"
+          >
+            Back to simulations
+          </Link>
+          <span className="rounded-full border border-white/10 px-3 py-2 font-mono text-[0.68rem] uppercase tracking-[0.2em] text-[var(--muted)]">
+            Run {simulationRunId}
+          </span>
+        </div>
+
         <CourtroomHeader transcript={transcript} />
 
         <section className="grid flex-1 gap-4 lg:min-h-0 lg:grid-cols-[minmax(0,1.62fr)_minmax(18rem,0.72fr)] lg:items-stretch">
@@ -131,25 +160,21 @@ function CourtroomPageContent({
   );
 }
 
-export function CourtroomPage() {
-  const selectedRunId = DEFAULT_SIMULATION_RUN_ID;
+export function CourtroomPage({
+  simulationRunId,
+}: {
+  simulationRunId: string;
+}) {
+  const selectedRunId = simulationRunId;
   const { errorMessage, requestState, responseSource, simulationRun } =
     useSimulationRun(selectedRunId);
-
-  if (!selectedRunId) {
-    return (
-      <CourtroomPageStatus
-        title="Simulation run selection is not wired yet"
-        description="The playback page now expects a single backend simulation-run payload. Once the run list lands, selecting a run will fetch that payload and start playback here."
-      />
-    );
-  }
 
   if (requestState === "loading") {
     return (
       <CourtroomPageStatus
         title="Loading simulation run"
         description={`Fetching playback data for run ${selectedRunId}.`}
+        simulationRunId={selectedRunId}
       />
     );
   }
@@ -162,6 +187,7 @@ export function CourtroomPage() {
           errorMessage ??
           "The backend playback payload could not be loaded for the selected simulation run."
         }
+        simulationRunId={selectedRunId}
       />
     );
   }
@@ -171,6 +197,7 @@ export function CourtroomPage() {
       <CourtroomPageStatus
         title="No playback payload returned"
         description="The selected simulation run did not return transcript and manifest data."
+        simulationRunId={selectedRunId}
       />
     );
   }
@@ -179,6 +206,7 @@ export function CourtroomPage() {
     <CourtroomPageContent
       manifestSource={responseSource}
       simulationRun={simulationRun}
+      simulationRunId={selectedRunId}
     />
   );
 }

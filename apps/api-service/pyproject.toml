@@ -20,6 +20,9 @@ dependencies = [
   "uvicorn[standard]>=0.35.0",
 ]
 
+[dependency-groups]
+dev = ["pyright>=1.1.403", "ruff>=0.12.4"]
+
 [tool.uv.sources]
 agent-service = { path = "../agent-service", editable = true }
 courtroom-domain = { path = "../../packages/python-domain", editable = true }
@@ -29,7 +32,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,6 +41,16 @@ where = ["src"]
 line-length = 88
 indent-width = 4
 
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/api_service.egg-info"]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingModuleSource = true

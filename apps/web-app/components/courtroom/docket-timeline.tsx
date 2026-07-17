@@ -34,7 +34,8 @@ export function DocketTimeline({
   transcript: TranscriptData;
   turns: PlaybackManifestTurn[];
 }) {
-  const [isAutoFollowPaused, setIsAutoFollowPaused] = useState(false);
+  const [pausedFollowNonce, setPausedFollowNonce] = useState<number | null>(null);
+  const isAutoFollowPaused = pausedFollowNonce === followNonce;
   const activeTurnRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const ignoreScrollRef = useRef(false);
@@ -47,10 +48,6 @@ export function DocketTimeline({
       }
     };
   }, []);
-
-  useEffect(() => {
-    setIsAutoFollowPaused(false);
-  }, [followNonce]);
 
   useEffect(() => {
     if (currentTurnId === null || !listRef.current || !activeTurnRef.current || isAutoFollowPaused) {
@@ -99,11 +96,11 @@ export function DocketTimeline({
       return;
     }
 
-    setIsAutoFollowPaused(true);
+    setPausedFollowNonce(followNonce);
   };
 
   const handleReturnToCurrent = () => {
-    setIsAutoFollowPaused(false);
+    setPausedFollowNonce(null);
     onReturnToCurrent();
   };
 

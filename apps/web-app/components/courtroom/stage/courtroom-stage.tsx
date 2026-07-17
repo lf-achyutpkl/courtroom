@@ -133,8 +133,7 @@ function createCharacter(
     }),
   });
   label.anchor.set(0.5, 0);
-  label.position.set(0, 138);
-  container.addChild(label);
+  label.position.set(x, y + 138);
 
   return {
     container,
@@ -315,6 +314,7 @@ export function CourtroomStage(props: CourtroomStageProps) {
           sprite.container.scale.set(SEATED_WITNESS_SCALE);
         }
         world.addChild(sprite.container);
+        world.addChild(sprite.label);
         characters.set(id, sprite);
       });
 
@@ -374,10 +374,12 @@ export function CourtroomStage(props: CourtroomStageProps) {
             sprite.label.text = isCurrentWitness
               ? getSpeakerShortName(stateRef.current.transcript, id)
               : "";
+            sprite.label.alpha = isCurrentWitness ? 1 : 0;
           } else {
             sprite.label.text = getSpeakerShortName(stateRef.current.transcript, id);
+            sprite.label.alpha = 1;
           }
-          sprite.label.alpha = isActive ? 1 : 0.78;
+          sprite.label.position.set(targetX, targetY + 138 * targetScale);
         });
 
         const hasSeatedWitness = witnessIds.some((id) => stateRef.current.witnessInBoxId !== id);

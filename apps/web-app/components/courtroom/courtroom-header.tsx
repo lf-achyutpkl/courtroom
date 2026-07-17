@@ -1,33 +1,52 @@
-import { getCaseTitle, type TranscriptData } from "@/lib/courtroom";
+import {
+  getCaseDateLabel,
+  getCaseTitle,
+  getWitnessSpeakerIds,
+  type TranscriptData,
+} from "@/lib/courtroom";
 
 export function CourtroomHeader({ transcript }: { transcript: TranscriptData }) {
   const caseTitle = getCaseTitle(transcript);
+  const caseType =
+    transcript.case_metadata.case_type.charAt(0).toUpperCase() +
+    transcript.case_metadata.case_type.slice(1);
+  const caseDate = getCaseDateLabel(transcript.case_metadata.case_id);
+  const witnessCount = getWitnessSpeakerIds(transcript).length;
+  const turnCount = transcript.audio_script_timeline.length;
 
   return (
-    <header className="panel shrink-0 rounded-[28px] px-5 py-4 sm:px-7 sm:py-5 lg:px-6 lg:py-3.5">
-      <div className="flex flex-col gap-4 lg:gap-3">
-        <div className="max-w-5xl">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <p className="text-xs uppercase tracking-[0.45em] text-[var(--muted)]">
-              Courtroom simulation
-            </p>
-            <span
-              aria-hidden="true"
-              className="h-px w-12 bg-gradient-to-r from-[var(--accent-soft)]/80 to-transparent"
-            />
-          </div>
+    <header className="rounded-[12px] border border-[#c8bcaa] bg-[#f2ebdf] px-6 py-5 sm:px-7">
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[#554d43]">
+          <span>{caseType}</span>
+          <span className="text-[#9e917c]" aria-hidden="true">/</span>
+          <span>{caseDate ?? "Date unavailable"}</span>
+          <span className="text-[#9e917c]" aria-hidden="true">/</span>
+          <span>{witnessCount} witnesses</span>
+          <span className="text-[#9e917c]" aria-hidden="true">/</span>
+          <span>{turnCount} transcript turns</span>
         </div>
 
-        <div className="border-t border-[var(--border)] pt-4 lg:pt-3">
-          <p className="text-xs uppercase tracking-[0.45em] text-[var(--accent-soft)]">
-            Case file
-          </p>
-          <h1 className="mt-2 max-w-5xl font-display text-3xl leading-[0.9] text-[var(--foreground)] sm:text-[3.25rem] lg:text-[2.05rem]">
-            {caseTitle}
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-[var(--foreground)] sm:text-[0.98rem] lg:text-[0.94rem] italic">
-                {transcript.case_metadata.charge}
-          </p>
+        <div className="grid gap-3 border-t border-[#d7ccbb] pt-4 lg:grid-cols-[minmax(0,1fr)_14rem] lg:items-start">
+          <div>
+            <h1 className="max-w-4xl text-[2rem] font-medium leading-[1.02] tracking-[-0.035em] text-[#1b1916] sm:text-[2.75rem]">
+              {caseTitle}
+            </h1>
+            <p className="mt-2 text-base leading-7 text-[#554d43]">
+              {transcript.case_metadata.charge}
+            </p>
+          </div>
+
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[#d7ccbb] pt-4 text-sm lg:border-t-0 lg:border-l lg:pl-5 lg:pt-0">
+            <div>
+              <dt className="text-[0.72rem] text-[#6a6156]">Prosecution</dt>
+              <dd className="mt-1 text-[#1b1916]">{transcript.case_metadata.prosecution}</dd>
+            </div>
+            <div>
+              <dt className="text-[0.72rem] text-[#6a6156]">Defendant</dt>
+              <dd className="mt-1 text-[#1b1916]">{transcript.case_metadata.defendant}</dd>
+            </div>
+          </dl>
         </div>
       </div>
     </header>

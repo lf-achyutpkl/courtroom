@@ -7,3 +7,5 @@ apps/agent-service/evals/reports/
 __pycache__/
 *.pyc
 .pnpm-store/
+/.next/
+/out/

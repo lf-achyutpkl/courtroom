@@ -1,5 +1,5 @@
-import { CourtroomPage } from "@/components/courtroom/courtroom-page";
+import { SimulationLibraryPage } from "@/components/courtroom/simulation-library-page";
 
 export default function Home() {
-  return <CourtroomPage />;
+  return <SimulationLibraryPage />;
 }

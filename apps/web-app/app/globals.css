@@ -8,6 +8,8 @@
   --accent: #d4a867;
   --accent-soft: #f2d9ac;
   --muted: #8fa5c6;
+  --verdict-approve: #7dbb9a;
+  --verdict-warning: #d88963;
   --border: rgba(242, 217, 172, 0.16);
   --shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   --font-app-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua",

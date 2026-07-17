@@ -2,6 +2,8 @@
 
 FastAPI backend API workspace for the courtroom simulator.
 
+Python 3.11-3.13 is currently supported for this workspace. Python 3.14 is not yet supported because the Kokoro TTS dependency chain currently resolves to packages without `cp314` wheels.
+
 ## Responsibilities
 
 - expose backend HTTP APIs
@@ -14,12 +16,14 @@ FastAPI backend API workspace for the courtroom simulator.
 Apply database migrations from `../../infra/db/migrations/`, then create a local environment file:
 
 ```bash
+uv sync
 cp .env.example .env
 ```
 
 Update `DATABASE_URL` in `.env` if you are not using the local default.
 Set `REDIS_URL` when using a non-default Redis instance for background jobs.
 Set the `R2_*` variables and `TTS_PROVIDER` before starting the audio worker.
+Install `espeak-ng` on the host before running the Kokoro-backed audio worker. The Python package is installed by `uv sync`, but Kokoro also relies on the system speech engine for phonemization.
 
 Start the API service with:
 

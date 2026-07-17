@@ -40,6 +40,10 @@ class SimulationRunRepository(Protocol):
         """Return a stored simulation run by id."""
         ...
 
+    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
+        """Return completed simulation runs that have generated audio artifacts."""
+        ...
+
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         """Create a pending simulation run for a stored case file."""
         ...
@@ -109,6 +113,20 @@ class PostgresSimulationRunRepository:
             session.commit()
             session.refresh(record)
             return _stored_simulation_run_from_record(record)
+
+    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
+        with self.session_factory() as session:
+            records = (
+                session.query(SimulationRunRecord)
+                .filter(SimulationRunRecord.status == "completed")
+                .filter(SimulationRunRecord.audio_manifest.is_not(None))
+                .order_by(
+                    SimulationRunRecord.completed_at.desc(),
+                    SimulationRunRecord.created_at.desc(),
+                )
+                .all()
+            )
+            return [_stored_simulation_run_from_record(record) for record in records]
 
     def store_result(
         self,

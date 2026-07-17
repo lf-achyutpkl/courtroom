@@ -39,6 +39,20 @@ class InMemorySimulationRunRepository:
     def __init__(self) -> None:
         self.records: dict[UUID, StoredSimulationRun] = {}
 
+    def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
+        return self.records.get(simulation_run_id)
+
+    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
+        return sorted(
+            [
+                record
+                for record in self.records.values()
+                if record.status == "completed" and record.audio_manifest is not None
+            ],
+            key=lambda record: (record.completed_at or record.created_at, record.created_at),
+            reverse=True,
+        )
+
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         record = StoredSimulationRun(
             id=uuid4(),
@@ -270,3 +284,172 @@ class SimulationApiTest(unittest.TestCase):
         run = next(iter(simulation_repository.records.values()))
         self.assertEqual(run.status, "failed")
         self.assertIn("Failed to enqueue simulation", run.error_message or "")
+
+    def test_list_simulation_runs_returns_completed_runs_with_audio_only(self) -> None:
+        case_file_repository = InMemoryCaseFileRepository()
+        simulation_repository = InMemorySimulationRunRepository()
+        client = build_client(
+            case_file_repository=case_file_repository,
+            simulation_repository=simulation_repository,
+        )
+
+        created_case_file = client.post("/case-files").json()
+        case_file_id = UUID(created_case_file["id"])
+        completed_run_id = uuid4()
+        simulation_repository.records[completed_run_id] = StoredSimulationRun(
+            id=completed_run_id,
+            case_file_id=case_file_id,
+            status="completed",
+            result={
+                "full_trial_transcript": [
+                    {
+                        "scene": "verdict",
+                        "speaker_id": "judge",
+                        "text": "[firm] Guilty.",
+                    }
+                ],
+                "verdict": {"outcome": "guilty"},
+            },
+            audio_manifest=[
+                {
+                    "turnId": 1,
+                    "speakerId": "judge",
+                    "scene": "verdict",
+                    "text": "[firm] Guilty.",
+                    "cleanText": "Guilty.",
+                    "emotion": "firm",
+                    "audioUrl": "https://cdn.example/audio/1.wav",
+                    "durationMs": 1800,
+                    "subtitleChunks": [
+                        {"text": "Guilty.", "startMs": 0, "endMs": 1800}
+                    ],
+                }
+            ],
+            audio_storage={"bucket": "audio"},
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 1, 1, 0, 5, tzinfo=timezone.utc),
+        )
+        incomplete_run_id = uuid4()
+        simulation_repository.records[incomplete_run_id] = StoredSimulationRun(
+            id=incomplete_run_id,
+            case_file_id=case_file_id,
+            status="completed",
+            result={"full_trial_transcript": []},
+            audio_manifest=None,
+            audio_storage=None,
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 1, 1, 0, 3, tzinfo=timezone.utc),
+        )
+
+        response = client.get("/simulation-runs")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["simulationRunId"], str(completed_run_id))
+        self.assertEqual(payload[0]["caseFile"]["id"], created_case_file["id"])
+        self.assertEqual(payload[0]["caseFile"]["charge"], "Grand theft auto")
+        self.assertEqual(payload[0]["playback"]["turnCount"], 1)
+        self.assertEqual(payload[0]["playback"]["durationMs"], 1800)
+        self.assertEqual(payload[0]["playback"]["verdictLabel"], "guilty")
+
+    def test_get_simulation_playback_returns_sanitized_frontend_payload(self) -> None:
+        case_file_repository = InMemoryCaseFileRepository()
+        simulation_repository = InMemorySimulationRunRepository()
+        client = build_client(
+            case_file_repository=case_file_repository,
+            simulation_repository=simulation_repository,
+        )
+
+        created_case_file = client.post("/case-files").json()
+        case_file_id = UUID(created_case_file["id"])
+        simulation_run_id = uuid4()
+        simulation_repository.records[simulation_run_id] = StoredSimulationRun(
+            id=simulation_run_id,
+            case_file_id=case_file_id,
+            status="completed",
+            result={
+                "full_trial_transcript": [
+                    {
+                        "scene": "opening",
+                        "speaker_id": "prosecution",
+                        "text": "[firm] Members of the jury.",
+                    },
+                    {
+                        "scene": "verdict",
+                        "speaker_id": "judge",
+                        "text": "[measured] Guilty.",
+                    },
+                ],
+                "node_telemetry": [{"node_name": "hidden"}],
+                "verdict": {"outcome": "guilty"},
+            },
+            audio_manifest=[
+                {
+                    "turnId": 1,
+                    "speakerId": "prosecution",
+                    "scene": "opening",
+                    "text": "[firm] Members of the jury.",
+                    "cleanText": "Members of the jury.",
+                    "emotion": "firm",
+                    "audioUrl": "https://cdn.example/audio/1.wav",
+                    "durationMs": 2100,
+                    "subtitleChunks": [
+                        {
+                            "text": "Members of the jury.",
+                            "startMs": 0,
+                            "endMs": 2100,
+                        }
+                    ],
+                }
+            ],
+            audio_storage={"turns": [{"key": "hidden"}]},
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=datetime(2026, 1, 1, 0, 5, tzinfo=timezone.utc),
+        )
+
+        response = client.get(f"/simulation-runs/{simulation_run_id}/playback")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["simulationRunId"], str(simulation_run_id))
+        self.assertEqual(payload["status"], "completed")
+        self.assertEqual(payload["transcript"]["case_metadata"]["charge"], "Grand theft auto")
+        self.assertIn("judge", payload["transcript"]["voice_character_map"])
+        self.assertEqual(payload["playbackManifest"][0]["cleanText"], "Members of the jury.")
+        self.assertNotIn("audio_storage", payload)
+        self.assertNotIn("node_telemetry", payload)
+
+    def test_get_simulation_playback_returns_conflict_when_audio_is_missing(self) -> None:
+        case_file_repository = InMemoryCaseFileRepository()
+        simulation_repository = InMemorySimulationRunRepository()
+        client = build_client(
+            case_file_repository=case_file_repository,
+            simulation_repository=simulation_repository,
+        )
+
+        created_case_file = client.post("/case-files").json()
+        case_file_id = UUID(created_case_file["id"])
+        simulation_run_id = uuid4()
+        simulation_repository.records[simulation_run_id] = StoredSimulationRun(
+            id=simulation_run_id,
+            case_file_id=case_file_id,
+            status="hearing_completed",
+            result={"full_trial_transcript": []},
+            audio_manifest=None,
+            audio_storage=None,
+            error_message=None,
+            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            completed_at=None,
+        )
+
+        response = client.get(f"/simulation-runs/{simulation_run_id}/playback")
+
+        self.assertEqual(response.status_code, 409)

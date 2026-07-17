@@ -15,13 +15,24 @@ function isCatalogItem(value: unknown): value is SimulationRunCatalogItem {
     return false;
   }
 
+  const jurisdictionLabel = value.caseFile.jurisdictionLabel;
+  const modelName = value.playback.modelName;
+  const evaluationScore = value.playback.evaluationScore;
+
   return (
     typeof value.simulationRunId === "string" &&
     typeof value.status === "string" &&
     typeof value.caseFile.id === "string" &&
     typeof value.caseFile.charge === "string" &&
+    (jurisdictionLabel === undefined ||
+      jurisdictionLabel === null ||
+      typeof jurisdictionLabel === "string") &&
     typeof value.playback.turnCount === "number" &&
-    typeof value.playback.durationMs === "number"
+    typeof value.playback.durationMs === "number" &&
+    (modelName === undefined || modelName === null || typeof modelName === "string") &&
+    (evaluationScore === undefined ||
+      evaluationScore === null ||
+      typeof evaluationScore === "number")
   );
 }
 

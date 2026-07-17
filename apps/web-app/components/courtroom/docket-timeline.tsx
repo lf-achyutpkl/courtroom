@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   getSceneLabel,
@@ -9,88 +9,160 @@ import {
   type TranscriptData,
 } from "@/lib/courtroom";
 
+function formatTurnTime(timeMs: number) {
+  const totalSeconds = Math.max(0, Math.floor(timeMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 export function DocketTimeline({
   currentTurnId,
+  followNonce,
+  isPlaying,
+  onReturnToCurrent,
+  onSelectTurn,
   transcript,
   turns,
 }: {
   currentTurnId: number | null;
+  followNonce: number;
+  isPlaying: boolean;
+  onReturnToCurrent: () => void;
+  onSelectTurn: (turnIndex: number) => void;
   transcript: TranscriptData;
   turns: PlaybackManifestTurn[];
 }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const activeTurnRef = useRef<HTMLElement | null>(null);
+  const [isAutoFollowPaused, setIsAutoFollowPaused] = useState(false);
+  const activeTurnRef = useRef<HTMLButtonElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const ignoreScrollRef = useRef(false);
+  const pauseTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (currentTurnId === null || !containerRef.current || !activeTurnRef.current) {
+    return () => {
+      if (pauseTimeoutRef.current) {
+        window.clearTimeout(pauseTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setIsAutoFollowPaused(false);
+  }, [followNonce]);
+
+  useEffect(() => {
+    if (currentTurnId === null || !listRef.current || !activeTurnRef.current || isAutoFollowPaused) {
       return;
     }
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const container = containerRef.current;
+    const list = listRef.current;
     const activeTurn = activeTurnRef.current;
-    const containerRect = container.getBoundingClientRect();
-    const activeRect = activeTurn.getBoundingClientRect();
-    const isFullyVisible =
-      activeRect.top >= containerRect.top && activeRect.bottom <= containerRect.bottom;
+    const topPadding = 12;
+    const targetScrollTop = Math.max(0, activeTurn.offsetTop - topPadding);
 
-    if (!isFullyVisible) {
-      const offsetTop = activeTurn.offsetTop - container.offsetTop;
-      const targetScrollTop =
-        offsetTop - container.clientHeight / 2 + activeTurn.clientHeight / 2;
+    ignoreScrollRef.current = true;
+    list.scrollTo({
+      top: targetScrollTop,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
 
-      container.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-      });
+    if (pauseTimeoutRef.current) {
+      window.clearTimeout(pauseTimeoutRef.current);
     }
-  }, [currentTurnId]);
+
+    pauseTimeoutRef.current = window.setTimeout(() => {
+      ignoreScrollRef.current = false;
+    }, prefersReducedMotion ? 0 : 250);
+  }, [currentTurnId, isAutoFollowPaused]);
+
+  const turnsWithStartTime = useMemo(
+    () =>
+      turns.reduce<Array<{ turn: PlaybackManifestTurn; turnStartMs: number }>>(
+        (items, turn) => {
+          const previousItem = items[items.length - 1];
+          const turnStartMs = previousItem
+            ? previousItem.turnStartMs + previousItem.turn.durationMs
+            : 0;
+
+          return [...items, { turn, turnStartMs }];
+        },
+        [],
+      ),
+    [turns],
+  );
+
+  const handleScroll = () => {
+    if (!isPlaying || ignoreScrollRef.current) {
+      return;
+    }
+
+    setIsAutoFollowPaused(true);
+  };
+
+  const handleReturnToCurrent = () => {
+    setIsAutoFollowPaused(false);
+    onReturnToCurrent();
+  };
 
   return (
-    <div className="panel overflow-hidden rounded-[28px] px-5 py-5 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs uppercase tracking-[0.3em] text-[var(--accent-soft)]">
-          Docket Timeline
-        </p>
+    <section className="flex h-[min(55vh,520px)] min-h-0 flex-col overflow-hidden rounded-[10px] border border-[#d5cab9] bg-[#fbf7f1] lg:h-full">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#e1d6c7] px-4 py-3">
+        <h2 className="text-sm font-medium text-[#1b1916]">Transcript</h2>
+        {isAutoFollowPaused ? (
+          <button
+            type="button"
+            onClick={handleReturnToCurrent}
+            className="text-xs font-medium text-[#3c342b] underline decoration-[#b4a490] underline-offset-4 transition-colors duration-150 hover:text-[#1b1916] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf7f1]"
+          >
+            Return to current
+          </button>
+        ) : null}
       </div>
 
       <div
-        ref={containerRef}
-        className="scrollbar-hidden mt-4 h-[24rem] space-y-3 overflow-y-auto pr-1 lg:min-h-0 lg:h-auto lg:flex-1"
+        ref={listRef}
+        onScroll={handleScroll}
+        className="min-h-0 flex-1 overflow-y-auto px-3 py-3"
       >
-        {turns.map((turn) => {
-          const isActive = turn.turnId === currentTurnId;
+        <div className="space-y-2 pb-16">
+          {turnsWithStartTime.map(({ turn, turnStartMs }, turnIndex) => {
+            const isActive = turn.turnId === currentTurnId;
 
-          return (
-            <article
-              key={turn.turnId}
-              ref={isActive ? activeTurnRef : null}
-              className={`rounded-[22px] border px-4 py-3.5 transition-colors duration-300 ${
-                isActive
-                  ? "border-[rgba(212,168,103,0.4)] bg-[rgba(212,168,103,0.08)]"
-                  : "border-white/10 bg-white/[0.03]"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[0.68rem] uppercase tracking-[0.28em] text-[var(--accent-soft)]">
-                    {getSceneLabel(turn.scene)}
-                  </p>
-                  <p className="mt-1.5 text-sm font-medium leading-6 text-[var(--foreground)]">
-                    {getSpeakerShortName(transcript, turn.speakerId)}
-                  </p>
+            return (
+              <button
+                key={turn.turnId}
+                ref={isActive ? activeTurnRef : null}
+                type="button"
+                onClick={() => onSelectTurn(turnIndex)}
+                className={`block w-full rounded-[8px] border px-3 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf7f1] ${
+                  isActive
+                    ? "border-[#a9967d] bg-[#efe5d6]"
+                    : "border-[#e0d4c4] bg-[#fbf7f1] hover:bg-[#f3ebdf]"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 text-[0.78rem] text-[#665d52]">
+                      <span>{getSceneLabel(turn.scene)}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>Turn {turn.turnId}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{formatTurnTime(turnStartMs)}</span>
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-[#1e1914]">
+                      {getSpeakerShortName(transcript, turn.speakerId)}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-[#342d26]">{turn.cleanText}</p>
+                  </div>
                 </div>
-                <span className="rounded-full border border-white/10 px-2.5 py-1 text-[0.65rem] uppercase tracking-[0.25em] text-[var(--muted)]">
-                  {turn.turnId}
-                </span>
-              </div>
-              <p className="mt-2.5 text-sm leading-6 text-[var(--muted)]">
-                {turn.cleanText}
-              </p>
-            </article>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -34,6 +34,8 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTimeMs, setCurrentTimeMs] = useState(0);
   const [mode, setMode] = useState<PlaybackMode>("timeline");
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [volume, setVolume] = useState(1);
 
   const animationFrameRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -55,6 +57,18 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
   useEffect(() => {
     currentTimeRef.current = currentTimeMs;
   }, [currentTimeMs]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   useEffect(() => {
     return () => {
@@ -110,14 +124,17 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
 
       startedTimeline = true;
       setMode("timeline");
-      const startedAt = performance.now() - startAtMs;
+      const startedAt = performance.now();
 
       const tick = (timestamp: number) => {
         if (disposed) {
           return;
         }
 
-        const elapsed = Math.min(currentTurn.durationMs, timestamp - startedAt);
+        const elapsed = Math.min(
+          currentTurn.durationMs,
+          startAtMs + (timestamp - startedAt) * playbackRate,
+        );
         setCurrentTimeMs(elapsed);
         currentTimeRef.current = elapsed;
 
@@ -138,6 +155,8 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
       audio.pause();
       audio.src = currentTurn.audioUrl;
       audio.currentTime = currentTimeRef.current / 1000;
+      audio.playbackRate = playbackRate;
+      audio.volume = volume;
       audio.preload = "auto";
 
       const handleTimeUpdate = () => {
@@ -190,21 +209,70 @@ export function useCourtroomPlayback(manifest: PlaybackManifestTurn[]) {
         audioRef.current.load();
       }
     };
-  }, [currentTurn, index, isPlaying, manifest]);
+  }, [currentTurn, index, isPlaying, manifest, playbackRate, volume]);
 
   const overallProgress = totalDurationMs
     ? (elapsedBeforeCurrentMs + currentTimeMs) / totalDurationMs
     : 0;
 
+  const elapsedMs = elapsedBeforeCurrentMs + currentTimeMs;
+
+  const seekTo = (nextElapsedMs: number) => {
+    if (manifest.length === 0) {
+      return;
+    }
+
+    const clampedElapsedMs = Math.max(0, Math.min(totalDurationMs, nextElapsedMs));
+    let remainingElapsedMs = clampedElapsedMs;
+    let nextIndex = manifest.length - 1;
+
+    for (let cursor = 0; cursor < manifest.length; cursor += 1) {
+      const turn = manifest[cursor];
+      if (remainingElapsedMs <= turn.durationMs || cursor === manifest.length - 1) {
+        nextIndex = cursor;
+        break;
+      }
+      remainingElapsedMs -= turn.durationMs;
+    }
+
+    const nextTurn = manifest[nextIndex];
+    const nextCurrentTimeMs =
+      nextIndex === manifest.length - 1 && clampedElapsedMs === totalDurationMs
+        ? nextTurn.durationMs
+        : remainingElapsedMs;
+
+    currentTimeRef.current = nextCurrentTimeMs;
+    setIndex(nextIndex);
+    setCurrentTimeMs(nextCurrentTimeMs);
+  };
+
+  const goToTurn = (nextIndex: number) => {
+    if (nextIndex < 0 || nextIndex >= manifest.length) {
+      return;
+    }
+
+    currentTimeRef.current = 0;
+    setIndex(nextIndex);
+    setCurrentTimeMs(0);
+  };
+
   return {
     currentTurn,
     currentTimeMs,
+    elapsedMs,
     index,
     isPlaying,
     mode,
     overallProgress,
+    playbackRate,
+    totalDurationMs,
+    volume,
+    goToTurn,
+    seekTo,
     setCurrentTimeMs,
     setIndex,
     setIsPlaying,
+    setPlaybackRate,
+    setVolume,
   };
 }

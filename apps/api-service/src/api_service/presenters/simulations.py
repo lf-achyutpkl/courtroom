@@ -34,6 +34,7 @@ def build_simulation_catalog_item(
             case_id=case_file.case_file.case_id,
             case_type=case_file.case_file.case_type,
             charge=case_file.case_file.charge_or_claim,
+            jurisdiction_label=_build_jurisdiction_label(case_file),
             plaintiff_or_prosecution=case_file.case_file.parties.plaintiff_or_prosecution,
             defendant=case_file.case_file.parties.defendant,
             witness_count=len(case_file.case_file.witnesses),
@@ -42,6 +43,8 @@ def build_simulation_catalog_item(
         playback=SimulationRunPlaybackSummary(
             turn_count=len(manifest),
             duration_ms=sum(turn.duration_ms for turn in manifest),
+            model_name=_extract_model_name(run.result),
+            evaluation_score=None,
             verdict_label=_extract_verdict_label(run.result),
             dominant_scene=_extract_dominant_scene(manifest),
         ),
@@ -197,6 +200,27 @@ def _extract_dominant_scene(
 
     scene_counts = Counter(turn.scene for turn in manifest)
     return scene_counts.most_common(1)[0][0]
+
+
+def _extract_model_name(result: dict[str, object] | None) -> str | None:
+    if result is None:
+        return None
+
+    run = result.get("run")
+    if not isinstance(run, dict):
+        return None
+
+    model_name = run.get("model_name")
+    if not isinstance(model_name, str) or not model_name.strip():
+        return None
+
+    return model_name
+
+
+def _build_jurisdiction_label(case_file: StoredCaseFile) -> str | None:
+    jurisdiction = case_file.case_file.jurisdiction
+    parts = [jurisdiction.state, jurisdiction.court]
+    return ", ".join(part for part in parts if part)
 
 
 def _read_required_str(payload: object, key: str) -> str:

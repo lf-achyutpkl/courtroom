@@ -27,6 +27,10 @@ class SimulationRunCaseFileSummary(FrontendSchemaModel):
     case_id: str = Field(serialization_alias="caseId")
     case_type: str = Field(serialization_alias="caseType")
     charge: str
+    jurisdiction_label: str | None = Field(
+        default=None,
+        serialization_alias="jurisdictionLabel",
+    )
     plaintiff_or_prosecution: str = Field(serialization_alias="plaintiffOrProsecution")
     defendant: str
     witness_count: int = Field(serialization_alias="witnessCount")
@@ -36,6 +40,14 @@ class SimulationRunCaseFileSummary(FrontendSchemaModel):
 class SimulationRunPlaybackSummary(FrontendSchemaModel):
     turn_count: int = Field(serialization_alias="turnCount")
     duration_ms: int = Field(serialization_alias="durationMs")
+    model_name: str | None = Field(
+        default=None,
+        serialization_alias="modelName",
+    )
+    evaluation_score: float | None = Field(
+        default=None,
+        serialization_alias="evaluationScore",
+    )
     verdict_label: str | None = Field(
         default=None,
         serialization_alias="verdictLabel",

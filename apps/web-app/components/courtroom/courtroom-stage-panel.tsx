@@ -6,72 +6,96 @@ import {
 
 import { PlaybackControls } from "@/components/courtroom/playback-controls";
 import { CourtroomStage } from "@/components/courtroom/stage/courtroom-stage";
-import type { PlaybackMode } from "@/hooks/use-courtroom-playback";
+
+function formatTurnSummary({
+  currentSpeakerId,
+  currentTurnIndex,
+  currentTurnScene,
+  totalTurnCount,
+  transcript,
+}: {
+  currentSpeakerId: string | null;
+  currentTurnIndex: number;
+  currentTurnScene: string | null;
+  totalTurnCount: number;
+  transcript: TranscriptData;
+}) {
+  const sceneLabel = currentTurnScene ? getSceneLabel(currentTurnScene) : "Awaiting scene";
+  const speakerName = currentSpeakerId
+    ? getSpeakerShortName(transcript, currentSpeakerId)
+    : "No speaker";
+
+  return `${sceneLabel} · ${speakerName} · Turn ${currentTurnIndex + 1} of ${totalTurnCount}`;
+}
 
 export function CourtroomStagePanel({
   currentLineProgress,
   currentSpeakerId,
+  currentTimeMs,
+  currentTurnIndex,
   currentTurnScene,
+  isFullscreen,
   isPlaying,
-  manifestSource,
-  mode,
+  isTranscriptVisible,
+  onNextTurn,
+  onPreviousTurn,
   onRestart,
+  onSeek,
+  onToggleFullscreen,
   onTogglePlayback,
+  onToggleTranscript,
+  onVolumeChange,
   overallProgress,
+  playbackRate,
+  setPlaybackRate,
+  subtitle,
+  totalDurationMs,
+  totalTurnCount,
   transcript,
+  volume,
   witnessInBoxId,
 }: {
   currentLineProgress: number;
   currentSpeakerId: string | null;
+  currentTimeMs: number;
+  currentTurnIndex: number;
   currentTurnScene: string | null;
+  isFullscreen: boolean;
   isPlaying: boolean;
-  manifestSource: string;
-  mode: PlaybackMode;
+  isTranscriptVisible: boolean;
+  onNextTurn: () => void;
+  onPreviousTurn: () => void;
   onRestart: () => void;
+  onSeek: (timeMs: number) => void;
+  onToggleFullscreen: () => void;
   onTogglePlayback: () => void;
+  onToggleTranscript: () => void;
+  onVolumeChange: (nextValue: number) => void;
   overallProgress: number;
+  playbackRate: number;
+  setPlaybackRate: (nextValue: number) => void;
+  subtitle: string | null;
+  totalDurationMs: number;
+  totalTurnCount: number;
   transcript: TranscriptData;
+  volume: number;
   witnessInBoxId: string | null;
 }) {
-  const speakerName = currentSpeakerId
-    ? getSpeakerShortName(transcript, currentSpeakerId)
-    : "No one speaking";
-  const sceneLabel = currentTurnScene ? getSceneLabel(currentTurnScene) : "Awaiting Scene";
-  const showHeader = isPlaying && mode === "audio";
-  const sectionLabelClassName =
-    "text-[0.65rem] uppercase tracking-[0.35em] text-[var(--muted)]";
-  const sectionValueClassName =
-    "mt-1 font-display text-lg leading-none text-[var(--foreground)] sm:text-xl pb-0.5";
-
   return (
-    <div className="panel flex flex-col rounded-[32px] p-3 sm:p-4 lg:min-h-0 lg:p-3.5">
-      <div
-        aria-hidden={!showHeader}
-        className={`flex shrink-0 items-start justify-between gap-4 px-3 py-3 transition-opacity duration-200 sm:px-4 lg:px-3 lg:py-2.5 ${
-          showHeader ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
-      >
-        <div>
-          <p className={sectionLabelClassName}>Active Scene</p>
-          <p className={sectionValueClassName}>{sceneLabel}</p>
-        </div>
-
-        <div className="min-w-0 text-right">
-          <p className={sectionLabelClassName}>Speaking Now</p>
-          <div className="mt-1 flex items-center justify-end gap-3">
-            <div className="flex items-end gap-1.5" aria-hidden="true">
-              <span className="h-2 w-1 rounded-full bg-[var(--accent-soft)] animate-[speaker-bar_0.9s_ease-in-out_infinite]" />
-              <span className="h-4 w-1 rounded-full bg-[var(--accent)] animate-[speaker-bar_0.9s_ease-in-out_0.18s_infinite]" />
-              <span className="h-3 w-1 rounded-full bg-[var(--accent-soft)] animate-[speaker-bar_0.9s_ease-in-out_0.36s_infinite]" />
-            </div>
-            <div className="min-w-0">
-              <p className={`truncate ${sectionValueClassName}`}>{speakerName}</p>
-            </div>
-          </div>
-        </div>
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border border-[#c8bcaa] bg-[#fbf7f1]">
+      <div className="border-b border-[#dbcfbf] bg-[#f3ece2] px-4 py-2 text-sm text-[#4f473d]">
+        <span className="block truncate font-medium text-[#211c17]">
+          {formatTurnSummary({
+            currentSpeakerId,
+            currentTurnIndex,
+            currentTurnScene,
+            totalTurnCount,
+            transcript,
+          })}
+        </span>
       </div>
 
-      <div className="relative h-[clamp(20rem,48vh,42rem)] min-h-[20rem] overflow-hidden rounded-[24px] sm:h-[clamp(24rem,52vh,44rem)] lg:h-[clamp(21rem,39vh,31rem)]">
+      <div className="relative aspect-video w-full flex-1 bg-[#110d0a] min-[1024px]:aspect-auto min-[1024px]:min-h-0">
         <CourtroomStage
           activeSpeakerId={currentSpeakerId}
           currentLineProgress={currentLineProgress}
@@ -82,16 +106,31 @@ export function CourtroomStagePanel({
         />
       </div>
 
-      <div className="mt-2.5 px-1 sm:px-2">
-        <PlaybackControls
-          isPlaying={isPlaying}
-          manifestSource={manifestSource}
-          mode={mode}
-          onRestart={onRestart}
-          onTogglePlayback={onTogglePlayback}
-          overallProgress={overallProgress}
-        />
+      <PlaybackControls
+        currentTimeMs={currentTimeMs}
+        isFullscreen={isFullscreen}
+        isPlaying={isPlaying}
+        isTranscriptVisible={isTranscriptVisible}
+        onNextTurn={onNextTurn}
+        onPreviousTurn={onPreviousTurn}
+        onRestart={onRestart}
+        onSeek={onSeek}
+        onToggleFullscreen={onToggleFullscreen}
+        onTogglePlayback={onTogglePlayback}
+        onToggleTranscript={onToggleTranscript}
+        onVolumeChange={onVolumeChange}
+        overallProgress={overallProgress}
+        playbackRate={playbackRate}
+        setPlaybackRate={setPlaybackRate}
+        totalDurationMs={totalDurationMs}
+        volume={volume}
+      />
+
+      <div className="border-t border-[#ddd1c1] bg-[#f7f1e8] px-4 py-3">
+        <p className="text-sm leading-6 text-[#433c34]">
+          {subtitle ?? "The current line will appear here while playback advances."}
+        </p>
       </div>
-    </div>
+    </section>
   );
 }

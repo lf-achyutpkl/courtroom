@@ -1,4 +1,6 @@
-.PHONY: help web-dev web-build web-start web-lint api-dev api-test agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker
+DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
+
+.PHONY: help web-dev web-build web-start web-lint api-dev api-test agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker docker-up docker-down docker-logs
 
 help:
 	@echo "Available targets:"
@@ -12,6 +14,9 @@ help:
 	@echo "  agent-test           Run agent-service tests"
 	@echo "  agent-eval-baseline  Run the agent baseline evaluation"
 	@echo "  worker               Start all API-owned background workers"
+	@echo "  docker-up            Start the Docker Compose stack"
+	@echo "  docker-down          Stop the Docker Compose stack"
+	@echo "  docker-logs          Follow Docker Compose logs"
 
 web-dev:
 	pnpm --dir apps/web-app dev
@@ -42,3 +47,12 @@ agent-eval-baseline:
 
 worker:
 	$(MAKE) -C apps/api-service worker-all
+
+docker-up:
+	$(DOCKER_COMPOSE) up --build
+
+docker-down:
+	$(DOCKER_COMPOSE) down
+
+docker-logs:
+	$(DOCKER_COMPOSE) logs -f

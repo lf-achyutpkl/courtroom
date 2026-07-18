@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+!.env.compose.example
+!**/.env.example
 apps/agent-service/evals/reports/
 *.egg-info/
 __pycache__/

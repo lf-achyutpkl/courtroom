@@ -13,11 +13,12 @@ Python 3.11-3.13 is currently supported for this workspace. Python 3.14 is not y
 
 ## Local Development
 
-Apply database migrations from `../../infra/db/migrations/`, then create a local environment file:
+Apply database migrations with Alembic, then create a local environment file:
 
 ```bash
 uv sync
 cp .env.example .env
+make db-upgrade
 ```
 
 Update `DATABASE_URL` in `.env` if you are not using the local default.
@@ -42,6 +43,18 @@ Or start queue-specific workers:
 ```bash
 make worker-llm
 make worker-tts
+```
+
+Create a new migration after changing SQLAlchemy models with:
+
+```bash
+make db-revision MESSAGE="describe_change"
+```
+
+Check the currently applied revision with:
+
+```bash
+make db-current
 ```
 
 The simulation pipeline now runs in two worker-owned stages:

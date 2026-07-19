@@ -1,7 +1,7 @@
 UV_CACHE_DIR ?= /tmp/uv-cache
 REDIS_URL ?= redis://localhost:6379/0
 
-.PHONY: check lint format-check typecheck dev test worker-all worker-llm worker-tts
+.PHONY: check lint format-check typecheck dev test worker-all worker-llm worker-tts db-upgrade db-current db-revision
 
 check: lint format-check typecheck
 
@@ -28,3 +28,12 @@ worker-llm:
 
 worker-tts:
 	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python -m api_service.worker --url $(REDIS_URL) simulation_tts
+
+db-upgrade:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run alembic upgrade head
+
+db-current:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run alembic current
+
+db-revision:
+	UV_CACHE_DIR=$(UV_CACHE_DIR) uv run alembic revision --autogenerate -m "$(MESSAGE)"

@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "FastAPI backend API for the courtroom simulator."
 requires-python = ">=3.11,<3.14"
 dependencies = [
+  "alembic>=1.16.0",
   "agent-service",
   "boto3>=1.39.0",
   "courtroom-domain",

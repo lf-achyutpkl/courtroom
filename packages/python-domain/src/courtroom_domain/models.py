@@ -44,6 +44,11 @@ class WitnessProfile(BaseModel):
     contradicts: str | None = None
 
 
+class DisputedFact(BaseModel):
+    fact_id: str
+    text: str
+
+
 class CaseJurisdiction(BaseModel):
     country: Literal["US"] = "US"
     state: Literal["California"] = "California"
@@ -84,12 +89,13 @@ class VerdictOutput(BaseModel):
 
 class CaseFile(BaseModel):
     case_id: str
+    case_title: str
     case_type: Literal["criminal", "civil"]
     charge_or_claim: str
     jurisdiction: CaseJurisdiction = Field(default_factory=CaseJurisdiction)
     parties: Parties
     ground_truth: str
-    disputed_facts: list[str] = Field(default_factory=list)
+    disputed_facts: list[DisputedFact] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
     witnesses: list[WitnessProfile] = Field(default_factory=list)
 

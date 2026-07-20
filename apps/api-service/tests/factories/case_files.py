@@ -6,6 +6,7 @@ from courtroom_domain import CaseFile
 def build_case_file(**overrides) -> CaseFile:
     payload = {
         "case_id": "case-123",
+        "case_title": "People v. Vale",
         "case_type": "criminal",
         "charge_or_claim": "Grand theft auto",
         "parties": {
@@ -13,7 +14,7 @@ def build_case_file(**overrides) -> CaseFile:
             "defendant": "Jordan Vale",
         },
         "ground_truth": "Ground truth",
-        "disputed_facts": ["Fact one"],
+        "disputed_facts": [{"fact_id": "F1", "text": "Fact one"}],
         "evidence": [],
         "witnesses": [],
     }

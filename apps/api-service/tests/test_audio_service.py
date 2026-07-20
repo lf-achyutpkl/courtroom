@@ -55,6 +55,7 @@ def build_case_file() -> CaseFile:
     return CaseFile.model_validate(
         {
             "case_id": str(uuid4()),
+            "case_title": "People v. Rivera",
             "case_type": "criminal",
             "charge_or_claim": "Grand theft auto",
             "parties": {
@@ -62,6 +63,7 @@ def build_case_file() -> CaseFile:
                 "defendant": "Alex Rivera",
             },
             "ground_truth": "The defendant took a parked vehicle.",
+            "disputed_facts": [],
             "evidence": [],
             "witnesses": [
                 {

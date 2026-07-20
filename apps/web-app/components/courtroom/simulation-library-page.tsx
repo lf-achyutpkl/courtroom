@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useSimulationRunCatalog } from "@/hooks/use-simulation-run-catalog";
 import {
   formatDuration,
+  formatEvaluationScore,
   formatRunDate,
   getCaseTypeLabel,
   getStatusLabel,
@@ -98,13 +99,12 @@ function LibraryStatus({
                 Review trial runs with the discipline of a courtroom analysis desk.
               </p>
             </div>
-            <button
-              type="button"
-              disabled
-              className="inline-flex h-10 items-center justify-center rounded-[8px] border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f4efe6] disabled:cursor-not-allowed disabled:opacity-100"
+            <Link
+              href="/case-files/new"
+              className="inline-flex h-10 items-center justify-center rounded-[8px] border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f4efe6] transition-colors duration-150 hover:bg-[#36312b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#e3ddd2]"
             >
-              New simulation
-            </button>
+              New case file
+            </Link>
           </header>
 
           <div className="py-12 sm:py-16">
@@ -283,13 +283,12 @@ export function SimulationLibraryPage() {
                 </p>
               </div>
 
-              <button
-                type="button"
-                disabled
-                className="inline-flex h-10 items-center justify-center rounded-[8px] border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f4efe6] disabled:cursor-not-allowed disabled:opacity-100"
+              <Link
+                href="/case-files/new"
+                className="inline-flex h-10 items-center justify-center rounded-[8px] border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f4efe6] transition-colors duration-150 hover:bg-[#36312b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#e3ddd2]"
               >
-                New simulation
-              </button>
+                New case file
+              </Link>
             </div>
           </header>
 

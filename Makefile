@@ -1,6 +1,6 @@
 DOCKER_COMPOSE ?= $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker compose"; fi)
 
-.PHONY: help web-dev web-build web-start web-lint api-dev api-test agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker docker-up docker-down docker-logs
+.PHONY: help web-dev web-build web-start web-lint api-dev api-test api-db-upgrade api-db-current api-db-revision agent-dev agent-test agent-eval-baseline agent-langgraph-dev worker docker-up docker-down docker-logs
 
 help:
 	@echo "Available targets:"
@@ -10,6 +10,9 @@ help:
 	@echo "  web-lint             Run web app linting"
 	@echo "  api-dev              Start the FastAPI backend API"
 	@echo "  api-test             Run API service tests"
+	@echo "  api-db-upgrade       Apply database migrations"
+	@echo "  api-db-current       Show the current database revision"
+	@echo "  api-db-revision      Generate a new Alembic revision with MESSAGE=..."
 	@echo "  agent-dev            Start the LangGraph dev server"
 	@echo "  agent-test           Run agent-service tests"
 	@echo "  agent-eval-baseline  Run the agent baseline evaluation"
@@ -35,6 +38,15 @@ api-dev:
 
 api-test:
 	$(MAKE) -C apps/api-service test
+
+api-db-upgrade:
+	$(MAKE) -C apps/api-service db-upgrade
+
+api-db-current:
+	$(MAKE) -C apps/api-service db-current
+
+api-db-revision:
+	$(MAKE) -C apps/api-service db-revision MESSAGE="$(MESSAGE)"
 
 agent-dev:
 	$(MAKE) -C apps/agent-service langgraph-dev

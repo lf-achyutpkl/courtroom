@@ -21,6 +21,7 @@ def build_case_file() -> CaseFile:
     return CaseFile.model_validate(
         {
             "case_id": "case-1",
+            "case_title": "State v. Defendant",
             "case_type": "criminal",
             "charge_or_claim": "Test charge",
             "jurisdiction": {
@@ -34,7 +35,7 @@ def build_case_file() -> CaseFile:
                 "defendant": "Defendant",
             },
             "ground_truth": "Ground truth",
-            "disputed_facts": ["fact-1"],
+            "disputed_facts": [{"fact_id": "F1", "text": "fact-1"}],
             "evidence": [],
             "witnesses": [
                 {

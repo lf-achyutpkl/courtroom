@@ -1,13 +1,22 @@
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from courtroom_domain import EditAction, manual_operation_from_payload
-from ...api.deps import get_case_file_repository
+from ...api.deps import (
+    get_case_file_message_repository,
+    get_case_file_repository,
+)
 from ...core.config import get_database_url
+from ...repositories.case_file_messages import (
+    CaseFileMessageRepository,
+    StoredCaseFileMessage,
+)
 from ...repositories.case_files import (
     CaseFileNotFoundError,
     CaseFileRepository,
@@ -15,13 +24,14 @@ from ...repositories.case_files import (
     StoredCaseFile,
 )
 from ...schemas.case_files import (
+    CaseFileMessageResponse,
     CaseFileMessageRequest,
     CaseFileResponse,
     ManualMutationRequest,
     ManualMutationResponse,
 )
 from ...services.case_file_factory import build_initial_case_file
-from ...workflows.case_editor import stream_case_editor_response
+from ...workflows.case_editor import iter_case_editor_stream_chunks
 
 
 router = APIRouter()
@@ -35,6 +45,18 @@ def _response_from_record(record: StoredCaseFile) -> CaseFileResponse:
         case_file=record.case_file,
         created_at=record.created_at,
         updated_at=record.updated_at,
+    )
+
+
+def _message_response_from_record(
+    record: StoredCaseFileMessage,
+) -> CaseFileMessageResponse:
+    return CaseFileMessageResponse(
+        id=record.id,
+        case_file_id=record.case_file_id,
+        role=record.role,
+        content=record.content,
+        created_at=record.created_at,
     )
 
 
@@ -63,6 +85,29 @@ def get_case_file(
             detail="Case file not found.",
         )
     return _response_from_record(record)
+
+
+@router.get(
+    "/case-files/{case_file_id}/messages",
+    response_model=list[CaseFileMessageResponse],
+)
+def get_case_file_messages(
+    case_file_id: UUID,
+    case_file_repository: CaseFileRepository = Depends(get_case_file_repository),
+    case_file_message_repository: CaseFileMessageRepository = Depends(
+        get_case_file_message_repository
+    ),
+) -> list[CaseFileMessageResponse]:
+    if case_file_repository.get(case_file_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case file not found.",
+        )
+
+    return [
+        _message_response_from_record(record)
+        for record in case_file_message_repository.list_for_case_file(case_file_id)
+    ]
 
 
 @router.post(
@@ -118,6 +163,9 @@ def post_case_file_message(
     case_file_id: UUID,
     request: CaseFileMessageRequest,
     case_file_repository: CaseFileRepository = Depends(get_case_file_repository),
+    case_file_message_repository: CaseFileMessageRepository = Depends(
+        get_case_file_message_repository
+    ),
 ) -> StreamingResponse:
     if case_file_repository.get(case_file_id) is None:
         raise HTTPException(
@@ -125,14 +173,39 @@ def post_case_file_message(
             detail="Case file not found.",
         )
 
-    return StreamingResponse(
-        stream_case_editor_response(
+    case_file_message_repository.create(
+        case_file_id=case_file_id,
+        role="human",
+        content=request.message,
+    )
+
+    def stream_response() -> Iterator[bytes]:
+        ai_parts: list[str] = []
+        for chunk in iter_case_editor_stream_chunks(
             case_file_id=case_file_id,
             message=request.message,
             selected_card=request.selected_card,
             case_files=case_file_repository,
             database_url=get_database_url(),
-        ),
+        ):
+            if chunk.kind == "text-delta":
+                ai_parts.append(str(chunk.data["delta"]))
+            yield f"data: {json.dumps(chunk.data, ensure_ascii=False)}\n\n".encode(
+                "utf-8"
+            )
+
+        ai_message = "".join(ai_parts).strip()
+        if ai_message:
+            case_file_message_repository.create(
+                case_file_id=case_file_id,
+                role="ai",
+                content=ai_message,
+            )
+
+        yield b"data: [DONE]\n\n"
+
+    return StreamingResponse(
+        stream_response(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from ..core.config import get_database_url, get_redis_url
 from ..queue.simulation_pipeline import RqSimulationQueue, SimulationQueue
+from ..repositories.case_file_messages import (
+    CaseFileMessageRepository,
+    PostgresCaseFileMessageRepository,
+)
 from ..repositories.case_files import CaseFileRepository, PostgresCaseFileRepository
 from ..repositories.simulation_runs import (
     PostgresSimulationRunRepository,
@@ -11,6 +15,10 @@ from ..repositories.simulation_runs import (
 
 def get_case_file_repository() -> CaseFileRepository:
     return PostgresCaseFileRepository(get_database_url())
+
+
+def get_case_file_message_repository() -> CaseFileMessageRepository:
+    return PostgresCaseFileMessageRepository(get_database_url())
 
 
 def get_simulation_run_repository() -> SimulationRunRepository:

@@ -8,6 +8,16 @@ type MessageRouteProps = {
   }>;
 };
 
+export async function GET(_: NextRequest, { params }: MessageRouteProps) {
+  const { caseFileId } = await params;
+  const response = await fetch(buildApiServiceUrl(`/case-files/${caseFileId}/messages`), {
+    cache: "no-store",
+  });
+
+  const payload = await response.json();
+  return Response.json(payload, { status: response.status });
+}
+
 export async function POST(request: NextRequest, { params }: MessageRouteProps) {
   const { caseFileId } = await params;
   const bodyText = await request.text();

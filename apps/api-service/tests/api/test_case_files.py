@@ -9,8 +9,12 @@ from courtroom_domain import CaseEditOperation, CaseFile, apply_case_edit_result
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from api_service.api.deps import get_case_file_repository
+from api_service.api.deps import (
+    get_case_file_message_repository,
+    get_case_file_repository,
+)
 from api_service.main import create_app
+from api_service.repositories.case_file_messages import StoredCaseFileMessage
 from api_service.repositories.case_files import (
     CaseFileNotFoundError,
     CaseFileRevisionConflictError,
@@ -91,9 +95,43 @@ class InMemoryCaseFileRepository:
         return updated
 
 
-def build_client(repository: InMemoryCaseFileRepository) -> TestClient:
+class InMemoryCaseFileMessageRepository:
+    def __init__(self) -> None:
+        self.records: list[StoredCaseFileMessage] = []
+
+    def list_for_case_file(self, case_file_id: UUID) -> list[StoredCaseFileMessage]:
+        return [record for record in self.records if record.case_file_id == case_file_id]
+
+    def create(
+        self,
+        *,
+        case_file_id: UUID,
+        role: str,
+        content: str,
+    ) -> StoredCaseFileMessage:
+        created_at = datetime(2026, 1, 1, tzinfo=timezone.utc) + timedelta(
+            seconds=len(self.records)
+        )
+        record = StoredCaseFileMessage(
+            id=uuid4(),
+            case_file_id=case_file_id,
+            role=role,  # type: ignore[arg-type]
+            content=content,
+            created_at=created_at,
+        )
+        self.records.append(record)
+        return record
+
+
+def build_client(
+    repository: InMemoryCaseFileRepository,
+    message_repository: InMemoryCaseFileMessageRepository | None = None,
+) -> TestClient:
     app: FastAPI = create_app()
     app.dependency_overrides[get_case_file_repository] = lambda: repository
+    app.dependency_overrides[get_case_file_message_repository] = (
+        lambda: message_repository or InMemoryCaseFileMessageRepository()
+    )
     return TestClient(app)
 
 
@@ -281,10 +319,36 @@ class CaseFileApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 409)
 
+    def test_get_messages_returns_persisted_transcript(self) -> None:
+        repository = InMemoryCaseFileRepository()
+        message_repository = InMemoryCaseFileMessageRepository()
+        record = repository.create(build_case_file())
+        message_repository.create(
+            case_file_id=record.id,
+            role="human",
+            content="Draft the witness list.",
+        )
+        message_repository.create(
+            case_file_id=record.id,
+            role="ai",
+            content="I added a first-pass witness list.",
+        )
+        client = build_client(repository, message_repository)
+
+        response = client.get(f"/case-files/{record.id}/messages")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()[0]["content"],
+            "Draft the witness list.",
+        )
+        self.assertEqual(response.json()[1]["role"], "ai")
+
     def test_message_endpoint_streams_sse_protocol(self) -> None:
         repository = InMemoryCaseFileRepository()
+        message_repository = InMemoryCaseFileMessageRepository()
         record = repository.create(build_case_file())
-        client = build_client(repository)
+        client = build_client(repository, message_repository)
 
         with (
             patch(
@@ -292,12 +356,45 @@ class CaseFileApiTest(unittest.TestCase):
                 return_value="postgresql://example",
             ),
             patch(
-                "api_service.api.routers.case_files.stream_case_editor_response",
+                "api_service.api.routers.case_files.iter_case_editor_stream_chunks",
                 return_value=iter(
                     [
-                        b'data: {"type":"start","messageId":"m1"}\n\n',
-                        b'data: {"type":"data-case-file-update","id":"case_metadata","data":{"action":"edit_card"}}\n\n',
-                        b"data: [DONE]\n\n",
+                        type(
+                            "Chunk",
+                            (),
+                            {
+                                "kind": "start",
+                                "data": {"type": "start", "messageId": "m1"},
+                            },
+                        )(),
+                        type(
+                            "Chunk",
+                            (),
+                            {
+                                "kind": "text-delta",
+                                "data": {"type": "text-delta", "id": "t1", "delta": "Sharper "},
+                            },
+                        )(),
+                        type(
+                            "Chunk",
+                            (),
+                            {
+                                "kind": "text-delta",
+                                "data": {"type": "text-delta", "id": "t1", "delta": "title"},
+                            },
+                        )(),
+                        type(
+                            "Chunk",
+                            (),
+                            {
+                                "kind": "data-case-file-update",
+                                "data": {
+                                    "type": "data-case-file-update",
+                                    "id": "case_metadata",
+                                    "data": {"action": "edit_card"},
+                                },
+                            },
+                        )(),
                     ]
                 ),
             ),
@@ -319,6 +416,11 @@ class CaseFileApiTest(unittest.TestCase):
             "v1",
         )
         self.assertIn('"type":"data-case-file-update"', response.text)
+        self.assertEqual(len(message_repository.records), 2)
+        self.assertEqual(message_repository.records[0].role, "human")
+        self.assertEqual(message_repository.records[0].content, "make the title sharper")
+        self.assertEqual(message_repository.records[1].role, "ai")
+        self.assertEqual(message_repository.records[1].content, "Sharper title")
 
 
 if __name__ == "__main__":

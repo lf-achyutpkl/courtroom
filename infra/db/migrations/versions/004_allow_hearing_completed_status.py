@@ -4,7 +4,7 @@ from pathlib import Path
 
 from alembic import op
 
-revision = "004_allow_hearing_completed_status"
+revision = "004_allow_hearing_completed"
 down_revision = "003_add_simulation_audio_stage"
 branch_labels = None
 depends_on = None

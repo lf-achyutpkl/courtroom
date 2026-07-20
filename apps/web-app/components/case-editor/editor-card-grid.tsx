@@ -58,7 +58,7 @@ function SectionShell({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[24px] border border-[#ddd2c4] bg-[#f8f3eb] p-4 shadow-[0_16px_40px_rgba(54,42,23,0.06)] sm:p-5">
+    <section className="border border-[#ddd2c4] bg-[linear-gradient(180deg,#fbf7f1_0%,#f4ede3_100%)] p-4 shadow-[0_18px_40px_rgba(54,42,23,0.07)] sm:p-5">
       {children}
     </section>
   );
@@ -71,6 +71,7 @@ export function EditorCardGrid({
   onCloseEditor,
   onDeleteCard,
   onOpenEditor,
+  onSelectTarget,
   selectedTarget,
   pendingMutationKey,
   recentAiChange,
@@ -86,6 +87,7 @@ export function EditorCardGrid({
   onCloseEditor: () => void;
   onDeleteCard: (card: SelectedCard) => void;
   onOpenEditor: (target: EditorTarget) => void;
+  onSelectTarget: (target: EditorTarget) => void;
   selectedTarget: EditorTarget | null;
   pendingMutationKey: string | null;
   recentAiChange: RecentCardChange | null;
@@ -238,9 +240,17 @@ export function EditorCardGrid({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col gap-4">
-      <SectionShell>
-        <div className="flex flex-wrap gap-2">
+    <aside className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-[#d6c9b7] bg-[linear-gradient(180deg,#efe6d7_0%,#f7f1e7_7%,#f3ece1_100%)] shadow-[0_26px_60px_rgba(54,42,23,0.11)]">
+      <header className="border-b border-[#deceb7] bg-[linear-gradient(180deg,rgba(251,246,238,0.96)_0%,rgba(242,233,220,0.96)_100%)] px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[0.8rem] font-medium tracking-[0.08em] text-[#5d4b31] uppercase">
+            Case editor
+          </p>
+          <span className="rounded-full border border-[#dccfbf] bg-[#fff9f1] px-3 py-1.5 text-xs font-medium text-[#5a4a38]">
+            {caseFile.witnesses.length + caseFile.evidence.length + caseFile.disputed_facts.length + 1} cards
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
           {readiness.warnings.length > 0 ? (
             readiness.warnings.map((warning) => (
               <span
@@ -256,7 +266,9 @@ export function EditorCardGrid({
             </span>
           )}
         </div>
-      </SectionShell>
+      </header>
+
+      <div className="flex-1 space-y-4 overflow-y-auto px-3 py-3 sm:px-0 sm:py-4">
 
       {isCaseMostlyEmpty(caseFile) ? (
         <SectionShell>
@@ -269,7 +281,6 @@ export function EditorCardGrid({
         </SectionShell>
       ) : null}
 
-      <div className="flex-1 space-y-4 overflow-y-auto pr-1">
         <SectionShell>
           <SectionToggle
             collapsed={collapsedSections.overview}
@@ -287,6 +298,12 @@ export function EditorCardGrid({
                 )}
                 isSelected={selectedCard?.card_type === "case_metadata"}
                 onSelect={() =>
+                  onSelectTarget({
+                    kind: "existing",
+                    card: { card_type: "case_metadata", card_id: null },
+                  })
+                }
+                onView={() =>
                   onOpenEditor({
                     kind: "existing",
                     card: { card_type: "case_metadata", card_id: null },
@@ -298,22 +315,22 @@ export function EditorCardGrid({
         </SectionShell>
 
         <SectionShell>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <SectionToggle
-              collapsed={collapsedSections.witnesses}
-              countLabel={`${caseFile.witnesses.length}`}
-              description="People who move the narrative and carry the factual record."
-              onToggle={() => toggleSection("witnesses")}
-              title="Witnesses"
-            />
-            <TextButton
-              className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
-              onClick={() => onOpenEditor({ kind: "new", cardType: "witness" })}
-            >
-              <PlusIcon />
-              Add witness
-            </TextButton>
-          </div>
+          <SectionToggle
+            actions={
+              <TextButton
+                className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
+                onClick={() => onOpenEditor({ kind: "new", cardType: "witness" })}
+              >
+                <PlusIcon />
+                Add
+              </TextButton>
+            }
+            collapsed={collapsedSections.witnesses}
+            countLabel={`${caseFile.witnesses.length}`}
+            description="People who move the narrative and carry the factual record."
+            onToggle={() => toggleSection("witnesses")}
+            title="Witnesses"
+          />
           {!collapsedSections.witnesses ? (
             <div className="mt-4 grid gap-3">
               {caseFile.witnesses.length === 0 ? (
@@ -335,6 +352,12 @@ export function EditorCardGrid({
                     selectedCard.card_id === witness.witness_id
                   }
                   onSelect={() =>
+                    onSelectTarget({
+                      kind: "existing",
+                      card: { card_type: "witness", card_id: witness.witness_id },
+                    })
+                  }
+                  onView={() =>
                     onOpenEditor({
                       kind: "existing",
                       card: { card_type: "witness", card_id: witness.witness_id },
@@ -348,22 +371,22 @@ export function EditorCardGrid({
         </SectionShell>
 
         <SectionShell>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <SectionToggle
-              collapsed={collapsedSections.evidence}
-              countLabel={`${caseFile.evidence.length}`}
-              description="Documents, objects, and exhibits that support or weaken the case."
-              onToggle={() => toggleSection("evidence")}
-              title="Evidence"
-            />
-            <TextButton
-              className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
-              onClick={() => onOpenEditor({ kind: "new", cardType: "evidence" })}
-            >
-              <PlusIcon />
-              Add evidence
-            </TextButton>
-          </div>
+          <SectionToggle
+            actions={
+              <TextButton
+                className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
+                onClick={() => onOpenEditor({ kind: "new", cardType: "evidence" })}
+              >
+                <PlusIcon />
+                Add
+              </TextButton>
+            }
+            collapsed={collapsedSections.evidence}
+            countLabel={`${caseFile.evidence.length}`}
+            description="Documents, objects, and exhibits that support or weaken the case."
+            onToggle={() => toggleSection("evidence")}
+            title="Evidence"
+          />
           {!collapsedSections.evidence ? (
             <div className="mt-4 grid gap-3">
               {caseFile.evidence.length === 0 ? (
@@ -386,6 +409,12 @@ export function EditorCardGrid({
                     selectedCard.card_id === evidence.evidence_id
                   }
                   onSelect={() =>
+                    onSelectTarget({
+                      kind: "existing",
+                      card: { card_type: "evidence", card_id: evidence.evidence_id },
+                    })
+                  }
+                  onView={() =>
                     onOpenEditor({
                       kind: "existing",
                       card: { card_type: "evidence", card_id: evidence.evidence_id },
@@ -398,22 +427,22 @@ export function EditorCardGrid({
         </SectionShell>
 
         <SectionShell>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <SectionToggle
-              collapsed={collapsedSections.disputedFacts}
-              countLabel={`${caseFile.disputed_facts.length}`}
-              description="The factual issues the parties disagree about."
-              onToggle={() => toggleSection("disputedFacts")}
-              title="Disputed facts"
-            />
-            <TextButton
-              className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
-              onClick={() => onOpenEditor({ kind: "new", cardType: "disputed_fact" })}
-            >
-              <PlusIcon />
-              Add disputed fact
-            </TextButton>
-          </div>
+          <SectionToggle
+            actions={
+              <TextButton
+                className="border-[#d8ccbb] bg-[#fffdfa] text-[#2d2620] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
+                onClick={() => onOpenEditor({ kind: "new", cardType: "disputed_fact" })}
+              >
+                <PlusIcon />
+                Add
+              </TextButton>
+            }
+            collapsed={collapsedSections.disputedFacts}
+            countLabel={`${caseFile.disputed_facts.length}`}
+            description="The factual issues the parties disagree about."
+            onToggle={() => toggleSection("disputedFacts")}
+            title="Disputed facts"
+          />
           {!collapsedSections.disputedFacts ? (
             <div className="mt-4 grid gap-3">
               {caseFile.disputed_facts.length === 0 ? (
@@ -436,6 +465,12 @@ export function EditorCardGrid({
                     selectedCard.card_id === fact.fact_id
                   }
                   onSelect={() =>
+                    onSelectTarget({
+                      kind: "existing",
+                      card: { card_type: "disputed_fact", card_id: fact.fact_id },
+                    })
+                  }
+                  onView={() =>
                     onOpenEditor({
                       kind: "existing",
                       card: { card_type: "disputed_fact", card_id: fact.fact_id },
@@ -470,7 +505,7 @@ export function EditorCardGrid({
           target={editorTarget}
         />
       ) : null}
-    </div>
+    </aside>
   );
 }
 

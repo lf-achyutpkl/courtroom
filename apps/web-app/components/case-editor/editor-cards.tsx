@@ -10,6 +10,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   CloseIcon,
+  EyeIcon,
   TextButton,
   TrashIcon,
   WarningIcon,
@@ -22,7 +23,6 @@ import type {
 import {
   formatDisplayValue,
   formatKnowledgeValue,
-  formatUnconfirmedValue,
   getDisputedFactCompletion,
   getEvidenceCompletion,
   getOverviewCompletion,
@@ -70,6 +70,7 @@ function SummaryCard({
   isSelected,
   meta,
   onSelect,
+  onView,
   summary,
 }: {
   body: string;
@@ -78,34 +79,54 @@ function SummaryCard({
   isSelected: boolean;
   meta?: string;
   onSelect: () => void;
+  onView: () => void;
   summary: CompletionSummary;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`group w-full rounded-[18px] border px-4 py-3.5 text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7] sm:px-4 ${
+    <div
+      className={`group w-full rounded-[18px] border px-4 py-3.5 text-left transition-all duration-150 sm:px-4 ${
         isSelected
-          ? "border-[#a88145] bg-[#fff7e8] shadow-[0_18px_32px_rgba(168,129,69,0.18)] ring-1 ring-[#d9ba83]"
+          ? "border-[#cbbca8] bg-[linear-gradient(180deg,#fffdf8_0%,#f6efe3_100%)] shadow-[0_18px_32px_rgba(54,42,23,0.1)] ring-1 ring-[#e3d7c7]"
           : changed
             ? "border-[#d9b67b] bg-[#fffaf0] shadow-[0_16px_28px_rgba(84,61,30,0.08)]"
             : "border-[#ddd2c4] bg-[#fffdfa] shadow-[0_12px_24px_rgba(54,42,23,0.05)] hover:border-[#c6b49a] hover:bg-[#fffaf4]"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="min-w-0 flex-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7]"
+        >
           <h3 className="text-[0.98rem] font-medium tracking-[-0.02em] text-[#1c1916]">
             {heading}
           </h3>
           {meta ? <p className="mt-1 text-xs tracking-[0.14em] text-[#7a6b58] uppercase">{meta}</p> : null}
+        </button>
+        <div className="flex items-start gap-2">
+          <SummaryStateBadge changed={changed} summary={summary} />
+          <button
+            type="button"
+            onClick={onView}
+            aria-label={`View ${heading}`}
+            title="View details"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8ccbb] bg-[#fffdf8] text-[#2b251f] shadow-[0_8px_18px_rgba(54,42,23,0.08)] transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#f8f0e4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7]"
+          >
+            <EyeIcon />
+          </button>
         </div>
-        <SummaryStateBadge changed={changed} summary={summary} />
       </div>
-      <p className="mt-3 line-clamp-3 text-sm leading-6 text-[#4e463d]">{body}</p>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="mt-3 block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7]"
+      >
+        <p className="line-clamp-3 text-sm leading-6 text-[#4e463d]">{body}</p>
+      </button>
       {isSelected ? (
-        <p className="mt-3 text-xs font-medium text-[#755321]">Selected for chat and editing</p>
+        <p className="mt-3 text-xs font-medium text-[#5d4d3b]">Selected for chat and editing</p>
       ) : null}
-    </button>
+    </div>
   );
 }
 
@@ -114,11 +135,13 @@ export function OverviewSummaryCard({
   changed,
   isSelected,
   onSelect,
+  onView,
 }: {
   caseFile: CaseFile;
   changed: boolean;
   isSelected: boolean;
   onSelect: () => void;
+  onView: () => void;
 }) {
   const summary = getOverviewCompletion(caseFile);
   const parties = [caseFile.parties.plaintiff_or_prosecution, caseFile.parties.defendant]
@@ -140,6 +163,7 @@ export function OverviewSummaryCard({
       isSelected={isSelected}
       meta="Case overview"
       onSelect={onSelect}
+      onView={onView}
       summary={summary}
     />
   );
@@ -149,21 +173,24 @@ export function WitnessSummaryCard({
   changed,
   isSelected,
   onSelect,
+  onView,
   witness,
 }: {
   changed: boolean;
   isSelected: boolean;
   onSelect: () => void;
+  onView: () => void;
   witness: WitnessProfile;
 }) {
   return (
     <SummaryCard
       body={formatKnowledgeValue(witness.knowledge_scope)}
       changed={changed}
-      heading={witness.name.trim() || "Unnamed witness"}
+      heading={witness.witness_id.trim() || "Untitled witness"}
       isSelected={isSelected}
       meta={`${witness.persona.trim() || "Role not provided"} • ${witness.called_by}`}
       onSelect={onSelect}
+      onView={onView}
       summary={getWitnessCompletion(witness)}
     />
   );
@@ -174,11 +201,13 @@ export function EvidenceSummaryCard({
   evidence,
   isSelected,
   onSelect,
+  onView,
 }: {
   changed: boolean;
   evidence: Evidence;
   isSelected: boolean;
   onSelect: () => void;
+  onView: () => void;
 }) {
   return (
     <SummaryCard
@@ -188,6 +217,7 @@ export function EvidenceSummaryCard({
       isSelected={isSelected}
       meta={`Submitted by ${evidence.submitted_by}`}
       onSelect={onSelect}
+      onView={onView}
       summary={getEvidenceCompletion(evidence)}
     />
   );
@@ -198,11 +228,13 @@ export function DisputedFactSummaryCard({
   fact,
   isSelected,
   onSelect,
+  onView,
 }: {
   changed: boolean;
   fact: DisputedFact;
   isSelected: boolean;
   onSelect: () => void;
+  onView: () => void;
 }) {
   return (
     <SummaryCard
@@ -212,6 +244,7 @@ export function DisputedFactSummaryCard({
       isSelected={isSelected}
       meta="Disputed fact"
       onSelect={onSelect}
+      onView={onView}
       summary={getDisputedFactCompletion(fact)}
     />
   );
@@ -397,7 +430,7 @@ export function CaseCardEditorDrawer({
   });
 
   const isExisting = target.kind === "existing";
-  const drawerTitle = isExisting ? "Edit case card" : `Add ${target.cardType.replace("_", " ")}`;
+  const drawerTitle = isExisting ? "Case editor" : `Add ${target.cardType.replace("_", " ")}`;
   const activeReviewChange: RecentCardChange | null =
     reviewChange &&
     target.kind === "existing" &&
@@ -412,8 +445,8 @@ export function CaseCardEditorDrawer({
       <div className="flex h-full flex-col">
         <header className="flex items-center justify-between gap-3 border-b border-[#e7ddd1] px-5 py-4 sm:px-6">
           <div>
-            <p className="text-[0.68rem] tracking-[0.18em] text-[#7c6d58] uppercase">
-              {isExisting ? "Focused editor" : "New card"}
+            <p className="text-[0.68rem] tracking-[0.2em] text-[#6c7484] uppercase">
+              {isExisting ? "Case editor" : "New card"}
             </p>
             <h2 className="mt-1 text-lg font-medium tracking-[-0.02em] text-[#191613]">
               {isExisting ? getDrawerHeading(caseFile, target.card) : getNewCardHeading(target.cardType)}
@@ -528,6 +561,7 @@ function renderExistingEditor(
 
     return (
       <>
+        <EditableField label="Witness ID" value={witness.witness_id} onSave={(value) => onSave(card, { witness_id: value })} />
         <EditableField label="Name" value={witness.name} onSave={(value) => onSave(card, { name: value })} />
         <EditableField label="Role" value={witness.persona} onSave={(value) => onSave(card, { persona: value })} />
         <SelectField
@@ -562,7 +596,7 @@ function renderExistingEditor(
 
     return (
       <>
-        <EditableField label="Title" value={evidence.evidence_id} onSave={(value) => onSave(card, { evidence_id: value })} />
+        <EditableField label="Evidence ID" value={evidence.evidence_id} onSave={(value) => onSave(card, { evidence_id: value })} />
         <SelectField
           label="Submitted by"
           options={[
@@ -589,7 +623,7 @@ function renderExistingEditor(
 
   return (
     <>
-      <EditableField label="Card ID" value={fact.fact_id} onSave={(value) => onSave(card, { fact_id: value })} />
+      <EditableField label="Disputed Fact ID" value={fact.fact_id} onSave={(value) => onSave(card, { fact_id: value })} />
       <EditableField
         label="Factual issue"
         multiline
@@ -683,7 +717,7 @@ function renderNewEditor(
   if (cardType === "evidence") {
     return (
       <>
-        <DraftField label="Title" value={draftEvidence.evidence_id} onChange={(value) => setDraftEvidence((current) => ({ ...current, evidence_id: value }))} />
+        <DraftField label="Evidence ID" value={draftEvidence.evidence_id} onChange={(value) => setDraftEvidence((current) => ({ ...current, evidence_id: value }))} />
         <DraftSelect
           label="Submitted by"
           value={draftEvidence.submitted_by}
@@ -712,7 +746,7 @@ function renderNewEditor(
 
   return (
     <>
-      <DraftField label="Card ID" value={draftFact.fact_id} onChange={(value) => setDraftFact((current) => ({ ...current, fact_id: value }))} />
+      <DraftField label="Disputed Fact ID" value={draftFact.fact_id} onChange={(value) => setDraftFact((current) => ({ ...current, fact_id: value }))} />
       <DraftField
         label="Factual issue"
         multiline
@@ -749,25 +783,27 @@ function getDrawerHeading(caseFile: CaseFile, card: SelectedCard) {
 
   if (card.card_type === "witness") {
     const witness = caseFile.witnesses.find((item) => item.witness_id === card.card_id);
-    return witness?.name || "Witness";
+    return witness?.witness_id || "Witness";
   }
 
   if (card.card_type === "evidence") {
     const evidence = caseFile.evidence.find((item) => item.evidence_id === card.card_id);
-    return evidence ? `${evidence.evidence_id} • ${formatUnconfirmedValue(evidence.description)}` : "Evidence";
+    return evidence?.evidence_id || "Evidence";
   }
 
   const fact = caseFile.disputed_facts.find((item) => item.fact_id === card.card_id);
-  return fact ? `${fact.fact_id} • ${formatDisplayValue(fact.text)}` : "Disputed fact";
+  return fact?.fact_id || "Disputed fact";
 }
 
 export function SectionToggle({
+  actions,
   collapsed,
   countLabel,
   description,
   onToggle,
   title,
 }: {
+  actions?: ReactNode;
   collapsed: boolean;
   countLabel: string;
   description: string;
@@ -775,25 +811,33 @@ export function SectionToggle({
   title: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="flex w-full items-start justify-between gap-4 rounded-[18px] px-1 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7]"
-    >
-      <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-[1.02rem] font-medium tracking-[-0.02em] text-[#181511]">{title}</h2>
-          <span className="rounded-full border border-[#e0d6ca] bg-[#fffdfa] px-2.5 py-1 text-[0.68rem] text-[#706456]">
-            {countLabel}
-          </span>
-        </div>
-        <p className="mt-1 text-sm leading-6 text-[#5b5248]">{description}</p>
-      </div>
-      <span
-        className={`mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd2c4] bg-[#fffdfa] text-[#2e2821] transition-transform duration-150 ${collapsed ? "" : "rotate-180"}`}
+    <div className="flex items-start justify-between gap-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="min-w-0 flex-1 rounded-[18px] px-1 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f6f0e7]"
       >
-        <ChevronDownIcon />
-      </span>
-    </button>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[1.02rem] font-medium tracking-[-0.02em] text-[#181511]">{title}</h2>
+            <span className="rounded-full border border-[#e0d6ca] bg-[#fffdfa] px-2.5 py-1 text-[0.68rem] text-[#706456]">
+              {countLabel}
+            </span>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-[#5b5248]">{description}</p>
+        </div>
+      </button>
+      <div className="mt-1 inline-flex items-center gap-2 self-start">
+        {actions}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={collapsed ? `Expand ${title}` : `Collapse ${title}`}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd2c4] bg-[#fffdfa] text-[#2e2821] transition-transform duration-150 ${collapsed ? "" : "rotate-180"}`}
+        >
+          <ChevronDownIcon />
+        </button>
+      </div>
+    </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   TextButton,
   UndoIcon,
 } from "@/components/case-editor/editor-primitives";
+import { useState } from "react";
 import type { RecentCardChange } from "@/components/case-editor/editor-workspace-utils";
 
 function MessageBubble({
@@ -27,14 +28,14 @@ function MessageBubble({
 
   return (
     <article
-      className={`rounded-[18px] border px-4 py-3 text-sm leading-6 shadow-[0_14px_30px_rgba(54,42,23,0.05)] ${
+      className={`rounded-[18px] border px-3.5 py-2.5 text-sm leading-[1.55] shadow-[0_14px_30px_rgba(54,42,23,0.05)] ${
         isUser
           ? "ml-8 border-[#e2cdb0] bg-[#f7ead6] text-[#1f1b16]"
-          : "mr-8 border-[#cfd7d7] bg-[linear-gradient(180deg,#f8fbfb_0%,#f1f6f6_100%)] text-[#22302f]"
+          : "mr-8 border-[#d7be89] bg-[linear-gradient(180deg,#fff8e8_0%,#fff1cf_100%)] text-[#2d261a] shadow-[0_16px_32px_rgba(120,88,30,0.1)]"
       }`}
     >
-      <p className={`text-[0.64rem] tracking-[0.18em] uppercase ${isUser ? "text-[#7c6d58]" : "text-[#547170]"}`}>
-        {isUser ? "You" : "AI assistant"}
+      <p className={`text-[0.64rem] tracking-[0.18em] uppercase ${isUser ? "text-[#7c6d58]" : "text-[#7a6332]"}`}>
+        {isUser ? "You" : "AI update"}
       </p>
       <p className="mt-2 whitespace-pre-wrap">{text}</p>
     </article>
@@ -139,8 +140,8 @@ export function EditorChatPanel({
   selectedCardLabel: string | null;
   suggestedActions: Array<{ id: string; label: string; onClick: () => void }>;
 }) {
-  const latestChanges = changeHistory.slice(-3).reverse();
-
+  const latestChanges = changeHistory.slice(-1).reverse();
+  const [suggestedActionsCollapsed, setSuggestedActionsCollapsed] = useState(true);
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-[#d8ccbd] bg-[#f8f3eb] shadow-[0_24px_54px_rgba(54,42,23,0.08)]">
       <header className="border-b border-[#e7ddd1] px-4 py-3 sm:px-5">
@@ -170,7 +171,7 @@ export function EditorChatPanel({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5">
+      <div className="flex-1 overflow-y-auto px-4 py-3 sm:px-5 bg-olive-100">
         <div className="space-y-3">
           {messages.length === 0 ? (
             <div className="rounded-[18px] border border-dashed border-[#d8ccbe] bg-[#fffdfa] px-4 py-5 text-sm leading-6 text-[#564d43]">
@@ -178,8 +179,8 @@ export function EditorChatPanel({
             </div>
           ) : null}
 
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+          {messages.map((message, i) => (
+            <MessageBubble key={message.id + i} message={message} />
           ))}
 
           {latestChanges.map((change) => (
@@ -197,19 +198,46 @@ export function EditorChatPanel({
       <div className="border-t border-[#e7ddd1] bg-[#f8f3eb] px-4 py-3 sm:px-5">
         {suggestedActions.length > 0 ? (
           <div className="mb-2.5">
-            <p className="text-[0.64rem] tracking-[0.18em] text-[#7c6d58] uppercase">
-              Suggested next actions
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {suggestedActions.slice(0, 3).map((action) => (
-                <TextButton
-                  key={action.id}
-                  className="border-[#d8ccbb] bg-[#fffdfa] text-[#2e2720] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
-                  onClick={action.onClick}
+            {suggestedActionsCollapsed ? (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSuggestedActionsCollapsed(false)}
+                  className="text-sm text-[#6f5b3a] underline underline-offset-4 transition-colors duration-150 hover:text-[#4f3f28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8f3eb]"
                 >
-                  {action.label}
-                </TextButton>
-              ))}
+                  Suggested next actions
+                </button>
+              </div>
+            ) : null}
+            <div
+              className={`grid transition-[grid-template-rows,opacity,margin] duration-200 ${
+                suggestedActionsCollapsed ? "mt-0 grid-rows-[0fr] opacity-0" : "mt-1.5 grid-rows-[1fr] opacity-100"
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="rounded-[18px] border border-[#e3d7c8] bg-[#fcf8f1] px-3 py-2.5">
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setSuggestedActionsCollapsed(true)}
+                      className="text-sm text-[#6f5b3a] underline underline-offset-4 transition-colors duration-150 hover:text-[#4f3f28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#26231f] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fcf8f1]"
+                    >
+                      Hide suggested next actions
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {suggestedActions.slice(0, 3).map((action) => (
+                      <TextButton
+                        key={action.id}
+                        className="border-[#d8ccbb] bg-[#fffdfa] text-[#2e2720] hover:bg-[#f4ebdd] focus-visible:ring-offset-[#f8f3eb]"
+                        onClick={action.onClick}
+                      >
+                        {action.label}
+                      </TextButton>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}

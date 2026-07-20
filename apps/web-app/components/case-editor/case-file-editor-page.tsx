@@ -329,12 +329,6 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
                 <span className="rounded-full border border-[#ddd1c4] bg-[#fffdfa] px-3 py-1.5 text-sm text-[#4f473d]">
                   {record.status === "ready" ? "Ready draft" : "Draft"}
                 </span>
-                <span className="rounded-full border border-[#ddd1c4] bg-[#fffdfa] px-3 py-1.5 text-sm text-[#4f473d]">
-                  {readiness.percentComplete}% complete
-                </span>
-                <span className="rounded-full border border-[#ddd1c4] bg-[#fffdfa] px-3 py-1.5 text-sm text-[#4f473d]">
-                  {readiness.completeItems}/{readiness.totalItems} complete items
-                </span>
                 {readiness.missingRequiredDetails > 0 ? (
                   <span className="inline-flex items-center gap-2 rounded-full border border-[#e1cab8] bg-[#fff3ea] px-3 py-1.5 text-sm text-[#824d2c]">
                     <WarningIcon />
@@ -408,7 +402,7 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
           </div>
         </div>
 
-        <section className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[minmax(0,1.22fr)_minmax(24rem,0.78fr)]">
+        <section className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,1fr)]">
           <div className={`${mobileView === "chat" ? "block" : "hidden"} min-h-0 xl:block`}>
             <EditorChatPanel
               changeHistory={changeHistory}
@@ -486,6 +480,17 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
 
                   return current;
                 });
+              }}
+              onSelectTarget={(target) => {
+                setSelectedTarget(target);
+                if (
+                  target.kind !== "existing" ||
+                  !reviewChange?.selectedCard ||
+                  reviewChange.selectedCard.card_type !== target.card.card_type ||
+                  reviewChange.selectedCard.card_id !== target.card.card_id
+                ) {
+                  setReviewChange(null);
+                }
               }}
               onOpenEditor={(target) => {
                 setSelectedTarget(target);

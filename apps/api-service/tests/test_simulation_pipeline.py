@@ -26,20 +26,28 @@ class InMemoryCaseFiles:
         self.case_file = case_file
 
     def create(self, case_file: CaseFile) -> StoredCaseFile:
+        timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
         return StoredCaseFile(
             id=uuid4(),
             case_file=case_file,
-            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            status="draft",
+            revision=1,
+            created_at=timestamp,
+            updated_at=timestamp,
         )
 
     def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         if self.case_file is None:
             return None
 
+        timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
         return StoredCaseFile(
             id=case_file_id,
             case_file=self.case_file,
-            created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            status="draft",
+            revision=1,
+            created_at=timestamp,
+            updated_at=timestamp,
         )
 
 
@@ -195,6 +203,7 @@ def build_case_file() -> CaseFile:
     return CaseFile.model_validate(
         {
             "case_id": str(uuid4()),
+            "case_title": "People v. Rivera",
             "case_type": "criminal",
             "charge_or_claim": "Grand theft auto",
             "parties": {
@@ -202,6 +211,7 @@ def build_case_file() -> CaseFile:
                 "defendant": "Alex Rivera",
             },
             "ground_truth": "The defendant took a parked vehicle.",
+            "disputed_facts": [],
             "evidence": [],
             "witnesses": [],
         }

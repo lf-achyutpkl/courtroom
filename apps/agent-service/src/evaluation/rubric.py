@@ -167,7 +167,9 @@ def build_openai_rubric_judge(
 
     def judge(rubric_input: RubricInput) -> JudgeResponse:
         structured_llm = llm.bind(max_completion_tokens=1400).with_structured_output(
-            JudgeResponse, include_raw=True
+            JudgeResponse,
+            include_raw=True,
+            method="function_calling",
         )
         response = structured_llm.invoke(
             [

@@ -16,7 +16,9 @@ def render_case_context(case_file: CaseFile) -> str:
         f"- {evidence.evidence_id}: {evidence.description}"
         for evidence in case_file.evidence
     )
-    facts_lines = "\n".join(f"- {fact}" for fact in case_file.disputed_facts)
+    facts_lines = "\n".join(
+        f"- {fact.fact_id}: {fact.text}" for fact in case_file.disputed_facts
+    )
     jurisdiction = case_file.jurisdiction
     jurisdiction_line = (
         f"{jurisdiction.country}, {jurisdiction.state}, "
@@ -24,6 +26,7 @@ def render_case_context(case_file: CaseFile) -> str:
     )
     return f"""CASE FILE
 Case ID: {case_file.case_id}
+Case title: {case_file.case_title}
 Case type: {case_file.case_type}
 Jurisdiction: {jurisdiction_line}
 Charge/Claim: {case_file.charge_or_claim}

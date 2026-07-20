@@ -97,7 +97,11 @@ def invoke_structured(
         max_completion_tokens = NODE_MAX_COMPLETION_TOKENS.get(node_name, 160)
         structured_llm = llm.bind(
             max_completion_tokens=max_completion_tokens
-        ).with_structured_output(schema, include_raw=True)
+        ).with_structured_output(
+            schema,
+            include_raw=True,
+            method="function_calling",
+        )
 
         messages = [
             SystemMessage(content=system_prompt),

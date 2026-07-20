@@ -1,6 +1,18 @@
+from .case_editor import (
+    CardType,
+    CaseEditOperation,
+    CaseEditResult,
+    CaseMetadata,
+    EditAction,
+    SelectedCard,
+    apply_case_edit_result,
+    case_metadata_from_case_file,
+    manual_operation_from_payload,
+)
 from .models import (
     CaseFile,
     CaseJurisdiction,
+    DisputedFact,
     Evidence,
     NodeTelemetry,
     Parties,
@@ -11,13 +23,23 @@ from .models import (
 )
 
 __all__ = [
+    "CardType",
+    "CaseEditOperation",
+    "CaseEditResult",
+    "CaseMetadata",
     "CaseFile",
     "CaseJurisdiction",
+    "DisputedFact",
+    "EditAction",
     "Evidence",
     "NodeTelemetry",
     "Parties",
+    "SelectedCard",
     "TranscriptTurn",
     "TrialState",
     "VerdictOutput",
     "WitnessProfile",
+    "apply_case_edit_result",
+    "case_metadata_from_case_file",
+    "manual_operation_from_payload",
 ]

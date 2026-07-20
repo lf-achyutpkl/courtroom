@@ -34,12 +34,44 @@ def stream_case_editor_response(
     case_files: CaseFileRepository,
     database_url: str,
 ) -> Iterator[bytes]:
-    stream_case_edit, build_postgres_checkpointer = _load_agent_editor_contract()
     message_id = f"case-file-{case_file_id}"
     text_id = f"text-{case_file_id}"
 
-    yield _encode_sse({"type": "start", "messageId": message_id})
-    yield _encode_sse({"type": "text-start", "id": text_id})
+    for chunk in iter_case_editor_stream_chunks(
+        case_file_id=case_file_id,
+        message=message,
+        selected_card=selected_card,
+        case_files=case_files,
+        database_url=database_url,
+        message_id=message_id,
+        text_id=text_id,
+    ):
+        yield _encode_sse(chunk.data)
+    yield b"data: [DONE]\n\n"
+
+
+def iter_case_editor_stream_chunks(
+    *,
+    case_file_id: UUID,
+    message: str,
+    selected_card: SelectedCard | None,
+    case_files: CaseFileRepository,
+    database_url: str,
+    message_id: str | None = None,
+    text_id: str | None = None,
+) -> Iterator[EditorStreamChunk]:
+    stream_case_edit, build_postgres_checkpointer = _load_agent_editor_contract()
+    resolved_message_id = message_id or f"case-file-{case_file_id}"
+    resolved_text_id = text_id or f"text-{case_file_id}"
+
+    yield EditorStreamChunk(
+        kind="start",
+        data={"type": "start", "messageId": resolved_message_id},
+    )
+    yield EditorStreamChunk(
+        kind="text-start",
+        data={"type": "text-start", "id": resolved_text_id},
+    )
 
     with build_postgres_checkpointer(database_url) as checkpointer:
         for event in stream_case_edit(
@@ -50,26 +82,30 @@ def stream_case_editor_response(
             checkpointer=checkpointer,
         ):
             if event.event_type == "edit_result":
-                yield _encode_sse(
-                    {
+                yield EditorStreamChunk(
+                    kind="data-case-file-update",
+                    data={
                         "type": "data-case-file-update",
                         "id": event.payload["id"],
                         "data": event.payload["edit_result"],
-                    }
+                    },
                 )
             elif event.event_type == "narration":
                 for delta in _split_text(str(event.payload["text"])):
-                    yield _encode_sse(
-                        {
+                    yield EditorStreamChunk(
+                        kind="text-delta",
+                        data={
                             "type": "text-delta",
-                            "id": text_id,
+                            "id": resolved_text_id,
                             "delta": delta,
-                        }
+                        },
                     )
 
-    yield _encode_sse({"type": "text-end", "id": text_id})
-    yield _encode_sse({"type": "finish"})
-    yield b"data: [DONE]\n\n"
+    yield EditorStreamChunk(
+        kind="text-end",
+        data={"type": "text-end", "id": resolved_text_id},
+    )
+    yield EditorStreamChunk(kind="finish", data={"type": "finish"})
 
 
 def _split_text(text: str) -> list[str]:

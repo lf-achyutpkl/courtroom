@@ -34,3 +34,11 @@ class ManualMutationResponse(BaseModel):
 class CaseFileMessageRequest(BaseModel):
     message: str
     selected_card: SelectedCard | None = None
+
+
+class CaseFileMessageResponse(BaseModel):
+    id: UUID
+    case_file_id: UUID
+    role: Literal["human", "ai"]
+    content: str
+    created_at: datetime

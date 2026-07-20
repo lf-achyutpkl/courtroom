@@ -38,6 +38,7 @@ import {
   type CaseEditResult,
   type CaseFile,
   type ManualMutationRequest,
+  type StoredCaseFileMessage,
 } from "@/lib/case-files";
 
 function applyManualRequest(caseFile: CaseFile, request: ManualMutationRequest) {
@@ -103,6 +104,7 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
   const [input, setInput] = useState("");
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [pendingMutationKey, setPendingMutationKey] = useState<string | null>(null);
+  const [persistedMessages, setPersistedMessages] = useState<CaseEditorMessage[]>([]);
   const [changeHistory, setChangeHistory] = useState<RecentCardChange[]>([]);
   const [recentAiChange, setRecentAiChange] = useState<RecentCardChange | null>(null);
   const [reviewChange, setReviewChange] = useState<RecentCardChange | null>(null);
@@ -172,6 +174,41 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
       }
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/case-files/${caseFileId}/messages`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`message history fetch failed with status ${response.status}`);
+        }
+
+        return (await response.json()) as StoredCaseFileMessage[];
+      })
+      .then((payload) => {
+        if (cancelled) {
+          return;
+        }
+
+        setPersistedMessages(
+          payload.map((message) => ({
+            id: message.id,
+            role: message.role === "human" ? "user" : "assistant",
+            parts: [{ type: "text", text: message.content }],
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPersistedMessages([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [caseFileId]);
 
   useEffect(() => {
     if (!seedPrompt || hasSentSeedPrompt.current || requestState !== "ready") {
@@ -293,6 +330,7 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
   const selectedCardLabel = getChatFocusLabel(caseFile, selectedTarget);
   const isStreaming = status === "submitted" || status === "streaming";
   const latestChange = recentAiChange ?? changeHistory.at(-1) ?? null;
+  const conversationMessages = [...persistedMessages, ...messages];
   const suggestedActions = buildSuggestedActions(
     caseFile,
     selectedTarget,
@@ -408,7 +446,7 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
               changeHistory={changeHistory}
               input={input}
               isStreaming={isStreaming}
-              messages={messages}
+              messages={conversationMessages}
               mutationError={mutationError}
               onClearFocus={() => {
                 setSelectedTarget(null);

@@ -18,12 +18,20 @@ class CaseFileRecord(Base):
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), primary_key=True)
     case_id: Mapped[str] = mapped_column(String, nullable=False)
+    case_title: Mapped[str] = mapped_column(String, nullable=False)
     case_type: Mapped[str] = mapped_column(String, nullable=False)
     charge_or_claim: Mapped[str] = mapped_column(String, nullable=False)
     plaintiff_or_prosecution: Mapped[str] = mapped_column(String, nullable=False)
     defendant: Mapped[str] = mapped_column(String, nullable=False)
-    case_file: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    revision: Mapped[int] = mapped_column(nullable=False)
+    case_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("NOW()"),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         server_default=text("NOW()"),

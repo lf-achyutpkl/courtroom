@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/react": "^4.0.34",
+    "ai": "^7.0.31",
     "next": "16.2.10",
     "pixi.js": "^8.19.0",
     "react": "19.2.4",

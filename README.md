@@ -24,7 +24,6 @@ This is a polyglot monorepo:
 - `packages/contracts` is reserved for future shared contracts.
 - `packages/python-domain` contains shared Python domain models used by multiple services.
 
-Docker implementation is intentionally not included yet.
 
 ## Docker Deployment
 

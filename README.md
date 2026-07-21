@@ -21,7 +21,7 @@ AI courtroom simulation built with `LangGraph`, `FastAPI`, `Next.js`, and `RQ`. 
 
 ### Case Builder Walkthrough
 
-<video src="docs/assets/case-editor-Courtroom-Simulation.webm" controls muted preload="metadata"></video>
+<video src="https://github.com/user-attachments/assets/de5ce54a-cff3-4042-8f96-7353098664a8" controls muted preload="metadata"></video>
 
 </details>
 
@@ -32,7 +32,7 @@ AI courtroom simulation built with `LangGraph`, `FastAPI`, `Next.js`, and `RQ`. 
 
 ### Running Simulation Walkthrough
 
-<video src="docs/assets/demo-simulation.webm" controls muted preload="metadata"></video>
+<video src="https://github.com/user-attachments/assets/1b34fecf-52ce-4a44-a10d-a17b1340984d" controls preload="metadata"></video>
 
 </details>
 
@@ -109,10 +109,10 @@ This keeps the case-building flow grounded in the saved case file while still le
 
 The trial runtime is implemented as a LangGraph state graph with explicit phases and routing. The Mermaid diagram stays as the primary reference because it is easy to diff and keep synchronized with code, while the Studio-exported images below provide a quick visual check of the actual graph shape.
 
-*Image: Trial graph*
+*Image: Trial graph* </br>
 ![LangGraph Studio export of the full trial graph](docs/assets/trial-graph.png)
 
-*Image: Examine witness subgraph*
+*Image: Examine witness subgraph*  </br>
 ![LangGraph Studio export of the witness subgraph](docs/assets/examine-witness-subgraph.png)
 
 - `prosecution_strategy` and `defense_strategy` run in parallel after the case template is loaded, then join before witness queue construction.

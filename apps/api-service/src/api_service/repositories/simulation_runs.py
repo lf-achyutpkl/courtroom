@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 from ..db.base import SimulationRunRecord
 from ..db.session import get_session_factory
 
-
 SimulationRunStatus = Literal[
     "pending",
     "running",

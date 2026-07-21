@@ -1,6 +1,7 @@
 import unittest
+from typing import cast
 
-from courtroom_domain import CaseFile, EditAction
+from courtroom_domain import CaseFile, EditAction, Evidence
 from pydantic import ValidationError
 
 from src.case_editor.nodes import LlmCaseEditResult, _coerce_case_edit_result
@@ -39,8 +40,12 @@ class CaseEditorNodesTest(unittest.TestCase):
                     "action": EditAction.add_card,
                     "card_type": "evidence",
                     "updated_content": {
-                        "description": "Bodycam still showing the suspect near the alley.",
-                        "submitted_by": "Officer Maria Lee submitted this to the prosecution",
+                        "description": (
+                            "Bodycam still showing the suspect near the alley."
+                        ),
+                        "submitted_by": (
+                            "Officer Maria Lee submitted this to the prosecution"
+                        ),
                     },
                     "narration_hint": "Added one new evidence item.",
                 }
@@ -65,10 +70,12 @@ class CaseEditorNodesTest(unittest.TestCase):
         )
 
         assert result.updated_content is not None
+        assert result.card_type is not None
+        updated_content = cast(Evidence, result.updated_content)
         self.assertEqual(result.card_type.value, "evidence")
         self.assertEqual(result.card_id, "E1")
-        self.assertEqual(result.updated_content.evidence_id, "E1")
-        self.assertEqual(result.updated_content.submitted_by, "prosecution")
+        self.assertEqual(updated_content.evidence_id, "E1")
+        self.assertEqual(updated_content.submitted_by, "prosecution")
 
 
 if __name__ == "__main__":

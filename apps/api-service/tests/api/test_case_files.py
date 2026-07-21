@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from datetime import datetime, timedelta, timezone
+from typing import cast
 from unittest.mock import patch
 from uuid import UUID, uuid4
 
@@ -18,8 +19,8 @@ from api_service.repositories.case_file_messages import StoredCaseFileMessage
 from api_service.repositories.case_files import (
     CaseFileNotFoundError,
     CaseFileRevisionConflictError,
-    _normalize_case_file_payload,
     StoredCaseFile,
+    _normalize_case_file_payload,
 )
 
 
@@ -108,7 +109,9 @@ class InMemoryCaseFileMessageRepository:
         self.records: list[StoredCaseFileMessage] = []
 
     def list_for_case_file(self, case_file_id: UUID) -> list[StoredCaseFileMessage]:
-        return [record for record in self.records if record.case_file_id == case_file_id]
+        return [
+            record for record in self.records if record.case_file_id == case_file_id
+        ]
 
     def create(
         self,
@@ -137,8 +140,8 @@ def build_client(
 ) -> TestClient:
     app: FastAPI = create_app()
     app.dependency_overrides[get_case_file_repository] = lambda: repository
-    app.dependency_overrides[get_case_file_message_repository] = (
-        lambda: message_repository or InMemoryCaseFileMessageRepository()
+    app.dependency_overrides[get_case_file_message_repository] = lambda: (
+        message_repository or InMemoryCaseFileMessageRepository()
     )
     return TestClient(app)
 
@@ -175,7 +178,10 @@ class CaseFileApiTest(unittest.TestCase):
             "ground_truth": "Ground truth",
             "disputed_facts": [
                 "Whether Jordan Vale intended to deprive the owner of the vehicle.",
-                "Whether the repair lot gave Jordan Vale permission to move the vehicle.",
+                (
+                    "Whether the repair lot gave Jordan Vale permission to move "
+                    "the vehicle."
+                ),
             ],
             "evidence": [],
             "witnesses": [],
@@ -194,7 +200,7 @@ class CaseFileApiTest(unittest.TestCase):
             },
         )()
 
-        normalized = _normalize_case_file_payload(record)
+        normalized = _normalize_case_file_payload(cast(object, record))
 
         self.assertEqual(normalized["case_title"], "People v. Vale")
         self.assertEqual(normalized["disputed_facts"][0]["fact_id"], "F1")
@@ -271,7 +277,10 @@ class CaseFileApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual([item["id"] for item in payload], [str(first.id), str(second.id)])
+        self.assertEqual(
+            [item["id"] for item in payload],
+            [str(first.id), str(second.id)],
+        )
 
     def test_mutation_endpoint_edits_case_metadata_and_bumps_revision(self) -> None:
         repository = InMemoryCaseFileRepository()
@@ -342,7 +351,9 @@ class CaseFileApiTest(unittest.TestCase):
         assert stored is not None
         self.assertEqual(stored.case_file.witnesses[0].witness_id, "W1")
 
-    def test_mutation_endpoint_deletes_witness_and_cleans_contradiction_links(self) -> None:
+    def test_mutation_endpoint_deletes_witness_and_cleans_contradiction_links(
+        self,
+    ) -> None:
         repository = InMemoryCaseFileRepository()
         record = repository.create(
             build_case_file(
@@ -473,7 +484,11 @@ class CaseFileApiTest(unittest.TestCase):
                             (),
                             {
                                 "kind": "text-delta",
-                                "data": {"type": "text-delta", "id": "t1", "delta": "Sharper "},
+                                "data": {
+                                    "type": "text-delta",
+                                    "id": "t1",
+                                    "delta": "Sharper ",
+                                },
                             },
                         )(),
                         type(
@@ -481,7 +496,11 @@ class CaseFileApiTest(unittest.TestCase):
                             (),
                             {
                                 "kind": "text-delta",
-                                "data": {"type": "text-delta", "id": "t1", "delta": "title"},
+                                "data": {
+                                    "type": "text-delta",
+                                    "id": "t1",
+                                    "delta": "title",
+                                },
                             },
                         )(),
                         type(
@@ -519,7 +538,10 @@ class CaseFileApiTest(unittest.TestCase):
         self.assertIn('"type": "data-case-file-update"', response.text)
         self.assertEqual(len(message_repository.records), 2)
         self.assertEqual(message_repository.records[0].role, "human")
-        self.assertEqual(message_repository.records[0].content, "make the title sharper")
+        self.assertEqual(
+            message_repository.records[0].content,
+            "make the title sharper",
+        )
         self.assertEqual(message_repository.records[1].role, "ai")
         self.assertEqual(message_repository.records[1].content, "Sharper title")
 

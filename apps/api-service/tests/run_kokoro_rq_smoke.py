@@ -3,12 +3,12 @@ from __future__ import annotations
 import json
 import sys
 import time
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
-
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 API_SERVICE_SRC = REPO_ROOT / "apps" / "api-service" / "src"
@@ -19,10 +19,14 @@ for import_path in (API_SERVICE_SRC, PYTHON_DOMAIN_SRC):
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
 
-from api_service.core.config import get_database_url, get_redis_url
-from api_service.db.session import get_session_factory
-from api_service.repositories.simulation_runs import PostgresSimulationRunRepository
+config_module = import_module("api_service.core.config")
+db_session_module = import_module("api_service.db.session")
+simulation_runs_module = import_module("api_service.repositories.simulation_runs")
 
+get_database_url = config_module.get_database_url
+get_redis_url = config_module.get_redis_url
+get_session_factory = db_session_module.get_session_factory
+PostgresSimulationRunRepository = simulation_runs_module.PostgresSimulationRunRepository
 
 CASE_FILE_ID = "889a9e00-cde0-4fc8-aa97-3eed585ec2ea"
 SIMULATION_RESULT: dict[str, Any] | None = {
@@ -42,7 +46,18 @@ SIMULATION_RESULT: dict[str, Any] | None = {
     },
     "full_trial_transcript": [
         {
-            "text": "Members of the jury, [steady] you will see repair-lot security footage showing Jordan Vale driving the vehicle out of the lot at 8:42 p.m. [measured] You will also see text messages between Jordan Vale and repair-lot personnel asking when the vehicle should be returned [firm]. W1 will testify about the conversations and the question of whether the repair lot gave implied permission to move the vehicle [somber]. The evidence will allow you to decide the disputed issue of whether Jordan Vale intended to permanently deprive the owner of the vehicle [quiet].",
+            "text": (
+                "Members of the jury, [steady] you will see repair-lot security "
+                "footage showing Jordan Vale driving the vehicle out of the lot "
+                "at 8:42 p.m. [measured] You will also see text messages "
+                "between Jordan Vale and repair-lot personnel asking when the "
+                "vehicle should be returned [firm]. W1 will testify about the "
+                "conversations and the question of whether the repair lot gave "
+                "implied permission to move the vehicle [somber]. The evidence "
+                "will allow you to decide the disputed issue of whether Jordan "
+                "Vale intended to permanently deprive the owner of the vehicle "
+                "[quiet]."
+            ),
             "scene": "opening",
             "ruling": None,
             "speaker_id": "prosecution",
@@ -50,7 +65,16 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "Members of the jury, [steady] you'll see the same footage and texts the prosecutor mentioned, but you will also hear that Mr. Vale asked when the car should be returned before he moved it. [measured] The evidence will show the repair lot gave implied permission and that Mr. Vale had no intent to permanently deprive the owner. [firm] At the end of this trial we will ask you to find him not guilty because the People cannot prove intent beyond a reasonable doubt. [quiet]",
+            "text": (
+                "Members of the jury, [steady] you'll see the same footage and "
+                "texts the prosecutor mentioned, but you will also hear that "
+                "Mr. Vale asked when the car should be returned before he moved "
+                "it. [measured] The evidence will show the repair lot gave "
+                "implied permission and that Mr. Vale had no intent to "
+                "permanently deprive the owner. [firm] At the end of this trial "
+                "we will ask you to find him not guilty because the People "
+                "cannot prove intent beyond a reasonable doubt. [quiet]"
+            ),
             "scene": "opening",
             "ruling": None,
             "speaker_id": "defense",
@@ -58,7 +82,11 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[steady] When you discovered the vehicle was missing, did you find any written or verbal authorization from the repair lot allowing anyone to remove that vehicle?",
+            "text": (
+                "[steady] When you discovered the vehicle was missing, did you "
+                "find any written or verbal authorization from the repair lot "
+                "allowing anyone to remove that vehicle?"
+            ),
             "scene": "direct",
             "ruling": None,
             "speaker_id": "prosecution",
@@ -66,7 +94,11 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[steady] No, I did not find any written authorization in the vehicle's file. [measured] No one on staff reported giving verbal permission for the vehicle to be removed.",
+            "text": (
+                "[steady] No, I did not find any written authorization in the "
+                "vehicle's file. [measured] No one on staff reported giving "
+                "verbal permission for the vehicle to be removed."
+            ),
             "scene": "direct",
             "ruling": None,
             "speaker_id": "W1",
@@ -74,7 +106,12 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[pressing] Does the repair lot keep a keys-out log, and does that log show any employee signing out the keys to this vehicle at or around 8:42 PM when the security footage shows it leaving?",
+            "text": (
+                "[pressing] Does the repair lot keep a keys-out log, and does "
+                "that log show any employee signing out the keys to this vehicle "
+                "at or around 8:42 PM when the security footage shows it "
+                "leaving?"
+            ),
             "scene": "cross",
             "ruling": None,
             "speaker_id": "defense",
@@ -82,7 +119,12 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[firm] Objection, hearsay. Calls for the contents of an out-of-court record (the keys-out log) to prove its entries without foundation/authentication or establishment of the business-records exception; hearsay objection warranted.",
+            "text": (
+                "[firm] Objection, hearsay. Calls for the contents of an "
+                "out-of-court record (the keys-out log) to prove its entries "
+                "without foundation/authentication or establishment of the "
+                "business-records exception; hearsay objection warranted."
+            ),
             "scene": "objection",
             "ruling": None,
             "speaker_id": "prosecution",
@@ -90,7 +132,17 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[firm] The question seeks the contents of an out-of-court log to prove its entries without any authentication or foundation for a business-records exception. [calm] Absent testimony establishing the log’s existence, its creation in the ordinary course, time of entry, and the person with knowledge, the log is hearsay. [measured] The objection is sustained; the proponent may lay proper foundation for admissibility under the business-records exception or authenticate the log before asking for its contents.",
+            "text": (
+                "[firm] The question seeks the contents of an out-of-court log "
+                "to prove its entries without any authentication or foundation "
+                "for a business-records exception. [calm] Absent testimony "
+                "establishing the log's existence, its creation in the ordinary "
+                "course, time of entry, and the person with knowledge, the log "
+                "is hearsay. [measured] The objection is sustained; the "
+                "proponent may lay proper foundation for admissibility under the "
+                "business-records exception or authenticate the log before "
+                "asking for its contents."
+            ),
             "scene": "ruling",
             "ruling": "sustained",
             "speaker_id": "judge",
@@ -98,7 +150,10 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": [],
         },
         {
-            "text": "Mr. Vale, [measured] can you explain why you moved the vehicle from the repair lot and why you returned it later?",
+            "text": (
+                "Mr. Vale, [measured] can you explain why you moved the vehicle "
+                "from the repair lot and why you returned it later?"
+            ),
             "scene": "direct",
             "ruling": None,
             "speaker_id": "defense",
@@ -106,7 +161,12 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "I moved the vehicle because I needed to retrieve personal belongings and I believed the lot had given me permission to move it [measured]. I returned it later as soon as I realized they wanted it back and to avoid any dispute [steady].",
+            "text": (
+                "I moved the vehicle because I needed to retrieve personal "
+                "belongings and I believed the lot had given me permission to "
+                "move it [measured]. I returned it later as soon as I realized "
+                "they wanted it back and to avoid any dispute [steady]."
+            ),
             "scene": "direct",
             "ruling": None,
             "speaker_id": "W2",
@@ -114,7 +174,12 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "Mr. Vale, did any employee or agent of the repair lot expressly tell you—either in person or by text—that you had permission to take the vehicle at or before 8:42 PM on the night it left their lot? [pressing]",
+            "text": (
+                "Mr. Vale, did any employee or agent of the repair lot expressly "
+                "tell you, either in person or by text, that you had permission "
+                "to take the vehicle at or before 8:42 PM on the night it left "
+                "their lot? [pressing]"
+            ),
             "scene": "cross",
             "ruling": None,
             "speaker_id": "prosecution",
@@ -122,7 +187,13 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[firm] Objection, hearsay. Objection — hearsay. The question asks the witness to relate an out-of-court statement by a repair-lot employee/agent offered to prove that he had permission; no hearsay exception or foundation for admissibility has been established.",
+            "text": (
+                "[firm] Objection, hearsay. Objection, hearsay. The question "
+                "asks the witness to relate an out-of-court statement by a "
+                "repair-lot employee or agent offered to prove that he had "
+                "permission; no hearsay exception or foundation for "
+                "admissibility has been established."
+            ),
             "scene": "objection",
             "ruling": None,
             "speaker_id": "defense",
@@ -130,7 +201,14 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[firm] The question asks the witness to relay an out-of-court statement by a repair-lot employee/agent to prove permission. Absent a foundation showing the declarant was acting within the scope of employment and that the statement qualifies as a party-admission or other exception, this is hearsay and inadmissible as framed.",
+            "text": (
+                "[firm] The question asks the witness to relay an out-of-court "
+                "statement by a repair-lot employee or agent to prove "
+                "permission. Absent a foundation showing the declarant was "
+                "acting within the scope of employment and that the statement "
+                "qualifies as a party-admission or other exception, this is "
+                "hearsay and inadmissible as framed."
+            ),
             "scene": "ruling",
             "ruling": "sustained",
             "speaker_id": "judge",
@@ -138,7 +216,23 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": [],
         },
         {
-            "text": "[firm] The security footage clearly shows Jordan Vale driving the vehicle out of the repair lot at 8:42 p.m., and the lot witness testified there was no written authorization and no staff reported giving verbal permission. [measured] The text messages on the record show Vale asking when the vehicle should be returned, a communication consistent with someone who knew the car was not theirs and with no evidence of consent to remove it. [steady] Vale admits he moved the car and only returned it after he realized the lot wanted it back, but that admission does not erase the fact the removal was unauthorized and the jury may reasonably infer intent from those facts. [somber] Based on the footage, the lot’s testimony that no permission was given, and the defendant’s own communications and conduct, I ask you to find Jordan Vale guilty beyond a reasonable doubt.",
+            "text": (
+                "[firm] The security footage clearly shows Jordan Vale driving "
+                "the vehicle out of the repair lot at 8:42 p.m., and the lot "
+                "witness testified there was no written authorization and no "
+                "staff reported giving verbal permission. [measured] The text "
+                "messages on the record show Vale asking when the vehicle "
+                "should be returned, a communication consistent with someone who "
+                "knew the car was not theirs and with no evidence of consent to "
+                "remove it. [steady] Vale admits he moved the car and only "
+                "returned it after he realized the lot wanted it back, but that "
+                "admission does not erase the fact the removal was unauthorized "
+                "and the jury may reasonably infer intent from those facts. "
+                "[somber] Based on the footage, the lot's testimony that no "
+                "permission was given, and the defendant's own communications "
+                "and conduct, I ask you to find Jordan Vale guilty beyond a "
+                "reasonable doubt."
+            ),
             "scene": "closing",
             "ruling": None,
             "speaker_id": "prosecution",
@@ -146,7 +240,21 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "[steady] The footage shows Mr. Vale driving the car, but footage alone does not prove he intended to permanently deprive anyone of their property. [measured] The texts on the record asking when the vehicle should be returned, together with Mr. Vale’s testimony that he moved the car only to retrieve personal items and then returned it, are consistent with lack of intent to steal. [firm] The People could not authenticate the keys-out log or introduce employees’ out-of-court statements, so they have not overcome the reasonable doubt created by those admitted facts and testimony. [quiet] Given the evidence admitted at trial, you must find there is reasonable doubt about guilt and return a verdict of not guilty.",
+            "text": (
+                "[steady] The footage shows Mr. Vale driving the car, but "
+                "footage alone does not prove he intended to permanently "
+                "deprive anyone of their property. [measured] The texts on the "
+                "record asking when the vehicle should be returned, together "
+                "with Mr. Vale's testimony that he moved the car only to "
+                "retrieve personal items and then returned it, are consistent "
+                "with lack of intent to steal. [firm] The People could not "
+                "authenticate the keys-out log or introduce employees' "
+                "out-of-court statements, so they have not overcome the "
+                "reasonable doubt created by those admitted facts and testimony. "
+                "[quiet] Given the evidence admitted at trial, you must find "
+                "there is reasonable doubt about guilt and return a verdict of "
+                "not guilty."
+            ),
             "scene": "closing",
             "ruling": None,
             "speaker_id": "defense",
@@ -154,7 +262,20 @@ SIMULATION_RESULT: dict[str, Any] | None = {
             "cited_chunk_ids": None,
         },
         {
-            "text": "Not guilty, [somber], because while E1 shows the vehicle leaving the repair lot at 8:42 p.m., the People did not prove beyond a reasonable doubt that Vale intended to permanently deprive the owner. Not guilty, [measured], because W2 testified he moved the vehicle to retrieve personal belongings and believed he had permission, and E2 shows he asked when the vehicle should be returned. Not guilty, [firm], because W1 testified no written authorization existed and no staff reported verbal permission, undermining any claim of express permission. Not guilty, [quiet], because the People have not authenticated crucial records or proven the mens rea required for grand theft auto beyond a reasonable doubt.",
+            "text": (
+                "Not guilty, [somber], because while E1 shows the vehicle "
+                "leaving the repair lot at 8:42 p.m., the People did not prove "
+                "beyond a reasonable doubt that Vale intended to permanently "
+                "deprive the owner. Not guilty, [measured], because W2 "
+                "testified he moved the vehicle to retrieve personal belongings "
+                "and believed he had permission, and E2 shows he asked when the "
+                "vehicle should be returned. Not guilty, [firm], because W1 "
+                "testified no written authorization existed and no staff "
+                "reported verbal permission, undermining any claim of express "
+                "permission. Not guilty, [quiet], because the People have not "
+                "authenticated crucial records or proven the mens rea required "
+                "for grand theft auto beyond a reasonable doubt."
+            ),
             "scene": "verdict",
             "ruling": None,
             "speaker_id": "judge",
@@ -201,14 +322,16 @@ def main() -> None:
 
     if final_run.status != "completed":
         raise RuntimeError(
-            f"Audio stage did not complete successfully. Final status: {final_run.status}"
+            "Audio stage did not complete successfully. Final status: "
+            f"{final_run.status}"
         )
 
 
 def _parse_case_file_id(raw_value: str) -> UUID:
     if raw_value == "REPLACE_WITH_CASE_FILE_UUID":
         raise RuntimeError(
-            "Replace CASE_FILE_ID with a real case_files.id value before running this script."
+            "Replace CASE_FILE_ID with a real case_files.id value before "
+            "running this script."
         )
     return UUID(raw_value)
 
@@ -218,7 +341,8 @@ def _parse_simulation_result(
 ) -> dict[str, Any]:
     if result is None:
         raise RuntimeError(
-            "Replace SIMULATION_RESULT with the LLM result payload before running this script."
+            "Replace SIMULATION_RESULT with the LLM result payload before "
+            "running this script."
         )
 
     if not isinstance(result, dict):
@@ -228,7 +352,8 @@ def _parse_simulation_result(
         "full_trial_transcript"
     ):
         raise RuntimeError(
-            "SIMULATION_RESULT must include audio_script_timeline or full_trial_transcript."
+            "SIMULATION_RESULT must include audio_script_timeline or "
+            "full_trial_transcript."
         )
 
     return result
@@ -277,11 +402,15 @@ def _assert_audio_stage_schema(database_url: str) -> None:
         missing_list = ", ".join(sorted(missing))
         raise RuntimeError(
             "simulation_runs is missing required audio-stage columns: "
-            f"{missing_list}. Apply infra/db/migrations/003_add_simulation_audio_stage.sql "
+            f"{missing_list}. Apply "
+            "infra/db/migrations/003_add_simulation_audio_stage.sql "
             "to this database, then rerun the script."
         )
 
-    if constraint_definition is None or "hearing_completed" not in constraint_definition:
+    if (
+        constraint_definition is None
+        or "hearing_completed" not in constraint_definition
+    ):
         raise RuntimeError(
             "simulation_runs status constraint does not allow 'hearing_completed'. "
             "Apply infra/db/migrations/004_allow_hearing_completed_status.sql "

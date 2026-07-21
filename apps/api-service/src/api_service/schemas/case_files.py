@@ -4,9 +4,8 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
+from courtroom_domain import CardType, CaseEditOperation, CaseFile, SelectedCard
 from pydantic import BaseModel
-
-from courtroom_domain import CaseEditOperation, CaseFile, CardType, SelectedCard
 
 
 class CaseFileResponse(BaseModel):

@@ -202,7 +202,8 @@ def _extract_script_turns(simulation_result: dict[str, object]) -> list[ScriptTu
         ]
 
     raise RuntimeError(
-        "Simulation result does not contain audio_script_timeline or full_trial_transcript."
+        "Simulation result does not contain audio_script_timeline or "
+        "full_trial_transcript."
     )
 
 

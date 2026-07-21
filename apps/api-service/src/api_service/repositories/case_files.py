@@ -101,7 +101,10 @@ class PostgresCaseFileRepository:
         with self.session_factory() as session:
             records = (
                 session.query(CaseFileRecord)
-                .order_by(CaseFileRecord.updated_at.desc(), CaseFileRecord.created_at.desc())
+                .order_by(
+                    CaseFileRecord.updated_at.desc(),
+                    CaseFileRecord.created_at.desc(),
+                )
                 .all()
             )
             stored_records: list[StoredCaseFile] = []
@@ -187,7 +190,7 @@ def _case_file_from_record(record: CaseFileRecord) -> CaseFile:
     return CaseFile.model_validate(_normalize_case_file_payload(record))
 
 
-def _normalize_case_file_payload(record: CaseFileRecord) -> dict[str, Any]:
+def _normalize_case_file_payload(record: Any) -> dict[str, Any]:
     payload = dict(record.case_json)
     payload.setdefault("case_id", str(record.case_id))
     payload.setdefault("case_title", record.case_title)

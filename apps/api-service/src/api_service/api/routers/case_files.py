@@ -4,10 +4,10 @@ import json
 from collections.abc import Iterator
 from uuid import UUID
 
+from courtroom_domain import EditAction, manual_operation_from_payload
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from courtroom_domain import EditAction, manual_operation_from_payload
 from ...api.deps import (
     get_case_file_message_repository,
     get_case_file_repository,
@@ -25,8 +25,8 @@ from ...repositories.case_files import (
 )
 from ...schemas.case_files import (
     CaseFileListItemResponse,
-    CaseFileMessageResponse,
     CaseFileMessageRequest,
+    CaseFileMessageResponse,
     CaseFileResponse,
     ManualMutationRequest,
     ManualMutationResponse,
@@ -34,12 +34,22 @@ from ...schemas.case_files import (
 from ...services.case_file_factory import build_initial_case_file
 from ...workflows.case_editor import iter_case_editor_stream_chunks
 
-
 router = APIRouter()
 
 
 def _response_from_record(record: StoredCaseFile) -> CaseFileResponse:
     return CaseFileResponse(
+        id=record.id,
+        status=record.status,
+        revision=record.revision,
+        case_file=record.case_file,
+        created_at=record.created_at,
+        updated_at=record.updated_at,
+    )
+
+
+def _list_item_response_from_record(record: StoredCaseFile) -> CaseFileListItemResponse:
+    return CaseFileListItemResponse(
         id=record.id,
         status=record.status,
         revision=record.revision,
@@ -78,7 +88,10 @@ def create_case_file(
 def list_case_files(
     case_file_repository: CaseFileRepository = Depends(get_case_file_repository),
 ) -> list[CaseFileListItemResponse]:
-    return [_response_from_record(record) for record in case_file_repository.list()]
+    return [
+        _list_item_response_from_record(record)
+        for record in case_file_repository.list()
+    ]
 
 
 @router.get("/case-files/{case_file_id}", response_model=CaseFileResponse)

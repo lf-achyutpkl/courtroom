@@ -25,16 +25,24 @@ class InMemoryCaseFiles:
     def __init__(self, case_file: CaseFile | None) -> None:
         self.case_file = case_file
 
-    def create(self, case_file: CaseFile) -> StoredCaseFile:
+    def create(
+        self,
+        case_file: CaseFile,
+        *,
+        status: str = "draft",
+    ) -> StoredCaseFile:
         timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
         return StoredCaseFile(
             id=uuid4(),
             case_file=case_file,
-            status="draft",
+            status=status,
             revision=1,
             created_at=timestamp,
             updated_at=timestamp,
         )
+
+    def list(self) -> list[StoredCaseFile]:
+        return []
 
     def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         if self.case_file is None:
@@ -46,6 +54,33 @@ class InMemoryCaseFiles:
             case_file=self.case_file,
             status="draft",
             revision=1,
+            created_at=timestamp,
+            updated_at=timestamp,
+        )
+
+    def apply_operation(
+        self,
+        case_file_id: UUID,
+        operation: object,
+        *,
+        expected_revision: int,
+    ) -> StoredCaseFile:
+        raise NotImplementedError
+
+    def replace_case_file(
+        self,
+        case_file_id: UUID,
+        case_file: CaseFile,
+        *,
+        expected_revision: int,
+        status: str | None = None,
+    ) -> StoredCaseFile:
+        timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        return StoredCaseFile(
+            id=case_file_id,
+            case_file=case_file,
+            status=status or "draft",
+            revision=expected_revision + 1,
             created_at=timestamp,
             updated_at=timestamp,
         )
@@ -65,6 +100,9 @@ class InMemoryRuns:
 
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         return self.records.get(simulation_run_id)
+
+    def list_for_dashboard(self) -> list[StoredSimulationRun]:
+        return list(self.records.values())
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
         simulation_run_id = uuid4()

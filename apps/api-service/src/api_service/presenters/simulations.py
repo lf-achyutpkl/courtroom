@@ -134,7 +134,8 @@ def _build_transcript_turns(
         ]
 
     raise ValueError(
-        "Simulation run result does not include audio_script_timeline or full_trial_transcript."
+        "Simulation run result does not include audio_script_timeline or "
+        "full_trial_transcript."
     )
 
 
@@ -146,7 +147,9 @@ def _validated_audio_manifest(
     if not manifest:
         if allow_missing:
             return []
-        raise ValueError("Simulation run does not contain generated audio manifest data.")
+        raise ValueError(
+            "Simulation run does not contain generated audio manifest data."
+        )
 
     turns: list[PlaybackManifestTurnResponse] = []
     for entry in manifest:
@@ -168,12 +171,16 @@ def _validated_audio_manifest(
 
 def _build_subtitle_chunks(value: object) -> list[PlaybackSubtitleChunk]:
     if not isinstance(value, list):
-        raise ValueError("Simulation run audio manifest contains invalid subtitle chunks.")
+        raise ValueError(
+            "Simulation run audio manifest contains invalid subtitle chunks."
+        )
 
     chunks: list[PlaybackSubtitleChunk] = []
     for chunk in value:
         if not isinstance(chunk, dict):
-            raise ValueError("Simulation run audio manifest contains invalid subtitle chunks.")
+            raise ValueError(
+                "Simulation run audio manifest contains invalid subtitle chunks."
+            )
         chunks.append(
             PlaybackSubtitleChunk(
                 text=_read_required_str(chunk, "text"),

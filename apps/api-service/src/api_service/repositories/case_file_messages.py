@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 from uuid import UUID, uuid4
 
 from ..db.base import CaseFileMessageRecord
@@ -77,7 +77,7 @@ def _stored_message_from_record(record: CaseFileMessageRecord) -> StoredCaseFile
     return StoredCaseFileMessage(
         id=record.id,
         case_file_id=record.case_file_id,
-        role=record.role,
+        role=cast(MessageRole, record.role),
         content=record.content,
         created_at=record.created_at,
     )

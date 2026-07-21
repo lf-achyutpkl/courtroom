@@ -215,17 +215,22 @@ class CaseFileApiTest(unittest.TestCase):
         case_file = payload["case_file"]
         UUID(case_file["case_id"])
         self.assertEqual(case_file["case_type"], "criminal")
-        self.assertEqual(case_file["case_title"], "Untitled matter")
+        self.assertEqual(case_file["case_title"], "People v. Vale")
+        self.assertEqual(case_file["charge_or_claim"], "Grand theft auto")
         self.assertEqual(
-            case_file["charge_or_claim"],
-            "Describe the dispute to generate the case file.",
+            case_file["parties"]["plaintiff_or_prosecution"],
+            "People of the State of California",
         )
-        self.assertEqual(case_file["parties"]["plaintiff_or_prosecution"], "TBD")
-        self.assertEqual(case_file["parties"]["defendant"], "TBD")
-        self.assertEqual(case_file["ground_truth"], "Pending generation from the author's prompt.")
-        self.assertEqual(case_file["witnesses"], [])
-        self.assertEqual(case_file["evidence"], [])
-        self.assertEqual(case_file["disputed_facts"], [])
+        self.assertEqual(case_file["parties"]["defendant"], "Jordan Vale")
+        self.assertEqual(
+            case_file["ground_truth"],
+            "Jordan Vale took a vehicle from a repair lot without permission.",
+        )
+        self.assertEqual(len(case_file["witnesses"]), 1)
+        self.assertEqual(case_file["witnesses"][0]["witness_id"], "W1")
+        self.assertEqual(len(case_file["evidence"]), 1)
+        self.assertEqual(case_file["evidence"][0]["evidence_id"], "E1")
+        self.assertEqual(case_file["disputed_facts"][0]["fact_id"], "F1")
         self.assertEqual(payload["revision"], 1)
         self.assertIn(record_id, repository.records)
 

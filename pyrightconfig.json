@@ -1,0 +1,48 @@
+{
+  "include": [
+    "apps/api-service/src",
+    "apps/api-service/tests",
+    "apps/agent-service/src",
+    "apps/agent-service/tests",
+    "packages/python-domain/src"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    "**/*.egg-info",
+    "**/.venv",
+    "**/.ruff_cache",
+    "**/.uv-cache",
+    "**/.langgraph_api",
+    "**/node_modules",
+    "**/.*"
+  ],
+  "venvPath": ".",
+  "venv": "apps/api-service/.venv",
+  "executionEnvironments": [
+    {
+      "root": "apps/api-service",
+      "extraPaths": [
+        "apps/api-service/src",
+        "apps/agent-service/src",
+        "packages/python-domain/src"
+      ]
+    },
+    {
+      "root": "apps/agent-service",
+      "extraPaths": [
+        "apps/agent-service/src",
+        "packages/python-domain/src"
+      ]
+    },
+    {
+      "root": "packages/python-domain",
+      "extraPaths": [
+        "packages/python-domain/src"
+      ]
+    }
+  ],
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "reportMissingModuleSource": true
+}

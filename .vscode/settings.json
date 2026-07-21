@@ -9,8 +9,17 @@
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
-    "files.exclude": {
-        "**/__pycache__": true,
-        "**/*.egg-info": true
-    }
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.egg-info": true
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/api-service/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/apps/api-service/src",
+    "${workspaceFolder}/apps/agent-service/src",
+    "${workspaceFolder}/packages/python-domain/src"
+  ],
+  "python.analysis.enableEditableInstalls": true,
+  "python.analysis.autoSearchPaths": false
 }

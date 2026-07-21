@@ -15,6 +15,7 @@ from ...presenters.simulations import (
 from ...repositories.case_files import CaseFileRepository
 from ...queue.simulation_pipeline import SimulationQueue
 from ...repositories.simulation_runs import (
+    DuplicateSimulationRunError,
     SimulationRunRepository,
     StoredSimulationRun,
 )
@@ -56,8 +57,25 @@ def start_simulation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Case file not found.",
         )
+    if case_file.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Simulation has already been started for this case file.",
+        )
 
-    run = run_repository.create_pending(request.case_file_id)
+    try:
+        case_file_repository.replace_case_file(
+            request.case_file_id,
+            case_file.case_file,
+            expected_revision=case_file.revision,
+            status="simulation_started",
+        )
+        run = run_repository.create_pending(request.case_file_id)
+    except DuplicateSimulationRunError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Simulation has already been started for this case file.",
+        ) from exc
     try:
         queue.enqueue_simulation(run.id, request.case_file_id)
     except Exception as exc:
@@ -79,7 +97,7 @@ def list_simulation_runs(
 ) -> list[SimulationRunCatalogItemResponse]:
     catalog: list[SimulationRunCatalogItemResponse] = []
 
-    for run in run_repository.list_completed_with_audio():
+    for run in run_repository.list_for_dashboard():
         case_file = case_file_repository.get(run.case_file_id)
         if case_file is None:
             continue

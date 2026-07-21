@@ -39,7 +39,7 @@ The first table stores `result JSONB` and `error_message TEXT` so the contract c
 1. Client posts `{ "case_file_id": UUID }` to `POST /start-simulation`.
 2. API verifies the case file exists.
 3. API inserts `simulation_runs.status = 'pending'`.
-4. API enqueues `{ simulation_run_id, case_file_id }` to the `simulation_llm` queue and creates a dependent DB job on `simulation_db`.
+4. API enqueues `{ simulation_run_id, case_file_id }` to the `simulation_llm` queue and creates a dependent DB job on `simulation_tts`.
 5. LLM worker marks the run `running`, loads the case file, runs LangGraph, and stores the generated result on the run record.
 6. DB worker reads the stored result and marks the simulation run `completed`.
 7. Any worker-stage failure marks the run `failed` with an error message.

@@ -22,7 +22,7 @@ def build_simulation_catalog_item(
     run: StoredSimulationRun,
     case_file: StoredCaseFile,
 ) -> SimulationRunCatalogItemResponse:
-    manifest = _validated_audio_manifest(run.audio_manifest)
+    manifest = _validated_audio_manifest(run.audio_manifest, allow_missing=True)
 
     return SimulationRunCatalogItemResponse(
         simulation_run_id=run.id,
@@ -140,8 +140,12 @@ def _build_transcript_turns(
 
 def _validated_audio_manifest(
     manifest: list[dict[str, object]] | None,
+    *,
+    allow_missing: bool = False,
 ) -> list[PlaybackManifestTurnResponse]:
     if not manifest:
+        if allow_missing:
+            return []
         raise ValueError("Simulation run does not contain generated audio manifest data.")
 
     turns: list[PlaybackManifestTurnResponse] = []

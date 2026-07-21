@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { type SimulationRunCatalogItem } from "@/lib/simulation-runs";
 
@@ -41,6 +41,11 @@ export function useSimulationRunCatalog() {
   const [requestState, setRequestState] =
     useState<SimulationRunCatalogRequestState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const reload = useCallback(() => {
+    setReloadKey((value) => value + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,11 +99,12 @@ export function useSimulationRunCatalog() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   return {
     catalog,
     errorMessage,
+    reload,
     requestState,
   };
 }

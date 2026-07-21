@@ -22,7 +22,11 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pyright>=1.1.403", "ruff>=0.12.4"]
+dev = [
+    "pyright>=1.1.403",
+    "rq-dashboard>=0.9.0",
+    "ruff>=0.12.4",
+]
 
 [tool.uv.sources]
 agent-service = { path = "../agent-service", editable = true }

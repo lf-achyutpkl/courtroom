@@ -18,6 +18,7 @@ from api_service.repositories.case_file_messages import StoredCaseFileMessage
 from api_service.repositories.case_files import (
     CaseFileNotFoundError,
     CaseFileRevisionConflictError,
+    _normalize_case_file_payload,
     StoredCaseFile,
 )
 
@@ -41,6 +42,13 @@ class InMemoryCaseFileRepository:
 
     def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         return self.records.get(case_file_id)
+
+    def list(self) -> list[StoredCaseFile]:
+        return sorted(
+            self.records.values(),
+            key=lambda record: (record.updated_at, record.created_at),
+            reverse=True,
+        )
 
     def apply_operation(
         self,
@@ -155,6 +163,46 @@ def build_case_file(**overrides: object) -> CaseFile:
 
 
 class CaseFileApiTest(unittest.TestCase):
+    def test_normalize_case_file_payload_repairs_legacy_draft_shape(self) -> None:
+        case_json = {
+            "case_id": "540f88e7-7138-4f9d-8e9b-2a0c4a7150d2",
+            "case_type": "criminal",
+            "charge_or_claim": "Grand theft auto",
+            "parties": {
+                "plaintiff_or_prosecution": "People of the State of California",
+                "defendant": "Jordan Vale",
+            },
+            "ground_truth": "Ground truth",
+            "disputed_facts": [
+                "Whether Jordan Vale intended to deprive the owner of the vehicle.",
+                "Whether the repair lot gave Jordan Vale permission to move the vehicle.",
+            ],
+            "evidence": [],
+            "witnesses": [],
+        }
+        record = type(
+            "Record",
+            (),
+            {
+                "case_id": "540f88e7-7138-4f9d-8e9b-2a0c4a7150d2",
+                "case_title": "People v. Vale",
+                "case_type": "criminal",
+                "charge_or_claim": "Grand theft auto",
+                "plaintiff_or_prosecution": "People of the State of California",
+                "defendant": "Jordan Vale",
+                "case_json": case_json,
+            },
+        )()
+
+        normalized = _normalize_case_file_payload(record)
+
+        self.assertEqual(normalized["case_title"], "People v. Vale")
+        self.assertEqual(normalized["disputed_facts"][0]["fact_id"], "F1")
+        self.assertEqual(
+            normalized["disputed_facts"][0]["text"],
+            "Whether Jordan Vale intended to deprive the owner of the vehicle.",
+        )
+
     def test_create_case_file_stores_initial_draft_with_uuid_id(self) -> None:
         repository = InMemoryCaseFileRepository()
         client = build_client(repository)
@@ -208,6 +256,18 @@ class CaseFileApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_list_case_files_returns_dashboard_records(self) -> None:
+        repository = InMemoryCaseFileRepository()
+        first = repository.create(build_case_file(case_title="Matter One"))
+        second = repository.create(build_case_file(case_title="Matter Two"))
+        client = build_client(repository)
+
+        response = client.get("/case-files")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual([item["id"] for item in payload], [str(first.id), str(second.id)])
+
     def test_mutation_endpoint_edits_case_metadata_and_bumps_revision(self) -> None:
         repository = InMemoryCaseFileRepository()
         record = repository.create(build_case_file())
@@ -230,6 +290,24 @@ class CaseFileApiTest(unittest.TestCase):
         stored = repository.get(record.id)
         assert stored is not None
         self.assertEqual(stored.case_file.case_title, "State v. Caldwell")
+
+    def test_mutation_endpoint_rejects_locked_case_file(self) -> None:
+        repository = InMemoryCaseFileRepository()
+        record = repository.create(build_case_file(), status="simulation_started")
+        client = build_client(repository)
+
+        response = client.post(
+            f"/case-files/{record.id}/mutations",
+            json={
+                "action": "edit_card",
+                "card_type": "case_metadata",
+                "card_id": None,
+                "content": {"case_title": "Locked"},
+                "expected_revision": 1,
+            },
+        )
+
+        self.assertEqual(response.status_code, 409)
 
     def test_mutation_endpoint_adds_witness_with_stable_generated_id(self) -> None:
         repository = InMemoryCaseFileRepository()
@@ -344,6 +422,24 @@ class CaseFileApiTest(unittest.TestCase):
         )
         self.assertEqual(response.json()[1]["role"], "ai")
 
+    def test_message_endpoint_rejects_locked_case_file(self) -> None:
+        repository = InMemoryCaseFileRepository()
+        record = repository.create(build_case_file(), status="simulation_started")
+        client = build_client(repository)
+
+        response = client.post(
+            f"/case-files/{record.id}/messages",
+            json={
+                "message": "make the title sharper",
+                "selected_card": {
+                    "card_type": "case_metadata",
+                    "card_id": None,
+                },
+            },
+        )
+
+        self.assertEqual(response.status_code, 409)
+
     def test_message_endpoint_streams_sse_protocol(self) -> None:
         repository = InMemoryCaseFileRepository()
         message_repository = InMemoryCaseFileMessageRepository()
@@ -415,7 +511,7 @@ class CaseFileApiTest(unittest.TestCase):
             response.headers["x-vercel-ai-ui-message-stream"],
             "v1",
         )
-        self.assertIn('"type":"data-case-file-update"', response.text)
+        self.assertIn('"type": "data-case-file-update"', response.text)
         self.assertEqual(len(message_repository.records), 2)
         self.assertEqual(message_repository.records[0].role, "human")
         self.assertEqual(message_repository.records[0].content, "make the title sharper")

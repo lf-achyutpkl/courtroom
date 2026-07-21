@@ -18,6 +18,15 @@ class CaseFileResponse(BaseModel):
     updated_at: datetime
 
 
+class CaseFileListItemResponse(BaseModel):
+    id: UUID
+    status: str
+    revision: int
+    case_file: CaseFile
+    created_at: datetime
+    updated_at: datetime
+
+
 class ManualMutationRequest(BaseModel):
     action: Literal["add_card", "edit_card", "delete_card"]
     card_type: CardType

@@ -24,6 +24,7 @@ from ...repositories.case_files import (
     StoredCaseFile,
 )
 from ...schemas.case_files import (
+    CaseFileListItemResponse,
     CaseFileMessageResponse,
     CaseFileMessageRequest,
     CaseFileResponse,
@@ -71,6 +72,13 @@ def create_case_file(
     case_file = build_initial_case_file()
     record = case_file_repository.create(case_file)
     return _response_from_record(record)
+
+
+@router.get("/case-files", response_model=list[CaseFileListItemResponse])
+def list_case_files(
+    case_file_repository: CaseFileRepository = Depends(get_case_file_repository),
+) -> list[CaseFileListItemResponse]:
+    return [_response_from_record(record) for record in case_file_repository.list()]
 
 
 @router.get("/case-files/{case_file_id}", response_model=CaseFileResponse)
@@ -125,6 +133,11 @@ def mutate_case_file(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Case file not found.",
         )
+    if stored.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Case file can no longer be edited after simulation has started.",
+        )
 
     try:
         operation = manual_operation_from_payload(
@@ -167,10 +180,16 @@ def post_case_file_message(
         get_case_file_message_repository
     ),
 ) -> StreamingResponse:
-    if case_file_repository.get(case_file_id) is None:
+    stored = case_file_repository.get(case_file_id)
+    if stored is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Case file not found.",
+        )
+    if stored.status != "draft":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Case file can no longer be edited after simulation has started.",
         )
 
     case_file_message_repository.create(

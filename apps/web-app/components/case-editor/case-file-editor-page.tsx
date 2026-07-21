@@ -38,6 +38,7 @@ import {
   type CaseEditResult,
   type CaseFile,
   type ManualMutationRequest,
+  type StartSimulationResponse,
   type StoredCaseFileMessage,
 } from "@/lib/case-files";
 
@@ -94,6 +95,16 @@ function applyManualRequest(caseFile: CaseFile, request: ManualMutationRequest) 
   });
 }
 
+function getErrorDetail(
+  payload: StartSimulationResponse | { detail?: string } | null,
+) {
+  if (!payload || !("detail" in payload)) {
+    return null;
+  }
+
+  return payload.detail ?? null;
+}
+
 export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -109,6 +120,9 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
   const [recentAiChange, setRecentAiChange] = useState<RecentCardChange | null>(null);
   const [reviewChange, setReviewChange] = useState<RecentCardChange | null>(null);
   const [mobileView, setMobileView] = useState<"chat" | "case">("chat");
+  const [startError, setStartError] = useState<string | null>(null);
+  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
   const hasSentSeedPrompt = useRef(false);
   const recordRef = useRef(record);
 
@@ -211,7 +225,17 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
   }, [caseFileId]);
 
   useEffect(() => {
+    if (record?.status !== "draft") {
+      setIsStartModalOpen(false);
+    }
+  }, [record?.status]);
+
+  useEffect(() => {
     if (!seedPrompt || hasSentSeedPrompt.current || requestState !== "ready") {
+      return;
+    }
+
+    if (record?.status !== "draft") {
       return;
     }
 
@@ -220,13 +244,17 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
     startTransition(() => {
       router.replace(`/case-files/${caseFileId}`);
     });
-  }, [caseFileId, requestState, router, seedPrompt, sendMessage]);
+  }, [caseFileId, record?.status, requestState, router, seedPrompt, sendMessage]);
 
   async function applyManualMutation(
     request: ManualMutationRequest,
     optimisticUpdate: (caseFile: CaseFile) => CaseFile,
   ) {
     if (!recordRef.current) {
+      return;
+    }
+    if (recordRef.current.status !== "draft") {
+      setMutationError("Case file can no longer be edited after simulation has started.");
       return;
     }
 
@@ -307,6 +335,56 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
     }
   }
 
+  async function startSimulation() {
+    if (!recordRef.current || recordRef.current.status !== "draft") {
+      return;
+    }
+
+    setIsStartingSimulation(true);
+    setStartError(null);
+
+    try {
+      const response = await fetch("/api/start-simulation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ case_file_id: caseFileId }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | StartSimulationResponse
+        | { detail?: string }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          getErrorDetail(payload) ??
+            `start simulation failed with status ${response.status}`,
+        );
+      }
+
+      setRecord((current) =>
+        current
+          ? {
+              ...current,
+              status: "simulation_started",
+            }
+          : current,
+      );
+      setIsStartModalOpen(false);
+      startTransition(() => {
+        router.push("/");
+      });
+    } catch (error: unknown) {
+      setStartError(
+        error instanceof Error ? error.message : "start simulation request failed",
+      );
+    } finally {
+      setIsStartingSimulation(false);
+    }
+  }
+
   if (requestState === "loading" || requestState === "idle") {
     return (
       <EditorStatus
@@ -327,6 +405,9 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
 
   const caseFile = record.case_file;
   const readiness = getCaseReadiness(caseFile);
+  const isLocked = record.status !== "draft";
+  const missingLaunchItems = getMissingLaunchItems(caseFile);
+  const canStartSimulation = !isLocked && missingLaunchItems.length === 0;
   const selectedCardLabel = getChatFocusLabel(caseFile, selectedTarget);
   const isStreaming = status === "submitted" || status === "streaming";
   const latestChange = recentAiChange ?? changeHistory.at(-1) ?? null;
@@ -365,7 +446,7 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
 
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="rounded-full border border-[#ddd1c4] bg-[#fffdfa] px-3 py-1.5 text-sm text-[#4f473d]">
-                  {record.status === "ready" ? "Ready draft" : "Draft"}
+                  {isLocked ? "Simulation locked" : "Draft"}
                 </span>
                 {readiness.missingRequiredDetails > 0 ? (
                   <span className="inline-flex items-center gap-2 rounded-full border border-[#e1cab8] bg-[#fff3ea] px-3 py-1.5 text-sm text-[#824d2c]">
@@ -410,12 +491,23 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
               </TextButton>
               <button
                 type="button"
-                disabled
-                title="Simulation launch is not wired from this editor view."
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f6f0e7] opacity-70"
+                disabled={isLocked || isStartingSimulation}
+                onClick={() => {
+                  setStartError(null);
+                  setIsStartModalOpen(true);
+                }}
+                className={`inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium ${
+                  isLocked || isStartingSimulation
+                    ? "border-[#b9aea0] bg-[#d9d1c6] text-[#6c6359]"
+                    : "border-[#26231f] bg-[#26231f] text-[#f6f0e7] transition-colors duration-150 hover:bg-[#36312b]"
+                }`}
               >
                 <SparkIcon />
-                Start simulation
+                {isLocked
+                  ? "Simulation started"
+                  : isStartingSimulation
+                    ? "Starting..."
+                    : "Run simulation"}
               </button>
             </div>
           </div>
@@ -442,56 +534,60 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
 
         <section className="grid min-h-0 flex-1 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(28rem,1fr)]">
           <div className={`${mobileView === "chat" ? "block" : "hidden"} min-h-0 xl:block`}>
-            <EditorChatPanel
-              changeHistory={changeHistory}
-              input={input}
-              isStreaming={isStreaming}
-              messages={conversationMessages}
-              mutationError={mutationError}
-              onClearFocus={() => {
-                setSelectedTarget(null);
-                setEditorTarget(null);
-                setReviewChange(null);
-              }}
-              onInputChange={setInput}
-              onJumpToChange={(change) => {
-                if (!change.selectedCard) {
-                  return;
-                }
+            {isLocked ? (
+              <LockedCasePanel />
+            ) : (
+              <EditorChatPanel
+                changeHistory={changeHistory}
+                input={input}
+                isStreaming={isStreaming}
+                messages={conversationMessages}
+                mutationError={mutationError}
+                onClearFocus={() => {
+                  setSelectedTarget(null);
+                  setEditorTarget(null);
+                  setReviewChange(null);
+                }}
+                onInputChange={setInput}
+                onJumpToChange={(change) => {
+                  if (!change.selectedCard) {
+                    return;
+                  }
 
-                setSelectedTarget({ kind: "existing", card: change.selectedCard });
-                setEditorTarget({ kind: "existing", card: change.selectedCard });
-                setReviewChange(null);
-                setMobileView("case");
-              }}
-              onReviewChange={(change) => {
-                if (!change.selectedCard) {
-                  return;
-                }
+                  setSelectedTarget({ kind: "existing", card: change.selectedCard });
+                  setEditorTarget({ kind: "existing", card: change.selectedCard });
+                  setReviewChange(null);
+                  setMobileView("case");
+                }}
+                onReviewChange={(change) => {
+                  if (!change.selectedCard) {
+                    return;
+                  }
 
-                setSelectedTarget({ kind: "existing", card: change.selectedCard });
-                setEditorTarget({ kind: "existing", card: change.selectedCard });
-                setReviewChange(change);
-                setMobileView("case");
-              }}
-              onStop={() => {
-                void stop();
-              }}
-              onSubmit={() => {
-                const trimmed = input.trim();
-                if (!trimmed) {
-                  return;
-                }
+                  setSelectedTarget({ kind: "existing", card: change.selectedCard });
+                  setEditorTarget({ kind: "existing", card: change.selectedCard });
+                  setReviewChange(change);
+                  setMobileView("case");
+                }}
+                onStop={() => {
+                  void stop();
+                }}
+                onSubmit={() => {
+                  const trimmed = input.trim();
+                  if (!trimmed) {
+                    return;
+                  }
 
-                void sendMessage({ text: trimmed });
-                setInput("");
-              }}
-              onUndoChange={(change) => {
-                void handleUndoChange(change);
-              }}
-              selectedCardLabel={selectedCardLabel}
-              suggestedActions={suggestedActions}
-            />
+                  void sendMessage({ text: trimmed });
+                  setInput("");
+                }}
+                onUndoChange={(change) => {
+                  void handleUndoChange(change);
+                }}
+                selectedCardLabel={selectedCardLabel}
+                suggestedActions={suggestedActions}
+              />
+            )}
           </div>
 
           <div className={`${mobileView === "case" ? "block" : "hidden"} min-h-0 xl:block`}>
@@ -585,7 +681,174 @@ export function CaseFileEditorPage({ caseFileId }: { caseFileId: string }) {
           </div>
         </div>
       ) : null}
+
+      {isStartModalOpen ? (
+        <LaunchSimulationModal
+          canStartSimulation={canStartSimulation}
+          caseTitle={caseFile.case_title}
+          isStartingSimulation={isStartingSimulation}
+          missingLaunchItems={missingLaunchItems}
+          onCancel={() => {
+            if (!isStartingSimulation) {
+              setIsStartModalOpen(false);
+            }
+          }}
+          onConfirm={() => {
+            void startSimulation();
+          }}
+          startError={startError}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function getMissingLaunchItems(caseFile: CaseFile) {
+  const missingItems: string[] = [];
+
+  if (!caseFile.case_title.trim()) {
+    missingItems.push("Case title");
+  }
+  if (!caseFile.charge_or_claim.trim()) {
+    missingItems.push("Charge or claim");
+  }
+  if (!caseFile.parties.plaintiff_or_prosecution.trim()) {
+    missingItems.push("Plaintiff or prosecution");
+  }
+  if (!caseFile.parties.defendant.trim()) {
+    missingItems.push("Defendant");
+  }
+  if (!caseFile.jurisdiction.state.trim()) {
+    missingItems.push("Jurisdiction state");
+  }
+  if (!caseFile.jurisdiction.court.trim()) {
+    missingItems.push("Court");
+  }
+  if (!caseFile.jurisdiction.trial_type.trim()) {
+    missingItems.push("Trial type");
+  }
+  if (!caseFile.ground_truth.trim()) {
+    missingItems.push("Ground truth");
+  }
+  if (caseFile.witnesses.length === 0) {
+    missingItems.push("At least one witness");
+  }
+  if (caseFile.evidence.length === 0) {
+    missingItems.push("At least one evidence item");
+  }
+  if (caseFile.disputed_facts.length === 0) {
+    missingItems.push("At least one disputed fact");
+  }
+
+  return missingItems;
+}
+
+function LockedCasePanel() {
+  return (
+    <div className="flex h-full min-h-[24rem] items-center justify-center rounded-[28px] border border-[#d8ccbd] bg-[#f8f3eb] p-6 shadow-[0_16px_34px_rgba(54,42,23,0.06)]">
+      <div className="max-w-md space-y-4 text-center">
+        <p className="text-[0.68rem] tracking-[0.24em] text-[#8a7d6f] uppercase">
+          Editing disabled
+        </p>
+        <h2 className="text-[1.35rem] font-medium tracking-[-0.03em] text-[#171411]">
+          This case has already entered simulation.
+        </h2>
+        <p className="text-sm leading-6 text-[#5d5348]">
+          Case details are now locked to preserve a single authoritative record for the
+          active or completed run.
+        </p>
+        <Link
+          href="/"
+          className="inline-flex h-10 items-center justify-center rounded-full border border-[#26231f] bg-[#26231f] px-4 text-sm font-medium text-[#f6f0e7] transition-colors duration-150 hover:bg-[#36312b]"
+        >
+          Return to home
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function LaunchSimulationModal({
+  canStartSimulation,
+  caseTitle,
+  isStartingSimulation,
+  missingLaunchItems,
+  onCancel,
+  onConfirm,
+  startError,
+}: {
+  canStartSimulation: boolean;
+  caseTitle: string;
+  isStartingSimulation: boolean;
+  missingLaunchItems: string[];
+  onCancel: () => void;
+  onConfirm: () => void;
+  startError: string | null;
+}) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-end bg-[rgba(24,19,14,0.42)] p-3 sm:items-center sm:justify-center sm:p-6">
+      <div className="w-full max-w-xl rounded-[28px] border border-[#d7cab9] bg-[#faf5ed] p-5 shadow-[0_26px_70px_rgba(35,28,20,0.25)] sm:p-6">
+        <div className="space-y-4">
+          <div>
+            <p className="text-[0.68rem] tracking-[0.22em] text-[#7f7263] uppercase">
+              Run simulation
+            </p>
+            <h2 className="mt-2 text-[1.4rem] font-medium tracking-[-0.03em] text-[#171411]">
+              {caseTitle.trim() || "Untitled case"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[#5d5348]">
+              Starting the simulation locks this case file. You will not be able to edit the
+              draft or launch another run for this matter.
+            </p>
+          </div>
+
+          {!canStartSimulation ? (
+            <div className="rounded-[20px] border border-[#e1cab8] bg-[#fff2e7] p-4">
+              <p className="text-sm font-medium text-[#7a4729]">
+                Add the missing items below before simulation can start.
+              </p>
+              <ul className="mt-3 space-y-2 text-sm text-[#6a4630]">
+                {missingLaunchItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="rounded-[20px] border border-[#d7c7b2] bg-[#fffdfa] p-4 text-sm leading-6 text-[#433a31]">
+              The draft passes the required preflight checks. Confirm to queue the run.
+            </div>
+          )}
+
+          {startError ? (
+            <div className="rounded-[18px] border border-[#e1cab8] bg-[#fff3ea] px-4 py-3 text-sm text-[#824d2c]">
+              {startError}
+            </div>
+          ) : null}
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex h-11 items-center justify-center rounded-full border border-[#d6cabb] bg-[#fffdfa] px-4 text-sm font-medium text-[#2c251f] transition-colors duration-150 hover:bg-[#f2eadd]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={!canStartSimulation || isStartingSimulation}
+              onClick={onConfirm}
+              className={`inline-flex h-11 items-center justify-center rounded-full px-4 text-sm font-medium ${
+                !canStartSimulation || isStartingSimulation
+                  ? "border border-[#b9aea0] bg-[#d9d1c6] text-[#6c6359]"
+                  : "border border-[#26231f] bg-[#26231f] text-[#f6f0e7] transition-colors duration-150 hover:bg-[#36312b]"
+              }`}
+            >
+              {isStartingSimulation ? "Queueing simulation..." : "Confirm and run"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

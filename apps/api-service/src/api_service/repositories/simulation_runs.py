@@ -35,13 +35,17 @@ class StoredSimulationRun:
     completed_at: datetime | None
 
 
+class DuplicateSimulationRunError(Exception):
+    pass
+
+
 class SimulationRunRepository(Protocol):
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         """Return a stored simulation run by id."""
         ...
 
-    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
-        """Return completed simulation runs that have generated audio artifacts."""
+    def list_for_dashboard(self) -> list[StoredSimulationRun]:
+        """Return simulation runs that should appear on the dashboard."""
         ...
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
@@ -103,26 +107,36 @@ class PostgresSimulationRunRepository:
             )
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
-        record = SimulationRunRecord(
-            id=uuid4(),
-            case_file_id=case_file_id,
-            status="pending",
-        )
         with self.session_factory() as session:
+            existing = (
+                session.query(SimulationRunRecord)
+                .filter(SimulationRunRecord.case_file_id == case_file_id)
+                .order_by(SimulationRunRecord.created_at.desc())
+                .first()
+            )
+            if existing is not None:
+                raise DuplicateSimulationRunError(
+                    f"Simulation already exists for case file {case_file_id}"
+                )
+
+            record = SimulationRunRecord(
+                id=uuid4(),
+                case_file_id=case_file_id,
+                status="pending",
+            )
             session.add(record)
             session.commit()
             session.refresh(record)
             return _stored_simulation_run_from_record(record)
 
-    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
+    def list_for_dashboard(self) -> list[StoredSimulationRun]:
         with self.session_factory() as session:
             records = (
                 session.query(SimulationRunRecord)
-                .filter(SimulationRunRecord.status == "completed")
-                .filter(SimulationRunRecord.audio_manifest.is_not(None))
+                .filter(SimulationRunRecord.status != "failed")
                 .order_by(
-                    SimulationRunRecord.completed_at.desc(),
                     SimulationRunRecord.created_at.desc(),
+                    SimulationRunRecord.completed_at.desc(),
                 )
                 .all()
             )

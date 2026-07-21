@@ -22,17 +22,47 @@ class InMemoryCaseFileRepository:
     def __init__(self) -> None:
         self.records: dict[UUID, StoredCaseFile] = {}
 
-    def create(self, case_file: CaseFile) -> StoredCaseFile:
+    def create(self, case_file: CaseFile, *, status: str = "draft") -> StoredCaseFile:
         record = StoredCaseFile(
             id=uuid4(),
             case_file=case_file,
+            status=status,
+            revision=1,
             created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            updated_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         )
         self.records[record.id] = record
         return record
 
+    def list(self) -> list[StoredCaseFile]:
+        return sorted(
+            self.records.values(),
+            key=lambda record: (record.updated_at, record.created_at),
+            reverse=True,
+        )
+
     def get(self, case_file_id: UUID) -> StoredCaseFile | None:
         return self.records.get(case_file_id)
+
+    def replace_case_file(
+        self,
+        case_file_id: UUID,
+        case_file: CaseFile,
+        *,
+        expected_revision: int,
+        status: str | None = None,
+    ) -> StoredCaseFile:
+        record = self.records[case_file_id]
+        updated = StoredCaseFile(
+            id=record.id,
+            case_file=case_file,
+            status=status or record.status,
+            revision=record.revision + 1,
+            created_at=record.created_at,
+            updated_at=datetime(2026, 1, 1, 0, 1, tzinfo=timezone.utc),
+        )
+        self.records[case_file_id] = updated
+        return updated
 
 
 class InMemorySimulationRunRepository:
@@ -42,18 +72,21 @@ class InMemorySimulationRunRepository:
     def get(self, simulation_run_id: UUID) -> StoredSimulationRun | None:
         return self.records.get(simulation_run_id)
 
-    def list_completed_with_audio(self) -> list[StoredSimulationRun]:
+    def list_for_dashboard(self) -> list[StoredSimulationRun]:
         return sorted(
             [
                 record
                 for record in self.records.values()
-                if record.status == "completed" and record.audio_manifest is not None
+                if record.status != "failed"
             ],
-            key=lambda record: (record.completed_at or record.created_at, record.created_at),
+            key=lambda record: (record.created_at, record.completed_at or record.created_at),
             reverse=True,
         )
 
     def create_pending(self, case_file_id: UUID) -> StoredSimulationRun:
+        for record in self.records.values():
+            if record.case_file_id == case_file_id:
+                raise RuntimeError("duplicate simulation")
         record = StoredSimulationRun(
             id=uuid4(),
             case_file_id=case_file_id,
@@ -250,6 +283,7 @@ class SimulationApiTest(unittest.TestCase):
         self.assertEqual(
             simulation_repository.records[simulation_run_id].status, "pending"
         )
+        self.assertEqual(repository.records[case_file_id].status, "simulation_started")
 
     def test_start_simulation_returns_404_for_unknown_case_file(self) -> None:
         client = build_client(
@@ -285,7 +319,29 @@ class SimulationApiTest(unittest.TestCase):
         self.assertEqual(run.status, "failed")
         self.assertIn("Failed to enqueue simulation", run.error_message or "")
 
-    def test_list_simulation_runs_returns_completed_runs_with_audio_only(self) -> None:
+    def test_start_simulation_rejects_second_run_for_case_file(self) -> None:
+        repository = InMemoryCaseFileRepository()
+        simulation_repository = InMemorySimulationRunRepository()
+        client = build_client(
+            case_file_repository=repository,
+            simulation_repository=simulation_repository,
+            simulation_queue=InMemorySimulationQueue(),
+        )
+        created_case_file = client.post("/case-files").json()
+
+        first_response = client.post(
+            "/start-simulation",
+            json={"case_file_id": created_case_file["id"]},
+        )
+        second_response = client.post(
+            "/start-simulation",
+            json={"case_file_id": created_case_file["id"]},
+        )
+
+        self.assertEqual(first_response.status_code, 202)
+        self.assertEqual(second_response.status_code, 409)
+
+    def test_list_simulation_runs_returns_running_and_completed_runs(self) -> None:
         case_file_repository = InMemoryCaseFileRepository()
         simulation_repository = InMemorySimulationRunRepository()
         client = build_client(
@@ -335,7 +391,7 @@ class SimulationApiTest(unittest.TestCase):
         simulation_repository.records[incomplete_run_id] = StoredSimulationRun(
             id=incomplete_run_id,
             case_file_id=case_file_id,
-            status="completed",
+            status="running",
             result={"full_trial_transcript": []},
             audio_manifest=None,
             audio_storage=None,
@@ -349,13 +405,16 @@ class SimulationApiTest(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(len(payload), 1)
+        self.assertEqual(len(payload), 2)
         self.assertEqual(payload[0]["simulationRunId"], str(completed_run_id))
         self.assertEqual(payload[0]["caseFile"]["id"], created_case_file["id"])
         self.assertEqual(payload[0]["caseFile"]["charge"], "Grand theft auto")
         self.assertEqual(payload[0]["playback"]["turnCount"], 1)
         self.assertEqual(payload[0]["playback"]["durationMs"], 1800)
         self.assertEqual(payload[0]["playback"]["verdictLabel"], "guilty")
+        self.assertEqual(payload[1]["simulationRunId"], str(incomplete_run_id))
+        self.assertEqual(payload[1]["status"], "running")
+        self.assertEqual(payload[1]["playback"]["turnCount"], 0)
 
     def test_get_simulation_playback_returns_sanitized_frontend_payload(self) -> None:
         case_file_repository = InMemoryCaseFileRepository()

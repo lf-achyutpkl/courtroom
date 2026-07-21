@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from courtroom_domain import (
-    CaseJurisdiction,
+    CardType,
     CaseEditResult,
     CaseFile,
-    CardType,
+    CaseJurisdiction,
     DisputedFact,
     EditAction,
     Evidence,
@@ -129,7 +129,16 @@ class LlmCaseEditResult(BaseModel):
             )
 
         if self.action == EditAction.add_card:
-            _validate_required_add_fields(self.card_type, self.updated_content)
+            _validate_required_add_fields(
+                self.card_type,
+                cast(
+                    LlmCaseMetadataContent
+                    | LlmWitnessContent
+                    | LlmEvidenceContent
+                    | LlmDisputedFactContent,
+                    self.updated_content,
+                ),
+            )
 
         return self
 

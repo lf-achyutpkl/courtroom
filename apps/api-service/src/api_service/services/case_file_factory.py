@@ -17,7 +17,9 @@ def build_initial_case_file() -> CaseFile:
                 "plaintiff_or_prosecution": "People of the State of California",
                 "defendant": "Jordan Vale",
             },
-            "ground_truth": "Jordan Vale took a vehicle from a repair lot without permission.",
+            "ground_truth": (
+                "Jordan Vale took a vehicle from a repair lot without permission."
+            ),
             "disputed_facts": [
                 {
                     "fact_id": "F1",
@@ -27,7 +29,10 @@ def build_initial_case_file() -> CaseFile:
             "evidence": [
                 {
                     "evidence_id": "E1",
-                    "description": "Repair lot intake log showing the vehicle was left for service.",
+                    "description": (
+                        "Repair lot intake log showing the vehicle was left for "
+                        "service."
+                    ),
                     "submitted_by": "prosecution",
                 }
             ],
@@ -37,7 +42,9 @@ def build_initial_case_file() -> CaseFile:
                     "name": "Avery Brooks",
                     "persona": "Repair lot manager who checked in the vehicle.",
                     "called_by": "prosecution",
-                    "knowledge_scope": "Can explain who had authority to release the vehicle.",
+                    "knowledge_scope": (
+                        "Can explain who had authority to release the vehicle."
+                    ),
                 }
             ],
         }

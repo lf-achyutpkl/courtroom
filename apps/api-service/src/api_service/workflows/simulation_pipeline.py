@@ -59,7 +59,8 @@ def execute_audio_generation_stage(
             raise RuntimeError(f"Simulation run not found: {simulation_run_id}")
         if run.result is None:
             raise RuntimeError(
-                f"Simulation run {simulation_run_id} has no generated result for audio synthesis."
+                f"Simulation run {simulation_run_id} has no generated result "
+                "for audio synthesis."
             )
 
         case_file = case_files.get(run.case_file_id)

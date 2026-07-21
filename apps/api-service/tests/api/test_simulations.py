@@ -74,12 +74,11 @@ class InMemorySimulationRunRepository:
 
     def list_for_dashboard(self) -> list[StoredSimulationRun]:
         return sorted(
-            [
-                record
-                for record in self.records.values()
-                if record.status != "failed"
-            ],
-            key=lambda record: (record.created_at, record.completed_at or record.created_at),
+            [record for record in self.records.values() if record.status != "failed"],
+            key=lambda record: (
+                record.created_at,
+                record.completed_at or record.created_at,
+            ),
             reverse=True,
         )
 
@@ -479,13 +478,21 @@ class SimulationApiTest(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["simulationRunId"], str(simulation_run_id))
         self.assertEqual(payload["status"], "completed")
-        self.assertEqual(payload["transcript"]["case_metadata"]["charge"], "Grand theft auto")
+        self.assertEqual(
+            payload["transcript"]["case_metadata"]["charge"],
+            "Grand theft auto",
+        )
         self.assertIn("judge", payload["transcript"]["voice_character_map"])
-        self.assertEqual(payload["playbackManifest"][0]["cleanText"], "Members of the jury.")
+        self.assertEqual(
+            payload["playbackManifest"][0]["cleanText"],
+            "Members of the jury.",
+        )
         self.assertNotIn("audio_storage", payload)
         self.assertNotIn("node_telemetry", payload)
 
-    def test_get_simulation_playback_returns_conflict_when_audio_is_missing(self) -> None:
+    def test_get_simulation_playback_returns_conflict_when_audio_is_missing(
+        self,
+    ) -> None:
         case_file_repository = InMemoryCaseFileRepository()
         simulation_repository = InMemorySimulationRunRepository()
         client = build_client(

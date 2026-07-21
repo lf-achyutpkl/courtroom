@@ -8,6 +8,7 @@ from uuid import UUID
 
 from courtroom_domain import CaseEditResult, SelectedCard
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.postgres import PostgresSaver
 
 from .graph import build_case_editor_graph
@@ -43,7 +44,7 @@ def stream_case_edit(
         selected_card_id=selected_card.card_id if selected_card else None,
         messages=[HumanMessage(content=user_message)],
     )
-    config = {
+    config: RunnableConfig = {
         "configurable": {
             "thread_id": str(case_file_id),
             "checkpoint_ns": "case_editor",

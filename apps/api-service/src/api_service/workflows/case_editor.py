@@ -7,7 +7,7 @@ import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable, Iterator, Protocol
+from typing import Callable, ContextManager, Iterator, Protocol
 from uuid import UUID
 
 from courtroom_domain import SelectedCard
@@ -24,6 +24,10 @@ class EditorStreamChunk:
 class SupportsEditorEvent(Protocol):
     event_type: str
     payload: dict[str, object]
+
+
+class SupportsCheckpointerFactory(Protocol):
+    def __call__(self, database_url: str) -> ContextManager[object]: ...
 
 
 def stream_case_editor_response(
@@ -124,7 +128,10 @@ def _encode_sse(payload: dict[str, object]) -> bytes:
 
 
 @lru_cache(maxsize=1)
-def _load_agent_editor_contract() -> tuple[Callable[..., Iterator[SupportsEditorEvent]], Callable[[str], object]]:
+def _load_agent_editor_contract() -> tuple[
+    Callable[..., Iterator[SupportsEditorEvent]],
+    SupportsCheckpointerFactory,
+]:
     try:
         service_module = importlib.import_module("src.case_editor.service")
     except ModuleNotFoundError as exc:

@@ -8,7 +8,6 @@ from typing import Any
 
 from .base import GeneratedSpeech, TtsProvider
 
-
 SAMPLE_RATE_HZ = 24000
 
 
@@ -19,7 +18,8 @@ class KokoroTtsProvider(TtsProvider):
             kokoro_module = import_module("kokoro")
         except ImportError as exc:
             raise RuntimeError(
-                "Kokoro is not installed. Install the api-service TTS dependencies before running the audio worker."
+                "Kokoro is not installed. Install the api-service TTS "
+                "dependencies before running the audio worker."
             ) from exc
 
         pipeline_cls = getattr(kokoro_module, "KPipeline", None)

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from ...api.deps import (
     get_case_file_repository,
@@ -12,8 +13,8 @@ from ...presenters.simulations import (
     build_simulation_catalog_item,
     build_simulation_playback_response,
 )
-from ...repositories.case_files import CaseFileRepository
 from ...queue.simulation_pipeline import SimulationQueue
+from ...repositories.case_files import CaseFileRepository
 from ...repositories.simulation_runs import (
     DuplicateSimulationRunError,
     SimulationRunRepository,
@@ -25,7 +26,6 @@ from ...schemas.simulations import (
     StartSimulationRequest,
     StartSimulationResponse,
 )
-
 
 router = APIRouter()
 

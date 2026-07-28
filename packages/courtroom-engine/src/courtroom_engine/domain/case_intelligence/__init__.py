@@ -233,5 +233,28 @@ class CaseIntelligenceReport(DomainModel):
     case_gaps: tuple[CaseGap, ...] = ()
     diagnostics: tuple[AnalyzerDiagnostic, ...] = ()
 
+    @property
+    def evidence_fact_edges(self) -> tuple[tuple[EvidenceId, FactId], ...]:
+        return tuple(
+            (relationship.evidence_id, relationship.fact_id)
+            for relationship in self.evidence_graph.relationships
+            if relationship.relationship_type == EvidenceRelationshipType.EVIDENCE_TO_FACT
+            and relationship.fact_id is not None
+        )
+
+    @property
+    def witness_fact_edges(self) -> tuple[tuple[WitnessId, FactId], ...]:
+        return tuple(
+            (relationship.witness_id, relationship.fact_id)
+            for relationship in self.witness_knowledge_graph.relationships
+        )
+
+    @property
+    def initial_contradiction_ids(self) -> tuple[ContradictionId, ...]:
+        return tuple(
+            contradiction.contradiction_id
+            for contradiction in self.contradiction_graph.contradictions
+        )
+
 
 DerivedCaseIntelligence = CaseIntelligenceReport

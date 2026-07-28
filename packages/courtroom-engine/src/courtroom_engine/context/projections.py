@@ -32,6 +32,7 @@ class NodePurpose(StrEnum):
     INITIAL_CASE_ANALYSIS = "initial_case_analysis"
     GLOBAL_STRATEGY = "global_strategy"
     WITNESS_SELECTION = "witness_selection"
+    EXAMINATION_OBJECTIVE = "examination_objective"
     TACTICAL_ACTION_PLANNING = "tactical_action_planning"
     QUESTION_GENERATION = "question_generation"
     OBJECTION_DECISION = "objection_decision"
@@ -81,6 +82,8 @@ class ProceduralContext(DomainModel):
     current_witness_id: WitnessId | None = None
     allowed_action_types: tuple[str, ...] = ()
     prohibited_action_types: tuple[str, ...] = ()
+    admitted_evidence_ids: tuple[EvidenceId, ...] = ()
+    pending_objection_id: str | None = None
 
 
 class BaseNodeContext(DomainModel):
@@ -175,6 +178,26 @@ class ActorCaseViewDTO(DomainModel):
         default_factory=PublicCaseIntelligenceContextDTO
     )
     public_event_summaries: tuple[str, ...] = ()
+
+
+class TacticalActionPlanDTO(DomainModel):
+    action_id: str
+    objective_id: str
+    action_type: str
+    target_fact_ids: tuple[FactId, ...] = ()
+    target_evidence_ids: tuple[EvidenceId, ...] = ()
+    target_witness_id: WitnessId | None = None
+    expected_effect: str
+
+
+class QuestionExecutionBriefDTO(DomainModel):
+    action_id: str
+    objective_id: str
+    question_goal: str
+    target_witness_id: WitnessId
+    allowed_fact_ids: tuple[FactId, ...] = ()
+    allowed_evidence_ids: tuple[EvidenceId, ...] = ()
+    prohibited_reference_ids: tuple[str, ...] = ()
 
 
 class ModelNodeContextDTO(BaseNodeContext):

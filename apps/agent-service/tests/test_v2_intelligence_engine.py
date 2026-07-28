@@ -103,9 +103,10 @@ class V2GraphSmokeTests(unittest.TestCase):
     def test_v2_ai_ai_graph_initializes_and_verifies_boundaries(self):
         result = build_v2_ai_ai_graph().invoke(V2AiAiState())
 
-        self.assertEqual(result["status"], "context_boundaries_verified")
-        self.assertIn("FAC-SPILL-NOTICED", result["boundary_context_ids"])
-        self.assertIn("KNO-CASHIER-SAW-SPILL", result["boundary_context_ids"])
+        self.assertEqual(result["status"], "evaluation_complete")
+        self.assertEqual(result["runtime"].phase, "complete")
+        self.assertIn("evaluation", result["phase_outputs"])
+        self.assertTrue(result["witness_examinations"])
 
 
 if __name__ == "__main__":

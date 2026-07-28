@@ -17,6 +17,8 @@ from .projections import (
     NodePurpose,
     ProceduralContext,
     PublicCaseIntelligenceContextDTO,
+    QuestionExecutionBriefDTO,
+    TacticalActionPlanDTO,
     WitnessFactContextDTO,
     WitnessKnowledgeContextDTO,
 )
@@ -43,6 +45,8 @@ __all__ = [
     "NodePurpose",
     "ProceduralContext",
     "PublicCaseIntelligenceContextDTO",
+    "QuestionExecutionBriefDTO",
+    "TacticalActionPlanDTO",
     "WitnessFactContextDTO",
     "WitnessKnowledgeContextDTO",
 ]

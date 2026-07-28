@@ -3,15 +3,16 @@ from __future__ import annotations
 from courtroom_engine.domain.case import Actor, ActorRole
 from courtroom_engine.domain.case_intelligence import EvidenceRelationshipType
 from courtroom_engine.domain.evidence import EvidenceItem, Fact
+from courtroom_engine.domain.procedure import TrialPhase
 from courtroom_engine.domain.trial import CompiledCasePackage, TrialRuntimeState
 from courtroom_engine.domain.visibility import VisibilityScope
 from courtroom_engine.policies.access import (
     VISIBILITY_POLICY_VERSION,
-    allowed_actions,
     allowed_scopes,
     excluded_categories,
     normalize_visibility,
 )
+from courtroom_engine.policies.procedure import allowed_actions
 
 from .projections import (
     CONTEXT_PROJECTION_VERSION,
@@ -56,7 +57,11 @@ class ContextBoundaryService:
         violation_messages: list[str] = []
         facts = self._project_facts(case_package.facts, allowed, violation_messages)
         evidence = self._project_evidence(
-            case_package.evidence, allowed, violation_messages
+            evidence_items=case_package.evidence,
+            actor=actor,
+            state=state,
+            allowed=allowed,
+            violation_messages=violation_messages,
         )
         witness_knowledge = self._project_witness_knowledge(
             case_package=case_package,
@@ -121,8 +126,21 @@ class ContextBoundaryService:
                 current_phase=state.phase,
                 active_actor_id=state.active_actor_id,
                 current_witness_id=state.current_witness_id,
-                allowed_action_types=allowed_actions(actor, request.node_purpose),
+                allowed_action_types=allowed_actions(
+                    actor,
+                    request.node_purpose,
+                    state.procedure,
+                ),
                 prohibited_action_types=("access_hidden_truth", "invent_evidence"),
+                admitted_evidence_ids=(
+                    state.procedure.admitted_evidence_ids
+                    or state.admitted_evidence_ids
+                ),
+                pending_objection_id=(
+                    state.procedure.pending_objection.objection_id
+                    if state.procedure.pending_objection is not None
+                    else None
+                ),
             ),
             actor=self._project_actor(actor),
             case_view=case_view,
@@ -185,11 +203,20 @@ class ContextBoundaryService:
 
     def _project_evidence(
         self,
+        *,
         evidence_items: tuple[EvidenceItem, ...],
+        actor: Actor | None,
+        state: TrialRuntimeState,
         allowed: frozenset[VisibilityScope],
         violation_messages: list[str],
     ) -> tuple[EvidenceContextDTO, ...]:
         projected: list[EvidenceContextDTO] = []
+        admitted_ids = set(state.procedure.admitted_evidence_ids or state.admitted_evidence_ids)
+        pending_evidence_id = (
+            state.procedure.pending_objection.target_evidence_id
+            if state.procedure.pending_objection is not None
+            else None
+        )
         for item in evidence_items:
             visibility = normalize_visibility(item.visibility)
             if visibility is None:
@@ -199,6 +226,16 @@ class ContextBoundaryService:
                 continue
             if visibility not in allowed:
                 continue
+            if actor is not None and actor.role == ActorRole.JURY:
+                if item.evidence_id not in admitted_ids:
+                    continue
+            if actor is not None and actor.role == ActorRole.TRIAL_JUDGE:
+                if (
+                    state.procedure.phase != TrialPhase.DELIBERATION
+                    and item.evidence_id not in admitted_ids
+                    and item.evidence_id != pending_evidence_id
+                ):
+                    continue
             projected.append(
                 EvidenceContextDTO(
                     evidence_id=item.evidence_id,

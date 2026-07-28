@@ -82,35 +82,35 @@ Goal: teach the system to read a compact case the way an elite trial lawyer star
 
 ## Procedure And Role Isolation
 
-- [ ] Define procedure state, allowed action registry, phase transitions, evidence admission state, objection state, and ruling records.
-- [ ] Move allowed actions out of ad hoc context code into policy modules.
-- [ ] Add role policies for plaintiff lawyer, prosecution lawyer, defense lawyer, witness, trial judge, jury, evaluator, and coach.
-- [ ] Ensure trial judge context sees only admitted record plus disputed material needed for the current ruling.
-- [ ] Ensure jury context sees only admitted evidence, testimony, stipulations, instructions, permitted arguments, and verdict form.
-- [ ] Add event stream and replay-friendly courtroom event models before expanding graph execution.
+- [x] Define procedure state, allowed action registry, phase transitions, evidence admission state, objection state, and ruling records.
+- [x] Move allowed actions out of ad hoc context code into policy modules.
+- [x] Add role policies for plaintiff lawyer, prosecution lawyer, defense lawyer, witness, trial judge, jury, evaluator, and coach.
+- [x] Ensure trial judge context sees only admitted record plus disputed material needed for the current ruling.
+- [x] Ensure jury context sees only admitted evidence, testimony, stipulations, instructions, permitted arguments, and verdict form.
+- [x] Add event stream and replay-friendly courtroom event models before expanding graph execution.
 
 ## Strategy Planner
 
-- [ ] Add structured strategy models: `PartyStrategy`, `CaseTheory`, `StrategicObjective`, `WitnessPlan`, `EvidencePlan`, opponent-risk records, and objective runtime state.
-- [ ] Build reusable strategy planning per side instead of separate hardcoded plaintiff/prosecution/defense flows.
-- [ ] Validate strategy against role context, legal elements, available facts, disclosed evidence, and procedure.
-- [ ] Add global strategy, witness selection, examination objective, tactical action, and question generation contexts in that order.
-- [ ] Add tests proving strategy nodes receive strategy context but question generation receives only an execution brief.
+- [x] Add structured strategy models: `PartyStrategy`, `CaseTheory`, `StrategicObjective`, `WitnessPlan`, `EvidencePlan`, opponent-risk records, and objective runtime state.
+- [x] Build reusable strategy planning per side instead of separate hardcoded plaintiff/prosecution/defense flows.
+- [x] Validate strategy against role context, legal elements, available facts, disclosed evidence, and procedure.
+- [x] Add global strategy, witness selection, examination objective, tactical action, and question generation contexts in that order.
+- [x] Add tests proving strategy nodes receive strategy context but question generation receives only an execution brief.
 
 ## Minimum Practical V2 Graph
 
-- [ ] Replace the smoke graph with the minimum practical graph from `v2-graph-design.md`: initialize session, analyze case, plan both sides, opening phase, witness loop, closing record, closing phase, structured deliberation, evaluation.
-- [ ] Keep major phases as root nodes and use subgraphs for case intelligence, strategy, witness examination, deliberation, and evaluation.
-- [ ] Store root state as references and phase outputs rather than copying the complete case into every checkpoint.
-- [ ] Keep `trial-v2-ai-ai` additive and leave `trial` and `examine-witness` unchanged.
+- [x] Replace the smoke graph with the minimum practical graph from `v2-graph-design.md`: initialize session, analyze case, plan both sides, opening phase, witness loop, closing record, closing phase, structured deliberation, evaluation.
+- [x] Keep major phases as root nodes and use subgraphs for case intelligence, strategy, witness examination, deliberation, and evaluation.
+- [x] Store root state as references and phase outputs rather than copying the complete case into every checkpoint.
+- [x] Keep `trial-v2-ai-ai` additive and leave `trial` and `examine-witness` unchanged.
 
 ## Witness Examination Redesign
 
-- [ ] Build the structured witness examination subgraph: initialize examination, select objective, plan action, validate action, generate question, objection decision, judge ruling, witness answer, validate answer, update evidence state, detect new contradictions, assess objective progress, transition examination, finalize witness.
-- [ ] Separate tactical action planning from courtroom question generation.
-- [ ] Add deterministic updater for facts, evidence, contradictions, objective progress, and witness credibility signals after every accepted answer.
-- [ ] Ensure witness answer context includes only relevant knowledge atoms, prior testimony, shown exhibits, current question, and witness behavior profile.
-- [ ] Add validator behavior that distinguishes model hallucination from intentional witness contradiction.
+- [x] Build the structured witness examination subgraph: initialize examination, select objective, plan action, validate action, generate question, objection decision, judge ruling, witness answer, validate answer, update evidence state, detect new contradictions, assess objective progress, transition examination, finalize witness.
+- [x] Separate tactical action planning from courtroom question generation.
+- [x] Add deterministic updater for facts, evidence, contradictions, objective progress, and witness credibility signals after every accepted answer.
+- [x] Ensure witness answer context includes only relevant knowledge atoms, prior testimony, shown exhibits, current question, and witness behavior profile.
+- [x] Add validator behavior that distinguishes model hallucination from intentional witness contradiction.
 
 ## Verdict, Evaluation, And Coaching
 

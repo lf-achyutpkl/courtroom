@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from .visibility import (
-    AccessPolicyDecision,
     VISIBILITY_POLICY_VERSION,
+    AccessPolicyDecision,
     allowed_actions,
     allowed_scopes,
     excluded_categories,
@@ -10,8 +10,8 @@ from .visibility import (
 )
 
 __all__ = [
-    "AccessPolicyDecision",
     "VISIBILITY_POLICY_VERSION",
+    "AccessPolicyDecision",
     "allowed_actions",
     "allowed_scopes",
     "excluded_categories",

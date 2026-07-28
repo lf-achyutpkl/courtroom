@@ -8,6 +8,12 @@ from pydantic import Field
 
 from courtroom_engine.domain.base import DomainModel
 from courtroom_engine.domain.case import ActorRole, PartySide
+from courtroom_engine.domain.case_intelligence import (
+    CaseGapType,
+    DisputeStatus,
+    EvidenceRelationshipType,
+    ProofStatus,
+)
 from courtroom_engine.domain.ids import (
     ActorId,
     CaseId,
@@ -116,10 +122,58 @@ class WitnessKnowledgeContextDTO(DomainModel):
     related_fact_ids: tuple[FactId, ...] = ()
 
 
+class MaterialFactContextDTO(DomainModel):
+    fact_id: FactId
+    element_id: ElementId
+    supporting_side: PartySide
+    opposing_side: PartySide
+    dispute_status: DisputeStatus
+    supporting_evidence_ids: tuple[EvidenceId, ...] = ()
+    knowledgeable_witness_ids: tuple[WitnessId, ...] = ()
+    proof_status: ProofStatus
+
+
+class EvidenceRelationshipContextDTO(DomainModel):
+    relationship_id: str
+    relationship_type: EvidenceRelationshipType
+    evidence_id: EvidenceId
+    fact_id: FactId | None = None
+    element_id: ElementId | None = None
+    witness_id: WitnessId | None = None
+
+
+class WitnessFactContextDTO(DomainModel):
+    relationship_id: str
+    witness_id: WitnessId
+    fact_id: FactId
+
+
+class CaseGapContextDTO(DomainModel):
+    gap_id: str
+    gap_type: CaseGapType
+    description: str
+    side: PartySide | None = None
+    element_id: ElementId | None = None
+    fact_ids: tuple[FactId, ...] = ()
+    evidence_ids: tuple[EvidenceId, ...] = ()
+    witness_ids: tuple[WitnessId, ...] = ()
+    severity: float = Field(ge=0, le=1)
+
+
+class PublicCaseIntelligenceContextDTO(DomainModel):
+    material_facts: tuple[MaterialFactContextDTO, ...] = ()
+    evidence_relationships: tuple[EvidenceRelationshipContextDTO, ...] = ()
+    witness_fact_relationships: tuple[WitnessFactContextDTO, ...] = ()
+    case_gaps: tuple[CaseGapContextDTO, ...] = ()
+
+
 class ActorCaseViewDTO(DomainModel):
     facts: tuple[FactContextDTO, ...] = ()
     evidence: tuple[EvidenceContextDTO, ...] = ()
     witness_knowledge: tuple[WitnessKnowledgeContextDTO, ...] = ()
+    intelligence: PublicCaseIntelligenceContextDTO = Field(
+        default_factory=PublicCaseIntelligenceContextDTO
+    )
     public_event_summaries: tuple[str, ...] = ()
 
 

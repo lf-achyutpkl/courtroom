@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from courtroom_engine.domain.case import Actor, ActorRole
+from courtroom_engine.domain.case_intelligence import EvidenceRelationshipType
 from courtroom_engine.domain.evidence import EvidenceItem, Fact
 from courtroom_engine.domain.trial import CompiledCasePackage, TrialRuntimeState
 from courtroom_engine.domain.visibility import VisibilityScope
@@ -16,14 +17,19 @@ from .projections import (
     CONTEXT_PROJECTION_VERSION,
     ActorCaseViewDTO,
     ActorContextDTO,
+    CaseGapContextDTO,
     ContextAuditRecord,
     ContextMetadata,
     ContextRequest,
     EvidenceContextDTO,
+    EvidenceRelationshipContextDTO,
     FactContextDTO,
+    MaterialFactContextDTO,
     ModelNodeContextDTO,
     NodePurpose,
     ProceduralContext,
+    PublicCaseIntelligenceContextDTO,
+    WitnessFactContextDTO,
     WitnessKnowledgeContextDTO,
 )
 
@@ -59,10 +65,19 @@ class ContextBoundaryService:
             allowed_scopes=allowed,
             violation_messages=violation_messages,
         )
+        intelligence = self._project_intelligence(
+            case_package=case_package,
+            actor=actor,
+            request=request,
+            fact_ids={fact.fact_id for fact in facts},
+            evidence_ids={item.evidence_id for item in evidence},
+            witness_knowledge=witness_knowledge,
+        )
         case_view = ActorCaseViewDTO(
             facts=facts,
             evidence=evidence,
             witness_knowledge=witness_knowledge,
+            intelligence=intelligence,
             public_event_summaries=state.public_event_summaries[
                 -request.recent_event_limit :
             ],
@@ -245,7 +260,10 @@ class ContextBoundaryService:
 
     def _role_contract(self, actor: Actor | None, node_purpose: NodePurpose) -> str:
         if node_purpose == NodePurpose.ACTOR_EVALUATION:
-            return "Evaluate the run using complete audit context; cite observable records."
+            return (
+                "Evaluate the run using complete audit context; cite observable "
+                "records."
+            )
         if node_purpose == NodePurpose.COACHING:
             return "Produce coaching from grounded evaluator observations."
         if actor is None:
@@ -254,16 +272,36 @@ class ContextBoundaryService:
 
     def _task_instruction(self, node_purpose: NodePurpose) -> str:
         instructions = {
-            NodePurpose.INITIAL_CASE_ANALYSIS: "Analyze case structure; do not draft courtroom dialogue.",
-            NodePurpose.GLOBAL_STRATEGY: "Create strategic objectives; do not generate questions.",
-            NodePurpose.WITNESS_SELECTION: "Select the next witness from available strategy objectives.",
-            NodePurpose.TACTICAL_ACTION_PLANNING: "Choose one tactical action; do not phrase it as dialogue.",
-            NodePurpose.QUESTION_GENERATION: "Generate one courtroom question from the selected action.",
-            NodePurpose.OBJECTION_DECISION: "Decide whether a legally supported objection exists.",
-            NodePurpose.OBJECTION_RULING: "Rule only on the pending objection or offer.",
-            NodePurpose.WITNESS_ANSWER: "Answer as the witness using only supplied witness knowledge.",
-            NodePurpose.ACTOR_EVALUATION: "Evaluate observable performance with citations.",
-            NodePurpose.COACHING: "Convert grounded evaluation observations into coaching.",
+            NodePurpose.INITIAL_CASE_ANALYSIS: (
+                "Analyze case structure; do not draft courtroom dialogue."
+            ),
+            NodePurpose.GLOBAL_STRATEGY: (
+                "Create strategic objectives; do not generate questions."
+            ),
+            NodePurpose.WITNESS_SELECTION: (
+                "Select the next witness from available strategy objectives."
+            ),
+            NodePurpose.TACTICAL_ACTION_PLANNING: (
+                "Choose one tactical action; do not phrase it as dialogue."
+            ),
+            NodePurpose.QUESTION_GENERATION: (
+                "Generate one courtroom question from the selected action."
+            ),
+            NodePurpose.OBJECTION_DECISION: (
+                "Decide whether a legally supported objection exists."
+            ),
+            NodePurpose.OBJECTION_RULING: (
+                "Rule only on the pending objection or offer."
+            ),
+            NodePurpose.WITNESS_ANSWER: (
+                "Answer as the witness using only supplied witness knowledge."
+            ),
+            NodePurpose.ACTOR_EVALUATION: (
+                "Evaluate observable performance with citations."
+            ),
+            NodePurpose.COACHING: (
+                "Convert grounded evaluation observations into coaching."
+            ),
         }
         return instructions[node_purpose]
 
@@ -272,7 +310,156 @@ class ContextBoundaryService:
         ids.extend(fact.fact_id for fact in case_view.facts)
         ids.extend(evidence.evidence_id for evidence in case_view.evidence)
         ids.extend(atom.knowledge_atom_id for atom in case_view.witness_knowledge)
+        ids.extend(record.fact_id for record in case_view.intelligence.material_facts)
+        ids.extend(
+            relationship.relationship_id
+            for relationship in case_view.intelligence.evidence_relationships
+        )
+        ids.extend(
+            relationship.relationship_id
+            for relationship in case_view.intelligence.witness_fact_relationships
+        )
+        ids.extend(gap.gap_id for gap in case_view.intelligence.case_gaps)
         return tuple(ids)
+
+    def _project_intelligence(
+        self,
+        *,
+        case_package: CompiledCasePackage,
+        actor: Actor | None,
+        request: ContextRequest,
+        fact_ids: set[str],
+        evidence_ids: set[str],
+        witness_knowledge: tuple[WitnessKnowledgeContextDTO, ...],
+    ) -> PublicCaseIntelligenceContextDTO:
+        report = case_package.intelligence
+        material_facts = tuple(
+            MaterialFactContextDTO(
+                fact_id=record.fact_id,
+                element_id=record.element_id,
+                supporting_side=record.supporting_side,
+                opposing_side=record.opposing_side,
+                dispute_status=record.dispute_status,
+                supporting_evidence_ids=tuple(
+                    evidence_id
+                    for evidence_id in record.supporting_evidence_ids
+                    if evidence_id in evidence_ids
+                ),
+                knowledgeable_witness_ids=self._visible_knowledgeable_witness_ids(
+                    actor=actor,
+                    request=request,
+                    record_witness_ids=record.knowledgeable_witness_ids,
+                    witness_knowledge=witness_knowledge,
+                ),
+                proof_status=record.proof_status,
+            )
+            for record in report.material_fact_map.facts
+            if record.fact_id in fact_ids
+        )
+        evidence_relationships = tuple(
+            EvidenceRelationshipContextDTO(
+                relationship_id=relationship.relationship_id,
+                relationship_type=relationship.relationship_type,
+                evidence_id=relationship.evidence_id,
+                fact_id=relationship.fact_id,
+                element_id=relationship.element_id,
+                witness_id=relationship.witness_id,
+            )
+            for relationship in report.evidence_graph.relationships
+            if relationship.relationship_type != EvidenceRelationshipType.CONTRADICTION
+            and relationship.evidence_id in evidence_ids
+            and (relationship.fact_id is None or relationship.fact_id in fact_ids)
+            and self._witness_relationship_visible(
+                actor=actor,
+                request=request,
+                witness_id=relationship.witness_id,
+            )
+        )
+        witness_relationships = tuple(
+            WitnessFactContextDTO(
+                relationship_id=relationship.relationship_id,
+                witness_id=relationship.witness_id,
+                fact_id=relationship.fact_id,
+            )
+            for relationship in report.witness_knowledge_graph.relationships
+            if relationship.fact_id in fact_ids
+            and self._witness_relationship_visible(
+                actor=actor,
+                request=request,
+                witness_id=relationship.witness_id,
+            )
+        )
+        gaps = tuple(
+            CaseGapContextDTO(
+                gap_id=gap.gap_id,
+                gap_type=gap.gap_type,
+                description=gap.description,
+                side=gap.side,
+                element_id=gap.element_id,
+                fact_ids=tuple(
+                    fact_id for fact_id in gap.fact_ids if fact_id in fact_ids
+                ),
+                evidence_ids=tuple(
+                    evidence_id
+                    for evidence_id in gap.evidence_ids
+                    if evidence_id in evidence_ids
+                ),
+                witness_ids=self._visible_knowledgeable_witness_ids(
+                    actor=actor,
+                    request=request,
+                    record_witness_ids=gap.witness_ids,
+                    witness_knowledge=witness_knowledge,
+                ),
+                severity=gap.severity,
+            )
+            for gap in report.case_gaps
+            if all(fact_id in fact_ids for fact_id in gap.fact_ids)
+            and all(evidence_id in evidence_ids for evidence_id in gap.evidence_ids)
+        )
+        return PublicCaseIntelligenceContextDTO(
+            material_facts=material_facts,
+            evidence_relationships=evidence_relationships,
+            witness_fact_relationships=witness_relationships,
+            case_gaps=gaps,
+        )
+
+    def _witness_relationship_visible(
+        self,
+        *,
+        actor: Actor | None,
+        request: ContextRequest,
+        witness_id: str | None,
+    ) -> bool:
+        if witness_id is None:
+            return True
+        if actor is not None and actor.role == ActorRole.WITNESS:
+            return witness_id == actor.witness_id
+        if request.node_purpose == NodePurpose.WITNESS_ANSWER:
+            return witness_id == request.target_witness_id
+        return True
+
+    def _visible_knowledgeable_witness_ids(
+        self,
+        *,
+        actor: Actor | None,
+        request: ContextRequest,
+        record_witness_ids: tuple[str, ...],
+        witness_knowledge: tuple[WitnessKnowledgeContextDTO, ...],
+    ) -> tuple[str, ...]:
+        if actor is not None and actor.role == ActorRole.WITNESS:
+            return tuple(
+                witness_id
+                for witness_id in record_witness_ids
+                if witness_id == actor.witness_id
+            )
+        if request.node_purpose == NodePurpose.WITNESS_ANSWER:
+            visible_witness_ids = {atom.witness_id for atom in witness_knowledge}
+            return tuple(
+                witness_id
+                for witness_id in record_witness_ids
+                if witness_id in visible_witness_ids
+            )
+        return record_witness_ids
 
     def _validate_no_forbidden_context(
         self,

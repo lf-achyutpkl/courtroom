@@ -1,14 +1,12 @@
 from __future__ import annotations
 
+from courtroom_engine.application.case_analysis import analyze_case
+
 from .models import (
     AuthoredCaseTemplate,
     CompiledCasePackage,
-    DerivedCaseIntelligence,
-    EvidenceId,
-    FactId,
     PartySide,
     VisibilityScope,
-    WitnessId,
 )
 
 
@@ -26,13 +24,16 @@ class CaseCompiler:
             evidence=template.evidence,
             witnesses=template.witnesses,
             witness_knowledge=template.witness_knowledge,
-            intelligence=self._derive_intelligence(template),
+            intelligence=analyze_case(template),
             private_truth=template.private_truth,
         )
 
     def _validate(self, template: AuthoredCaseTemplate) -> None:
         party_ids = {party.party_id for party in template.parties}
+        actor_ids = {actor.actor_id for actor in template.actors}
+        matter_ids = {matter.matter_id for matter in template.matters}
         fact_ids = {fact.fact_id for fact in template.facts}
+        evidence_ids = {item.evidence_id for item in template.evidence}
         element_ids = {
             element.element_id
             for matter in template.matters
@@ -43,8 +44,17 @@ class CaseCompiler:
 
         if len(party_ids) != len(template.parties):
             raise ValueError("duplicate party ids are not allowed")
+        if len(actor_ids) != len(template.actors):
+            raise ValueError("duplicate actor ids are not allowed")
+        if len(matter_ids) != len(template.matters):
+            raise ValueError("duplicate matter ids are not allowed")
+        element_count = sum(len(matter.elements) for matter in template.matters)
+        if len(element_ids) != element_count:
+            raise ValueError("duplicate element ids are not allowed")
         if len(fact_ids) != len(template.facts):
             raise ValueError("duplicate fact ids are not allowed")
+        if len(evidence_ids) != len(template.evidence):
+            raise ValueError("duplicate evidence ids are not allowed")
         if len(witness_ids) != len(template.witnesses):
             raise ValueError("duplicate witness ids are not allowed")
         if len(knowledge_ids) != len(template.witness_knowledge):
@@ -102,33 +112,5 @@ class CaseCompiler:
         for matter in template.matters:
             if matter.case_kind != template.metadata.case_kind:
                 raise ValueError("matter case kind must match case metadata")
-
-    def _derive_intelligence(
-        self, template: AuthoredCaseTemplate
-    ) -> DerivedCaseIntelligence:
-        material_fact_ids = tuple(
-            fact.fact_id for fact in template.facts if fact.disputed
-        )
-        evidence_fact_edges: list[tuple[EvidenceId, FactId]] = []
-        for evidence in template.evidence:
-            for fact_id in evidence.supports_fact_ids:
-                evidence_fact_edges.append((evidence.evidence_id, fact_id))
-
-        witness_fact_edges: list[tuple[WitnessId, FactId]] = []
-        for atom in template.witness_knowledge:
-            for fact_id in atom.related_fact_ids:
-                witness_fact_edges.append((atom.witness_id, fact_id))
-
-        contradiction_ids = ()
-        if template.private_truth is not None:
-            contradiction_ids = tuple(
-                contradiction.contradiction_id
-                for contradiction in template.private_truth.expected_contradictions
-            )
-
-        return DerivedCaseIntelligence(
-            material_fact_ids=material_fact_ids,
-            evidence_fact_edges=tuple(evidence_fact_edges),
-            witness_fact_edges=tuple(witness_fact_edges),
-            initial_contradiction_ids=contradiction_ids,
-        )
+            if not matter.elements:
+                raise ValueError("matters must define at least one legal element")

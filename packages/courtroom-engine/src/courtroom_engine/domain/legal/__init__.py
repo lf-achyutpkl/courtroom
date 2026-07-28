@@ -24,7 +24,7 @@ class ClaimOrCharge(DomainModel):
     elements: tuple[LegalElement, ...]
 
     @model_validator(mode="after")
-    def validate_prefix(self) -> "ClaimOrCharge":
+    def validate_prefix(self) -> ClaimOrCharge:
         if self.case_kind == CaseKind.CIVIL and not self.matter_id.startswith("CLM-"):
             raise ValueError("civil matters must use CLM-* ids")
         if self.case_kind == CaseKind.CRIMINAL and not self.matter_id.startswith(

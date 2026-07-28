@@ -7,18 +7,14 @@ from pydantic import Field
 
 from courtroom_engine.domain.base import DomainModel
 from courtroom_engine.domain.case import Actor, CaseMetadata, Party
+from courtroom_engine.domain.case_intelligence import CaseIntelligenceReport
 from courtroom_engine.domain.evidence import EvidenceItem, Fact
-from courtroom_engine.domain.ids import ActorId, CaseId, EvidenceId, FactId, WitnessId
+from courtroom_engine.domain.ids import ActorId, CaseId, EvidenceId, WitnessId
 from courtroom_engine.domain.legal import ClaimOrCharge
 from courtroom_engine.domain.simulation_truth import PrivateSimulationTruth
 from courtroom_engine.domain.witnesses import KnowledgeAtom, Witness
 
-
-class DerivedCaseIntelligence(DomainModel):
-    material_fact_ids: tuple[FactId, ...] = ()
-    evidence_fact_edges: tuple[tuple[EvidenceId, FactId], ...] = ()
-    witness_fact_edges: tuple[tuple[WitnessId, FactId], ...] = ()
-    initial_contradiction_ids: tuple[str, ...] = ()
+DerivedCaseIntelligence = CaseIntelligenceReport
 
 
 class AuthoredCaseTemplate(DomainModel):

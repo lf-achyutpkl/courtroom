@@ -2,7 +2,8 @@
     "dependencies": ["."],
     "graphs": {
       "trial": "./src/agent.py:graph",
-      "examine-witness": "./src/subgraphs/witness/agent.py:witness_graph"
+      "examine-witness": "./src/subgraphs/witness/agent.py:witness_graph",
+      "trial-v2-ai-ai": "./src/v2/ai_ai_graph.py:graph"
     },
     "env": "./.env",
     "python_version": "3.11"

@@ -4,7 +4,8 @@
     "apps/api-service/tests",
     "apps/agent-service/src",
     "apps/agent-service/tests",
-    "packages/python-domain/src"
+    "packages/python-domain/src",
+    "packages/courtroom-engine/src"
   ],
   "exclude": [
     "**/__pycache__",
@@ -24,14 +25,22 @@
       "extraPaths": [
         "apps/api-service/src",
         "apps/agent-service/src",
-        "packages/python-domain/src"
+        "packages/python-domain/src",
+        "packages/courtroom-engine/src"
       ]
     },
     {
       "root": "apps/agent-service",
       "extraPaths": [
         "apps/agent-service/src",
-        "packages/python-domain/src"
+        "packages/python-domain/src",
+        "packages/courtroom-engine/src"
+      ]
+    },
+    {
+      "root": "packages/courtroom-engine",
+      "extraPaths": [
+        "packages/courtroom-engine/src"
       ]
     },
     {

@@ -19,11 +19,11 @@ This tracks remaining V2 AI-vs-AI work after the initial foundation pass. Source
 
 ## Next Engineering Task
 
-- [ ] Expand the case model and context boundary foundation into the planned package structure from `v2-structure.md`.
-- [ ] Split current flat `courtroom_engine.models` into domain modules for case, evidence, witnesses, legal, strategy, simulation truth, trial state, and events.
-- [ ] Add explicit public DTOs for every actor-facing context so restricted contexts never rely on copying canonical models and removing fields.
-- [ ] Add context audit records with included IDs, excluded categories, policy version, projection version, estimated context size, and violation status.
-- [ ] Add tests for unknown visibility, evaluator-only truth leakage, opposing private strategy leakage, non-target witness knowledge leakage, and direct canonical package access in model-backed nodes.
+- [x] Expand the case model and context boundary foundation into the planned package structure from `v2-structure.md`.
+- [x] Split current flat `courtroom_engine.models` into domain modules for case, evidence, witnesses, legal, strategy, simulation truth, trial state, and events.
+- [x] Add explicit public DTOs for every actor-facing context so restricted contexts never rely on copying canonical models and removing fields.
+- [x] Add context audit records with included IDs, excluded categories, policy version, projection version, estimated context size, and violation status.
+- [x] Add tests for unknown visibility, evaluator-only truth leakage, opposing private strategy leakage, non-target witness knowledge leakage, and direct canonical package access in model-backed nodes.
 
 ## Case Intelligence Foundation
 
@@ -102,4 +102,3 @@ This tracks remaining V2 AI-vs-AI work after the initial foundation pass. Source
 - [ ] Fine-tuning.
 - [ ] Production learning loops.
 - [ ] Multi-jurisdiction support beyond initial California-oriented abstractions.
-

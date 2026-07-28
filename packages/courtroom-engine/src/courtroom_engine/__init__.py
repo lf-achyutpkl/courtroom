@@ -1,9 +1,16 @@
 from .compiler import CaseCompiler
 from .context import (
+    ActorCaseViewDTO,
+    ActorContextDTO,
     BaseNodeContext,
+    ContextAuditRecord,
     ContextBoundaryService,
     ContextRequest,
+    EvidenceContextDTO,
+    FactContextDTO,
+    ModelNodeContextDTO,
     NodePurpose,
+    WitnessKnowledgeContextDTO,
 )
 from .models import (
     Actor,
@@ -27,6 +34,8 @@ from .models import (
 
 __all__ = [
     "Actor",
+    "ActorCaseViewDTO",
+    "ActorContextDTO",
     "ActorRole",
     "AuthoredCaseTemplate",
     "BaseNodeContext",
@@ -35,12 +44,16 @@ __all__ = [
     "CaseMetadata",
     "ClaimOrCharge",
     "CompiledCasePackage",
+    "ContextAuditRecord",
     "ContextBoundaryService",
     "ContextRequest",
     "DerivedCaseIntelligence",
+    "EvidenceContextDTO",
     "EvidenceItem",
     "Fact",
+    "FactContextDTO",
     "KnowledgeAtom",
+    "ModelNodeContextDTO",
     "NodePurpose",
     "Party",
     "PartySide",
@@ -48,4 +61,5 @@ __all__ = [
     "TrialRuntimeState",
     "VisibilityScope",
     "Witness",
+    "WitnessKnowledgeContextDTO",
 ]

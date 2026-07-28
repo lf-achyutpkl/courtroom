@@ -27,11 +27,58 @@ This tracks remaining V2 AI-vs-AI work after the initial foundation pass. Source
 
 ## Case Intelligence Foundation
 
-- [ ] Implement case intelligence state and outputs: case graph, evidence graph, timeline graph, contradiction graph, material fact map, and case-gap records.
-- [ ] Add a deterministic `analyze_case` service or subgraph that composes normalization, legal issue identification, element mapping, fact classification, evidence graph generation, witness knowledge graph generation, contradiction detection, and validation.
-- [ ] Add provenance and confidence fields to derived intelligence objects.
-- [ ] Add civil and criminal fixture cases, while keeping the first runnable vertical slice on one compact scenario.
-- [ ] Add compiler tests for criminal `CHG-*` matters, civil `CLM-*` matters, missing burden elements, dangling evidence references, duplicate IDs, and mismatched case kind.
+Goal: teach the system to read a compact case the way an elite trial lawyer starts reading it: identify what must be proved, which facts matter, which evidence can prove or attack those facts, which witness can establish each point, where the story conflicts, and which gaps should drive strategy. This slice is still AI-vs-AI only and must not touch frontend code or the existing V1 graph.
+
+### Scope Boundary
+
+- [ ] Work only in `packages/courtroom-engine`, its tests, and V2 docs unless an OpenSpec artifact explicitly expands scope.
+- [ ] Keep `trial-v2-ai-ai` additive and do not modify the existing V1 `trial` or `examine-witness` graphs.
+- [ ] Keep case intelligence deterministic first; use LLM-shaped seams only as typed ports or future adapters, not as required runtime behavior for this slice.
+- [ ] Treat derived intelligence as separate from authored case facts, private simulation truth, and runtime trial state.
+- [ ] Ensure no actor-facing context receives canonical case packages, evaluator-only truth, hidden contradiction labels, or another witness's private knowledge.
+
+### Target Modules
+
+- [ ] Add `courtroom_engine/domain/case_intelligence/` for derived intelligence models.
+- [ ] Add `courtroom_engine/application/case_analysis/` for the deterministic analyzer pipeline.
+- [ ] Keep graph orchestration glue out of the domain layer; any future LangGraph subgraph belongs under `courtroom_engine/orchestration/`.
+- [ ] Export only stable public types through `courtroom_engine.models` and package `__init__.py` after the internal modules are in place.
+
+### Derived Intelligence Models
+
+- [ ] Implement `CaseIntelligenceReport` as the top-level analyzer output attached to `CompiledCasePackage.intelligence`.
+- [ ] Implement `CaseGraph` with typed nodes and edges for matters, claims or charges, defenses, legal elements, parties, facts, evidence, witnesses, authorities, remedies, and possible verdict outcomes.
+- [ ] Implement `EvidenceGraph` with evidence-to-fact, evidence-to-element, evidence-to-witness, foundation, authenticity, admissibility, impeachment, and contradiction relationships.
+- [ ] Implement `TimelineGraph` with event ordering, approximate dates, sequence constraints, source references, temporal gaps, and temporal conflicts.
+- [ ] Implement `ContradictionGraph` with contradiction records that distinguish witness-vs-witness, witness-vs-document, witness-vs-prior-statement, fact-vs-timeline, claim-vs-evidence, internal-testimony, and theory inconsistency.
+- [ ] Implement `MaterialFactMap` that maps every legally material fact to its matter, legal element, supporting side, opposing side, dispute status, supporting evidence, contradicting evidence, knowledgeable witnesses, and current proof status.
+- [ ] Implement `CaseGap` records for missing burden proof, missing foundation, unsupported material facts, unresolved legal issues, one-witness dependencies, weak corroboration, temporal gaps, and contradiction opportunities.
+- [ ] Add shared provenance and confidence fields to every derived intelligence object that was inferred or classified, including source IDs, derivation method, analyzer version, confidence score, and review status.
+
+### Analyzer Pipeline
+
+- [ ] Add deterministic `analyze_case(template_or_package)` application service that returns a validated `CaseIntelligenceReport`.
+- [ ] Compose the analyzer as ordered, independently testable steps: `normalize_case`, `identify_legal_issues`, `map_legal_elements`, `classify_material_facts`, `build_evidence_graph`, `build_timeline_graph`, `build_witness_knowledge_graph`, `detect_contradictions`, `analyze_case_gaps`, and `validate_case_intelligence`.
+- [ ] Keep each step pure where practical: input typed case data, output typed intelligence fragments or validation errors.
+- [ ] Record analyzer diagnostics instead of silently rewriting ambiguous case material.
+- [ ] Make validation fail closed when references are dangling, confidence is missing for inferred relationships, or derived intelligence claims more than the authored case supports.
+- [ ] Preserve the existing compiler entry point while moving its current minimal derivation behind the new analyzer service.
+
+### First Vertical Slice
+
+- [ ] Use one compact civil scenario as the first runnable case-intelligence fixture.
+- [ ] Add one compact criminal scenario after the civil path passes, specifically to exercise `CHG-*` matter IDs, prosecution burden, defense theory, and criminal verdict options.
+- [ ] Keep fixture cases small enough that a human can manually inspect every claim, element, fact, witness, evidence item, contradiction, and gap.
+- [ ] Include expert-reference expectations in fixtures only as private simulation truth or test fixtures, not as actor-visible case context.
+
+### Tests And Acceptance
+
+- [ ] Add unit tests for case graph construction from civil `CLM-*` matters and criminal `CHG-*` matters.
+- [ ] Add compiler or analyzer validation tests for missing burden elements, dangling evidence references, dangling witness knowledge references, duplicate IDs, mismatched case kind, malformed matter prefixes, and unknown visibility.
+- [ ] Add tests proving every material fact has provenance, every inferred edge has confidence, and every contradiction points to valid source objects.
+- [ ] Add tests proving evaluator-only truth, hidden contradiction labels, private strategy, and non-target witness knowledge stay out of actor-facing derived intelligence contexts.
+- [ ] Add golden-case tests for the first civil fixture covering expected material fact map, evidence graph edges, witness knowledge graph edges, contradiction candidates, and case gaps.
+- [ ] Gate completion on a reviewer being able to answer from structured outputs: what must be proved, what proves it, who can establish it, what attacks it, what is missing, and why the next strategy planner has enough input to reason like a trial lawyer.
 
 ## Procedure And Role Isolation
 

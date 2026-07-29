@@ -27,6 +27,7 @@ class CourtroomEventType(StrEnum):
     CLOSING_DELIVERED = "closing_delivered"
     DELIBERATION_COMPLETED = "deliberation_completed"
     EVALUATION_COMPLETED = "evaluation_completed"
+    COACHING_COMPLETED = "coaching_completed"
 
 
 class CourtroomEvent(DomainModel):

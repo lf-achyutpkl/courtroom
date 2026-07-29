@@ -7,9 +7,15 @@ from courtroom_engine.application.examination import (
     WitnessExaminationOutput,
     run_witness_examination,
 )
+from courtroom_engine.application.coaching import run_coaching
+from courtroom_engine.application.deliberation import run_judicial_deliberation
+from courtroom_engine.application.evaluation import run_evaluation
 from courtroom_engine.application.planning import plan_party_strategy
 from courtroom_engine.compiler import CaseCompiler
 from courtroom_engine.domain.case import PartySide
+from courtroom_engine.domain.coaching import CoachingReport
+from courtroom_engine.domain.deliberation import DeliberationReport
+from courtroom_engine.domain.evaluation import EvaluationReport
 from courtroom_engine.domain.events import CourtroomEvent, CourtroomEventType
 from courtroom_engine.domain.procedure import (
     EvidenceAdmissionRecord,
@@ -30,6 +36,9 @@ class V2AiAiState(BaseModel):
     boundary_context_ids: list[str] = Field(default_factory=list)
     strategies: dict[str, PartyStrategy] = Field(default_factory=dict)
     witness_examinations: list[WitnessExaminationOutput] = Field(default_factory=list)
+    deliberation: DeliberationReport | None = None
+    evaluation: EvaluationReport | None = None
+    coaching: CoachingReport | None = None
     phase_outputs: dict[str, str] = Field(default_factory=dict)
 
 
@@ -230,18 +239,27 @@ def run_closing_phase_node(state: V2AiAiState) -> V2AiAiState:
 
 
 def run_deliberation_node(state: V2AiAiState) -> V2AiAiState:
-    _, runtime = _require_initialized(state)
-    summary = "Structured deliberation placeholder applied burden to admitted record."
+    case_package, runtime = _require_initialized(state)
+    deliberation = run_judicial_deliberation(
+        case_package=case_package,
+        state=runtime,
+    )
+    summary = (
+        "Structured deliberation reached "
+        f"{deliberation.verdict.outcome.value} verdict with "
+        f"{len(deliberation.finalized_findings)} finding(s)."
+    )
     event = _event(
         CourtroomEventType.DELIBERATION_COMPLETED,
         TrialPhase.DELIBERATION,
         summary,
+        cited=(deliberation.verdict.verdict_id,),
     )
     updated_runtime = runtime.with_phase(TrialPhase.EVALUATION, summary).model_copy(
         update={"events": (*runtime.events, event)}
     )
     return _with_runtime(
-        state,
+        state.model_copy(update={"deliberation": deliberation}),
         updated_runtime,
         "deliberation_complete",
         {"deliberation": summary},
@@ -249,13 +267,53 @@ def run_deliberation_node(state: V2AiAiState) -> V2AiAiState:
 
 
 def run_evaluation_node(state: V2AiAiState) -> V2AiAiState:
-    _, runtime = _require_initialized(state)
-    summary = "Evaluation placeholder recorded procedure, role, and strategy traces."
+    case_package, runtime = _require_initialized(state)
+    if state.deliberation is None:
+        raise ValueError("evaluation requires deliberation report")
+    evaluation = run_evaluation(
+        case_package=case_package,
+        state=runtime,
+        strategies=tuple(state.strategies.values()),
+        witness_examinations=tuple(state.witness_examinations),
+        deliberation=state.deliberation,
+    )
+    summary = (
+        "Evaluation completed with "
+        f"{len(evaluation.observations)} grounded observation(s) and "
+        f"{len(evaluation.missed_opportunities)} missed opportunity record(s)."
+    )
     event = _event(CourtroomEventType.EVALUATION_COMPLETED, TrialPhase.EVALUATION, summary)
+    updated_runtime = runtime.model_copy(
+        update={"events": (*runtime.events, event)}
+    )
+    return _with_runtime(
+        state.model_copy(update={"evaluation": evaluation}),
+        updated_runtime,
+        "evaluation_complete",
+        {"evaluation": summary},
+    )
+
+
+def run_coaching_node(state: V2AiAiState) -> V2AiAiState:
+    _, runtime = _require_initialized(state)
+    if state.evaluation is None:
+        raise ValueError("coaching requires evaluation report")
+    coaching = run_coaching(evaluation=state.evaluation)
+    summary = (
+        "Coaching completed with "
+        f"{len(coaching.moments)} moment(s) and "
+        f"{len(coaching.skill_profile_updates)} skill update(s)."
+    )
+    event = _event(CourtroomEventType.COACHING_COMPLETED, TrialPhase.EVALUATION, summary)
     updated_runtime = runtime.with_phase(TrialPhase.COMPLETE, summary).model_copy(
         update={"events": (*runtime.events, event)}
     )
-    return _with_runtime(state, updated_runtime, "evaluation_complete", {"evaluation": summary})
+    return _with_runtime(
+        state.model_copy(update={"coaching": coaching}),
+        updated_runtime,
+        "coaching_complete",
+        {"coaching": summary},
+    )
 
 
 def build_v2_ai_ai_graph():
@@ -269,6 +327,7 @@ def build_v2_ai_ai_graph():
     builder.add_node("run_closing_phase", run_closing_phase_node)
     builder.add_node("run_deliberation", run_deliberation_node)
     builder.add_node("run_evaluation", run_evaluation_node)
+    builder.add_node("run_coaching", run_coaching_node)
     builder.add_edge(START, "initialize_session")
     builder.add_edge("initialize_session", "analyze_case")
     builder.add_edge("analyze_case", "plan_sides")
@@ -278,7 +337,8 @@ def build_v2_ai_ai_graph():
     builder.add_edge("prepare_closing_record", "run_closing_phase")
     builder.add_edge("run_closing_phase", "run_deliberation")
     builder.add_edge("run_deliberation", "run_evaluation")
-    builder.add_edge("run_evaluation", END)
+    builder.add_edge("run_evaluation", "run_coaching")
+    builder.add_edge("run_coaching", END)
     return builder.compile()
 
 

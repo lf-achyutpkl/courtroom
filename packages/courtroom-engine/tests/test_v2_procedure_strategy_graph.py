@@ -184,10 +184,14 @@ class MinimumV2GraphTests(unittest.TestCase):
     def test_v2_ai_ai_graph_reaches_evaluation(self) -> None:
         result = build_v2_ai_ai_graph().invoke(V2AiAiState())
 
-        self.assertEqual(result["status"], "evaluation_complete")
+        self.assertEqual(result["status"], "coaching_complete")
         self.assertEqual(result["runtime"].phase, TrialPhase.COMPLETE.value)
         self.assertIn("evaluation", result["phase_outputs"])
+        self.assertIn("coaching", result["phase_outputs"])
         self.assertTrue(result["witness_examinations"])
+        self.assertIsNotNone(result["deliberation"])
+        self.assertIsNotNone(result["evaluation"])
+        self.assertIsNotNone(result["coaching"])
 
 
 if __name__ == "__main__":

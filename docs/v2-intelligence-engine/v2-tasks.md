@@ -114,11 +114,106 @@ Goal: teach the system to read a compact case the way an elite trial lawyer star
 
 ## Verdict, Evaluation, And Coaching
 
-- [ ] Replace single verdict generation with structured judicial deliberation: judge record, legal questions, element evaluation, witness credibility, burden application, candidate findings, challenge findings, final verdict, verdict validation.
-- [ ] Add evaluation pipeline: deterministic checks, prosecution/plaintiff evaluation, defense evaluation, witness evaluation, judge evaluation, simulation evaluation, missed opportunity detection, counterfactual comparison, aggregation, confidence calibration.
-- [ ] Add grounded evaluation observations that cite facts, evidence, transcript events, strategy records, or ruling records.
-- [ ] Add coaching graph only after evaluator quality is acceptable; coaching should transform grounded observations, not rescore the trial.
-- [ ] Add skill evidence updates for legal grounding, procedure, role adherence, evidence use, contradiction handling, and professional conduct.
+Goal: teach the system to reach and explain a legally grounded verdict from the admitted record, evaluate every participant from cited courtroom evidence, and turn those evaluations into concrete coaching that helps a human learn to think like an elite trial lawyer. This slice is still AI-vs-AI only and must not touch frontend code or the existing V1 graph.
+
+### Scope Boundary
+
+- [ ] Work only in `packages/courtroom-engine`, its tests, V2 docs, and additive `trial-v2-ai-ai` orchestration unless an OpenSpec artifact explicitly expands scope.
+- [ ] Do not modify `apps/web-app`, `apps/api-service`, or the existing V1 `trial` and `examine-witness` graphs.
+- [ ] Keep the Trial Judge and Evaluation Judge as separate roles with separate context policies, prompts, model routing, and output contracts.
+- [ ] Treat verdict, evaluation, coaching, and skill-profile updates as separate stages; coaching must transform evaluation observations and must not rescore the trial.
+- [ ] Require every verdict finding, evaluator observation, missed opportunity, and coaching moment to cite structured records instead of relying on transcript summary alone.
+- [ ] Keep deterministic validators as hard gates before LLM-based evaluation or coaching runs.
+
+### Target Modules
+
+- [ ] Add `courtroom_engine/domain/deliberation/` for judge record, legal question, element finding, credibility finding, burden application, candidate finding, verdict, and validation models.
+- [ ] Add or expand `courtroom_engine/domain/evaluation/` for deterministic validation results, grounded observations, actor scores, missed opportunities, counterfactual comparisons, aggregation records, calibration records, and expert-review flags.
+- [ ] Add `courtroom_engine/domain/coaching/` for coaching moments, better-action sequences, example execution, case improvement plans, and skill evidence updates.
+- [ ] Add `courtroom_engine/application/deliberation/` for the judicial deliberation pipeline.
+- [ ] Add `courtroom_engine/application/evaluation/` for deterministic checks, specialist evaluators, missed-opportunity detection, counterfactual comparison, aggregation, and calibration.
+- [ ] Add `courtroom_engine/application/coaching/` only after evaluation acceptance gates pass.
+- [ ] Add `courtroom_engine/orchestration/deliberation_graph.py`, `evaluation_graph.py`, and `coaching_graph.py` as additive V2 subgraphs wired only into `trial-v2-ai-ai`.
+- [ ] Keep graph nodes thin: orchestration routes state, application services make decisions, domain models define contracts, policies enforce boundaries.
+
+### Judicial Deliberation Foundation
+
+- [ ] Replace single verdict generation with a structured deliberation subgraph: `build_judge_record`, `identify_legal_questions`, `evaluate_elements`, `assess_credibility`, `apply_burden`, `generate_findings`, `challenge_findings`, `finalize_findings`, `generate_verdict`, and `validate_verdict`.
+- [ ] Build a judge-only record from admitted evidence, admitted testimony, stipulations, permitted arguments, jury or bench instructions, ruling records, and procedural status.
+- [ ] Exclude private simulation truth, unrevealed case intelligence, hidden contradiction labels, lawyer private strategy, evaluator-only references, and excluded evidence from the judge record.
+- [ ] Model `LegalQuestion` records for each claim, charge, defense, remedy, or verdict option that must be resolved.
+- [ ] Model `ElementEvaluation` records with element ID, burden holder, standard of proof, supporting admitted record citations, contrary admitted record citations, unresolved gaps, and provisional proved/not-proved status.
+- [ ] Model `WitnessCredibilityFinding` records that cite only testimony, admitted impeachment material, demeanor events if captured, prior admitted statements, and contradiction records made available in court.
+- [ ] Model `BurdenApplication` records that explicitly connect each element finding to the configured burden and standard.
+- [ ] Generate candidate findings from structured element and credibility records, then run a challenge pass that searches for unsupported findings, missing contrary evidence, burden mistakes, and record-boundary violations.
+- [ ] Generate the final verdict only from finalized findings, not directly from the raw transcript.
+- [ ] Validate verdict support deterministically: every dispositive finding must cite admitted records, every required element must be resolved, the configured burden must be applied, and no excluded or hidden material may influence the verdict.
+
+### Evaluation Pipeline Foundation
+
+- [ ] Build `EvaluationState` from trial events, transcript events, admitted evidence state, strategy records, action decision records, ruling records, deliberation findings, verdict records, context audit records, and run metadata.
+- [ ] Run deterministic checks first for hidden-information leakage, nonexistent evidence citations, excluded evidence use, invalid phase transitions, unresolved objections, out-of-turn actions, unsupported transcript facts, role-boundary violations, and verdict findings unsupported by admitted records.
+- [ ] Fail closed or route to blocked evaluation status when deterministic checks show the trial record is structurally invalid.
+- [ ] Add specialist evaluator contracts for prosecution/plaintiff, defense, witnesses, trial judge, and simulation quality instead of a single all-purpose evaluation prompt.
+- [ ] Evaluate lawyers in separate dimensions: theory coherence, element coverage, objective selection, witness sequencing, evidence use, foundation, contradiction handling, objections, adaptation, opening, closing, procedure, role adherence, and professional conduct.
+- [ ] Evaluate witnesses primarily as simulation quality: knowledge-boundary compliance, consistency with personal knowledge, prior-statement consistency, appropriate uncertainty, persona stability, responsiveness, and non-disclosure of hidden facts.
+- [ ] Evaluate the trial judge for record-only rulings, neutral procedure handling, correct legal standard, burden treatment, evidence-to-fact reasoning, element findings, verdict support, and internal consistency.
+- [ ] Evaluate simulation quality for legal issue coverage, evidence coverage, adversarial balance, procedural realism, narrative coherence, contradiction handling, role separation, educational usefulness, and absence of unsupported facts.
+- [ ] Store evaluator identity, rubric version, prompt version, model version, input context policy version, confidence, abstention status, and human-review status on every evaluator output.
+
+### Grounded Evaluation Observations
+
+- [ ] Define `EvaluationObservation` with evaluated actor, dimension, claim, severity, score impact, confidence, citations, affected objectives, recommended alternative, evaluator version, and review status.
+- [ ] Require citations to one or more structured records: fact IDs, evidence IDs, transcript event IDs, courtroom event IDs, strategy objective IDs, tactical action IDs, ruling IDs, contradiction IDs, element IDs, finding IDs, or verdict IDs.
+- [ ] Reject or mark invalid any evaluator observation that cannot cite supporting records.
+- [ ] Distinguish objective defects from advocacy judgment: structural invalidity, legal-grounding problem, strategic mistake, execution problem, witness-simulation defect, judge-reasoning defect, and coaching opportunity.
+- [ ] Add source-span or event-span support for observations that depend on a sequence, such as an abandoned cross-examination objective or missed impeachment setup.
+- [ ] Preserve low-confidence observations without converting them into firm coaching claims; low-confidence, high-severity observations should route to expert review.
+
+### Missed Opportunity And Counterfactual Comparison
+
+- [ ] Detect missed opportunities only at high-value decision points: available contradiction, completed foundation, damaging admission, objection opportunity, opened-door moment, unsupported required element, or abandoned strategic objective.
+- [ ] Reconstruct the legally available state at the decision point before generating alternatives.
+- [ ] Generate bounded alternative actions from allowed actions, role context, active strategy objectives, admitted or usable evidence, witness knowledge boundaries, and procedural constraints.
+- [ ] Compare actual action against alternatives on legal relevance, objective advancement, evidence support, risk, recoverability, likely opponent response, and expected verdict sensitivity.
+- [ ] Store `CounterfactualComparison` records that include actual action, preferred action, rejected alternatives, assumptions, citations, expected value delta, risk analysis, confidence, and evaluator version.
+- [ ] Avoid exhaustive search across every utterance; reserve counterfactual evaluation for moments likely to change case strength or learning value.
+
+### Coaching Readiness Gate
+
+- [ ] Do not build coaching graph behavior until evaluator outputs pass fixture-level citation validity, deterministic-validation gating, and reviewer-readable observation quality.
+- [ ] Establish a small golden evaluation fixture before coaching: one correct strategic move, one missed impeachment, one foundation failure, one witness boundary violation, and one unsupported verdict finding.
+- [ ] Gate coaching on a reviewer being able to trace each proposed coaching point back to a valid evaluation observation and the underlying courtroom records.
+- [ ] Ensure coaching never claims a human lied or gives legal advice beyond the simulated training context; coaching should focus on observable advocacy behavior and scenario-specific alternatives.
+
+### Coaching Graph
+
+- [ ] Build coaching as a separate subgraph: `select_learning_moments`, `map_moments_to_skills`, `reconstruct_moment_state`, `explain_cause_and_consequence`, `generate_better_sequence`, `generate_example_execution`, `prioritize_feedback`, and `build_improvement_plan`.
+- [ ] Transform grounded observations into `CoachingMoment` records with transcript location, skill category, what happened, affected objective, available information, why it mattered, better action, example wording, expected response, recovery option, severity, and confidence.
+- [ ] Produce both outcome coaching and technique coaching: whether the action improved the case and whether the action was performed correctly.
+- [ ] Generate example questions or arguments only from facts and evidence legally available at that moment.
+- [ ] Prioritize coaching by severity, causal impact, repeated skill pattern, confidence, and educational usefulness.
+- [ ] Produce a session-level improvement plan that groups related moments into practice themes rather than listing every evaluator observation.
+
+### Skill Evidence Updates
+
+- [ ] Add skill evidence records for legal grounding, issue spotting, theory development, objective selection, procedure, role adherence, evidence use, foundation, contradiction handling, witness control, objection handling, adaptation, opening, closing, judicial reasoning, and professional conduct.
+- [ ] Update skill profiles by appending evidence with citations, direction, strength, confidence, decay or recency metadata, and source evaluator version; do not overwrite a skill score from one run.
+- [ ] Keep AI actor skill evidence separate from future human learner profiles so AI-vs-AI simulation quality does not pollute human coaching data.
+- [ ] Support future AI-vs-Human reuse by designing skill evidence around actor IDs and role IDs, not hardcoded prosecution/defense model names.
+
+### Tests And Acceptance
+
+- [ ] Add deliberation unit tests proving the judge record excludes private truth, excluded evidence, hidden contradiction labels, private strategy, and evaluator-only material.
+- [ ] Add verdict validation tests for missing element findings, burden mismatch, unsupported dispositive findings, excluded evidence reliance, unresolved legal questions, and invalid verdict options.
+- [ ] Add evaluation tests proving deterministic checks run before LLM-style evaluators and block structurally invalid records.
+- [ ] Add grounded-observation tests proving evaluator observations must cite valid facts, evidence, transcript events, strategy records, ruling records, findings, or verdict records.
+- [ ] Add missed-opportunity tests for at least one available contradiction, one abandoned objective, and one failure to use admitted evidence on a required element.
+- [ ] Add counterfactual comparison tests proving alternatives are generated only from procedurally allowed actions and legally available information.
+- [ ] Add coaching readiness tests proving coaching refuses invalid or citation-free evaluator observations.
+- [ ] Add coaching output tests proving every coaching moment traces to a valid observation and every example action stays within the reconstructed moment state.
+- [ ] Add skill evidence tests proving updates are append-only, cited, actor-scoped, role-scoped, and separated between AI actor metrics and future human learner profiles.
+- [ ] Gate completion on a reviewer being able to answer from structured outputs: what verdict was reached, which admitted records support each finding, which participant decisions changed case strength, which better actions were available, why those actions were better, and what skill evidence should drive future coaching.
 
 ## Skills And Policy Packs
 

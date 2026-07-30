@@ -27,6 +27,7 @@ This file applies to the whole repository.
 - Preserve clear boundaries between playback UI, backend API code, simulation logic, content assets, and worker runtime code.
 - Update docs when introducing a new workspace, major folder, or cross-cutting convention.
 - If a change affects multiple workspaces, document the boundary and ownership explicitly in OpenSpec artifacts.
+- Keep `__init__.py` files export-only. Do not put implementation logic, runtime behavior, or orchestration code in package initializer files.
 
 ## Current Direction
 

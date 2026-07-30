@@ -217,13 +217,13 @@ Goal: teach the system to reach and explain a legally grounded verdict from the 
 
 ## Skills And Policy Packs
 
-- [ ] Implement a skill registry with explicit loading rules.
-- [ ] Add global skills: citation grounding, source hierarchy, uncertainty handling, role-boundary compliance, professional conduct, and evidence provenance.
-- [ ] Add California jurisdiction skills for civil procedure, evidence, CACI instructions, and local court rules.
-- [ ] Add role skills for plaintiff/prosecution lawyer, defense lawyer, trial judge, juror, and witness.
-- [ ] Add phase skills for opening, direct, cross, redirect, objections, closing, and deliberation.
-- [ ] Add tactical skills for authentication, personal knowledge, impeachment, perception challenge, bias exposure, and causation.
-- [ ] Enforce that LLM calls cannot freely load arbitrary skills outside the current role, phase, jurisdiction, and allowed action.
+- [x] Implement a skill registry with explicit loading rules.
+- [x] Add global skills: citation grounding, source hierarchy, uncertainty handling, role-boundary compliance, professional conduct, and evidence provenance.
+- [x] Add California jurisdiction skills for civil procedure, evidence, CACI instructions, and local court rules.
+- [x] Add role skills for plaintiff/prosecution lawyer, defense lawyer, trial judge, juror, and witness.
+- [x] Add phase skills for opening, direct, cross, redirect, objections, closing, and deliberation.
+- [x] Add tactical skills for authentication, personal knowledge, impeachment, perception challenge, bias exposure, and causation.
+- [x] Enforce that LLM calls cannot freely load arbitrary skills outside the current role, phase, jurisdiction, and allowed action.
 
 ## Testing And Acceptance Gates
 

@@ -103,9 +103,10 @@ class V2GraphSmokeTests(unittest.TestCase):
     def test_v2_ai_ai_graph_initializes_and_verifies_boundaries(self):
         result = build_v2_ai_ai_graph().invoke(V2AiAiState())
 
-        self.assertEqual(result["status"], "evaluation_complete")
+        self.assertEqual(result["status"], "coaching_complete")
         self.assertEqual(result["runtime"].phase, "complete")
         self.assertIn("evaluation", result["phase_outputs"])
+        self.assertIn("coaching", result["phase_outputs"])
         self.assertTrue(result["witness_examinations"])
 
 

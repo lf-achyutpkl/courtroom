@@ -60,6 +60,8 @@ class ContextMetadata(DomainModel):
     policy_version: str
     included_object_ids: tuple[str, ...] = ()
     excluded_categories: tuple[str, ...] = ()
+    allowed_skill_ids: tuple[str, ...] = ()
+    loaded_skill_pack_ids: tuple[str, ...] = ()
 
 
 class ContextAuditRecord(DomainModel):

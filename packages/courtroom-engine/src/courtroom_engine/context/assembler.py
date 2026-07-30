@@ -13,6 +13,11 @@ from courtroom_engine.policies.access import (
     normalize_visibility,
 )
 from courtroom_engine.policies.procedure import allowed_actions
+from courtroom_engine.policies.skills import (
+    SKILL_POLICY_VERSION,
+    build_skill_load_request,
+    resolve_allowed_skill_load,
+)
 
 from .projections import (
     CONTEXT_PROJECTION_VERSION,
@@ -93,15 +98,25 @@ class ContextBoundaryService:
             request.node_purpose,
             unknown_visibility=bool(violation_messages),
         )
+        skill_decision = resolve_allowed_skill_load(
+            build_skill_load_request(
+                jurisdiction_id=case_package.metadata.jurisdiction,
+                actor=actor,
+                node_purpose=request.node_purpose,
+                procedure=state.procedure,
+            )
+        )
         metadata = ContextMetadata(
             session_id=request.session_id,
             node_purpose=request.node_purpose,
             actor_id=request.requesting_actor_id,
             case_id=case_package.metadata.case_id,
             phase=state.phase,
-            policy_version=VISIBILITY_POLICY_VERSION,
+            policy_version=f"{VISIBILITY_POLICY_VERSION}+{SKILL_POLICY_VERSION}",
             included_object_ids=included_ids,
             excluded_categories=excluded,
+            allowed_skill_ids=skill_decision.allowed_skill_ids,
+            loaded_skill_pack_ids=skill_decision.loaded_pack_ids,
         )
         draft_context = ModelNodeContextDTO(
             metadata=metadata,
@@ -112,7 +127,7 @@ class ContextBoundaryService:
                 case_id=case_package.metadata.case_id,
                 included_object_ids=included_ids,
                 excluded_categories=excluded,
-                policy_version=VISIBILITY_POLICY_VERSION,
+                policy_version=f"{VISIBILITY_POLICY_VERSION}+{SKILL_POLICY_VERSION}",
                 projection_version=CONTEXT_PROJECTION_VERSION,
                 estimated_context_size=0,
                 violation_status=(
@@ -133,8 +148,7 @@ class ContextBoundaryService:
                 ),
                 prohibited_action_types=("access_hidden_truth", "invent_evidence"),
                 admitted_evidence_ids=(
-                    state.procedure.admitted_evidence_ids
-                    or state.admitted_evidence_ids
+                    state.procedure.admitted_evidence_ids or state.admitted_evidence_ids
                 ),
                 pending_objection_id=(
                     state.procedure.pending_objection.objection_id
@@ -211,7 +225,9 @@ class ContextBoundaryService:
         violation_messages: list[str],
     ) -> tuple[EvidenceContextDTO, ...]:
         projected: list[EvidenceContextDTO] = []
-        admitted_ids = set(state.procedure.admitted_evidence_ids or state.admitted_evidence_ids)
+        admitted_ids = set(
+            state.procedure.admitted_evidence_ids or state.admitted_evidence_ids
+        )
         pending_evidence_id = (
             state.procedure.pending_objection.target_evidence_id
             if state.procedure.pending_objection is not None
@@ -226,16 +242,20 @@ class ContextBoundaryService:
                 continue
             if visibility not in allowed:
                 continue
-            if actor is not None and actor.role == ActorRole.JURY:
-                if item.evidence_id not in admitted_ids:
-                    continue
-            if actor is not None and actor.role == ActorRole.TRIAL_JUDGE:
-                if (
-                    state.procedure.phase != TrialPhase.DELIBERATION
-                    and item.evidence_id not in admitted_ids
-                    and item.evidence_id != pending_evidence_id
-                ):
-                    continue
+            if (
+                actor is not None
+                and actor.role == ActorRole.JURY
+                and item.evidence_id not in admitted_ids
+            ):
+                continue
+            if (
+                actor is not None
+                and actor.role == ActorRole.TRIAL_JUDGE
+                and state.procedure.phase != TrialPhase.DELIBERATION
+                and item.evidence_id not in admitted_ids
+                and item.evidence_id != pending_evidence_id
+            ):
+                continue
             projected.append(
                 EvidenceContextDTO(
                     evidence_id=item.evidence_id,

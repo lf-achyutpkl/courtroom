@@ -227,12 +227,12 @@ Goal: teach the system to reach and explain a legally grounded verdict from the 
 
 ## Testing And Acceptance Gates
 
-- [ ] Add package-level tests under `packages/courtroom-engine/tests` once the package structure expands.
-- [ ] Add scenario tests for one compact AI-vs-AI vertical slice.
-- [ ] Add regression tests for context leakage, invalid phase transitions, unsupported evidence references, malformed IDs, and hallucinated facts.
-- [ ] Add LangStudio smoke tests for `trial-v2-ai-ai`.
+- [x] Add package-level tests under `packages/courtroom-engine/tests` once the package structure expands.
+- [x] Add scenario tests for one compact AI-vs-AI vertical slice.
+- [x] Add regression tests for context leakage, invalid phase transitions, unsupported evidence references, malformed IDs, and hallucinated facts.
+- [x] Add LangStudio smoke tests for `trial-v2-ai-ai`.
 - [ ] Add blind comparison dataset later to compare V2 planner-selected actions against V1 prompt-only actions.
-- [ ] Do not add frontend or API integration tests until LangStudio validation is complete.
+- [x] Do not add frontend or API integration tests until LangStudio validation is complete.
 
 ## Explicitly Out Of Scope For Current V2 Slice
 

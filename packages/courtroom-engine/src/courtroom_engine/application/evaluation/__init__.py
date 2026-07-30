@@ -140,6 +140,7 @@ def run_deterministic_checks(
     state: TrialRuntimeState,
     deliberation: DeliberationReport,
 ) -> tuple[DeterministicCheckResult, ...]:
+    fact_ids = {fact.fact_id for fact in case_package.facts}
     evidence_ids = {evidence.evidence_id for evidence in case_package.evidence}
     admitted_ids = set(deliberation.judge_record.admitted_evidence_ids)
     nonexistent = tuple(
@@ -147,6 +148,12 @@ def run_deterministic_checks(
         for event in state.events
         for cited_id in event.cited_object_ids
         if cited_id.startswith("EVD-") and cited_id not in evidence_ids
+    )
+    hallucinated_facts = tuple(
+        cited_id
+        for event in state.events
+        for cited_id in event.cited_object_ids
+        if cited_id.startswith("FAC-") and cited_id not in fact_ids
     )
     excluded_used = tuple(
         citation
@@ -194,7 +201,8 @@ def run_deterministic_checks(
         ),
         _check(
             DeterministicCheckCode.INVALID_PHASE_TRANSITION,
-            state.phase in {"evaluation", "complete"},
+            state.phase in {"evaluation", "complete"}
+            and not _has_invalid_phase_transition(state),
             "Runtime reached evaluation or complete phase before evaluation.",
             (),
             severity=EvaluationSeverity.MEDIUM,
@@ -214,9 +222,12 @@ def run_deterministic_checks(
         ),
         _check(
             DeterministicCheckCode.UNSUPPORTED_TRANSCRIPT_FACT,
-            True,
+            not hallucinated_facts,
             "No unsupported transcript fact detected in deterministic event stream.",
-            (),
+            tuple(
+                RecordCitation(kind=CitationKind.FACT, record_id=fact_id)
+                for fact_id in hallucinated_facts
+            ),
             severity=EvaluationSeverity.LOW,
         ),
         _check(
@@ -236,6 +247,17 @@ def run_deterministic_checks(
             ),
         ),
     )
+
+
+def _has_invalid_phase_transition(state: TrialRuntimeState) -> bool:
+    phase_order = tuple(phase.value for phase in state.procedure.phase.__class__)
+    phase_index = {phase: index for index, phase in enumerate(phase_order)}
+    for transition in state.procedure.transitions:
+        from_index = phase_index[transition.from_phase.value]
+        to_index = phase_index[transition.to_phase.value]
+        if to_index < from_index or to_index - from_index > 1:
+            return True
+    return False
 
 
 def detect_missed_opportunities(

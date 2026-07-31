@@ -4,6 +4,8 @@
     "apps/api-service/tests",
     "apps/agent-service/src",
     "apps/agent-service/tests",
+    "apps/agent-service-v2/src",
+    "apps/agent-service-v2/tests",
     "packages/python-domain/src",
     "packages/courtroom-engine/src"
   ],
@@ -34,6 +36,13 @@
       "extraPaths": [
         "apps/agent-service/src",
         "packages/python-domain/src",
+        "packages/courtroom-engine/src"
+      ]
+    },
+    {
+      "root": "apps/agent-service-v2",
+      "extraPaths": [
+        "apps/agent-service-v2/src",
         "packages/courtroom-engine/src"
       ]
     },

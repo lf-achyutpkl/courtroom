@@ -1,0 +1,43 @@
+[project]
+name = "agent-service-v2"
+version = "0.1.0"
+description = "V2 LangGraph runtime workspace for courtroom simulation flows."
+requires-python = ">=3.11"
+dependencies = [
+  "courtroom-engine",
+  "langgraph>=1.2.9",
+  "pydantic>=2.13.4",
+]
+
+[dependency-groups]
+dev = [
+  "langgraph-cli[inmem]>=0.4.0",
+  "pyright>=1.1.403",
+  "pytest>=9.0.0",
+  "ruff>=0.12.4",
+]
+
+[tool.uv.sources]
+courtroom-engine = { path = "../../packages/courtroom-engine", editable = true }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/agent_service_v2.egg-info"]
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingModuleSource = true

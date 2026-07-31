@@ -27,12 +27,6 @@ from courtroom_engine.domain.strategy import StrategyValidationStatus
 from courtroom_engine.fixtures import build_reference_case
 from courtroom_engine.policies.procedure import validate_action_allowed
 
-try:
-    from courtroom_engine.graph import V2AiAiState, build_v2_ai_ai_graph
-except ModuleNotFoundError:
-    V2AiAiState = None
-    build_v2_ai_ai_graph = None
-
 
 class ProcedurePolicyTests(unittest.TestCase):
     def test_invalid_action_is_rejected_for_witness(self) -> None:
@@ -177,21 +171,6 @@ class WitnessExaminationTests(unittest.TestCase):
         self.assertEqual(output.answer_validation.status.value, "supported")
         self.assertEqual(output.objective_status.value, "satisfied")
         self.assertGreaterEqual(len(output.events), 3)
-
-
-class MinimumV2GraphTests(unittest.TestCase):
-    @unittest.skipIf(build_v2_ai_ai_graph is None, "langgraph is not installed")
-    def test_v2_ai_ai_graph_reaches_evaluation(self) -> None:
-        result = build_v2_ai_ai_graph().invoke(V2AiAiState())
-
-        self.assertEqual(result["status"], "coaching_complete")
-        self.assertEqual(result["runtime"].phase, TrialPhase.COMPLETE.value)
-        self.assertIn("evaluation", result["phase_outputs"])
-        self.assertIn("coaching", result["phase_outputs"])
-        self.assertTrue(result["witness_examinations"])
-        self.assertIsNotNone(result["deliberation"])
-        self.assertIsNotNone(result["evaluation"])
-        self.assertIsNotNone(result["coaching"])
 
 
 if __name__ == "__main__":

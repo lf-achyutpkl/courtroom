@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from langgraph.graph import END, START, StateGraph
-from pydantic import BaseModel
-
 from courtroom_engine.application.evaluation import run_evaluation
 from courtroom_engine.application.examination import WitnessExaminationOutput
 from courtroom_engine.domain.deliberation import DeliberationReport
 from courtroom_engine.domain.evaluation import EvaluationReport
 from courtroom_engine.domain.strategy import PartyStrategy
 from courtroom_engine.domain.trial import CompiledCasePackage, TrialRuntimeState
+from langgraph.graph import END, START, StateGraph
+from pydantic import BaseModel
 
 
 class EvaluationState(BaseModel):

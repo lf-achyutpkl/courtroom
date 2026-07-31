@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
-import json
-import sys
 import unittest
 from pathlib import Path
 
@@ -22,7 +19,6 @@ from courtroom_engine.domain.procedure import (
 )
 from courtroom_engine.domain.trial import TrialRuntimeState
 from courtroom_engine.fixtures import build_reference_case
-from courtroom_engine.graph import V2AiAiState, build_v2_ai_ai_graph
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -30,18 +26,19 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 class TestingAcceptanceGateTests(unittest.TestCase):
     def test_compact_ai_vs_ai_vertical_slice_answers_reviewer_questions(self) -> None:
-        result = build_v2_ai_ai_graph().invoke(V2AiAiState())
-
-        package = result["case_package"]
-        runtime = result["runtime"]
-        strategy = next(iter(result["strategies"].values()))
-        deliberation = result["deliberation"]
-        evaluation = result["evaluation"]
-        coaching = result["coaching"]
+        package, runtime, strategies, examinations = _run_recorded_trial()
+        deliberation = run_judicial_deliberation(
+            case_package=package,
+            state=runtime,
+        )
+        evaluation = run_evaluation(
+            case_package=package,
+            state=runtime,
+            strategies=strategies,
+            witness_examinations=examinations,
+            deliberation=deliberation,
+        )
         intelligence = package.intelligence
-
-        self.assertEqual(result["status"], "coaching_complete")
-        self.assertEqual(runtime.phase, TrialPhase.COMPLETE.value)
 
         self.assertTrue(
             {
@@ -56,13 +53,13 @@ class TestingAcceptanceGateTests(unittest.TestCase):
         self.assertTrue(intelligence.contradiction_graph.contradictions)
         self.assertTrue(intelligence.case_gaps)
 
+        strategy = strategies[0]
         self.assertTrue(strategy.objectives)
         self.assertTrue(strategy.witness_plans)
         self.assertTrue(strategy.evidence_plans)
         self.assertTrue(deliberation.verdict.finding_ids)
         self.assertTrue(evaluation.observations)
         self.assertTrue(evaluation.counterfactual_comparisons)
-        self.assertTrue(coaching.moments)
 
     def test_regression_gates_block_invalid_phase_and_hallucinated_fact(self) -> None:
         package, runtime, strategies, examinations = _run_recorded_trial()
@@ -112,34 +109,15 @@ class TestingAcceptanceGateTests(unittest.TestCase):
         self.assertEqual(evaluation.actor_evaluations, ())
         self.assertEqual(evaluation.simulation_evaluation.abstention_status, "abstained")
 
-    def test_langstudio_v2_graph_export_is_registered_and_importable(self) -> None:
-        langgraph_config = json.loads(
-            (REPO_ROOT / "apps/agent-service/langgraph.json").read_text()
-        )
+    def test_courtroom_engine_has_no_langgraph_runtime_surface(self) -> None:
+        pyproject = (REPO_ROOT / "packages/courtroom-engine/pyproject.toml").read_text()
+        package_root = REPO_ROOT / "packages/courtroom-engine/src/courtroom_engine"
 
-        self.assertIn("trial", langgraph_config["graphs"])
-        self.assertIn("examine-witness", langgraph_config["graphs"])
-        self.assertEqual(
-            langgraph_config["graphs"]["trial-v2-ai-ai"],
-            "./src/v2/ai_ai_graph.py:graph",
-        )
-
-        app_src = REPO_ROOT / "apps/agent-service/src"
-        sys.path.insert(0, str(app_src))
-        try:
-            spec = importlib.util.spec_from_file_location(
-                "v2_ai_ai_graph_smoke",
-                app_src / "v2/ai_ai_graph.py",
-            )
-            self.assertIsNotNone(spec)
-            self.assertIsNotNone(spec.loader)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-        finally:
-            sys.path.remove(str(app_src))
-
-        result = module.graph.invoke(V2AiAiState())
-        self.assertEqual(result["status"], "coaching_complete")
+        self.assertNotIn("langgraph", pyproject)
+        self.assertFalse((REPO_ROOT / "packages/courtroom-engine/langgraph.json").exists())
+        self.assertFalse((package_root / "graph.py").exists())
+        self.assertFalse((package_root / "studio.py").exists())
+        self.assertFalse((package_root / "orchestration").exists())
 
 
 def _run_recorded_trial():

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from langgraph.graph import END, START, StateGraph
-
 from courtroom_engine.application.examination import (
     WitnessExaminationOutput,
     run_witness_examination,
@@ -9,6 +7,7 @@ from courtroom_engine.application.examination import (
 from courtroom_engine.domain.procedure import ExaminationMode
 from courtroom_engine.domain.strategy import PartyStrategy
 from courtroom_engine.domain.trial import CompiledCasePackage, TrialRuntimeState
+from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel
 
 

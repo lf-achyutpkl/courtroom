@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from langgraph.graph import END, START, StateGraph
-from pydantic import BaseModel, Field
-
+from courtroom_engine.application.coaching import run_coaching
+from courtroom_engine.application.deliberation import run_judicial_deliberation
+from courtroom_engine.application.evaluation import run_evaluation
 from courtroom_engine.application.examination import (
     WitnessExaminationOutput,
     run_witness_examination,
 )
-from courtroom_engine.application.coaching import run_coaching
-from courtroom_engine.application.deliberation import run_judicial_deliberation
-from courtroom_engine.application.evaluation import run_evaluation
 from courtroom_engine.application.planning import plan_party_strategy
 from courtroom_engine.compiler import CaseCompiler
 from courtroom_engine.domain.case import PartySide
@@ -27,6 +24,8 @@ from courtroom_engine.domain.procedure import (
 from courtroom_engine.domain.strategy import PartyStrategy
 from courtroom_engine.domain.trial import CompiledCasePackage, TrialRuntimeState
 from courtroom_engine.fixtures import build_reference_case
+from langgraph.graph import END, START, StateGraph
+from pydantic import BaseModel, Field
 
 
 class V2AiAiState(BaseModel):
@@ -75,7 +74,11 @@ def analyze_case_node(state: V2AiAiState) -> V2AiAiState:
         f"{len(case_package.intelligence.material_fact_map.facts)} material facts, "
         f"{len(case_package.intelligence.case_gaps)} gaps."
     )
-    event = _event(CourtroomEventType.CASE_ANALYZED, TrialPhase.CASE_INTELLIGENCE, summary)
+    event = _event(
+        CourtroomEventType.CASE_ANALYZED,
+        TrialPhase.CASE_INTELLIGENCE,
+        summary,
+    )
     return _with_runtime(
         state,
         runtime.with_phase(TrialPhase.STRATEGY, summary).model_copy(
@@ -103,10 +106,7 @@ def plan_sides_node(state: V2AiAiState) -> V2AiAiState:
         first_strategy.side.value: first_strategy,
         defense_strategy.side.value: defense_strategy,
     }
-    summary = (
-        "Planned private strategies for "
-        f"{first_strategy.side.value} and defense."
-    )
+    summary = f"Planned private strategies for {first_strategy.side.value} and defense."
     event = _event(
         CourtroomEventType.STRATEGY_PLANNED,
         TrialPhase.STRATEGY,
@@ -133,8 +133,15 @@ def run_opening_phase_node(state: V2AiAiState) -> V2AiAiState:
     summary = f"Opening phase recorded for {first_side.value} and defense."
     event = _event(CourtroomEventType.OPENING_DELIVERED, TrialPhase.OPENING, summary)
     updated_runtime = runtime.with_phase(TrialPhase.WITNESS_EXAMINATION, summary)
-    updated_runtime = updated_runtime.model_copy(update={"events": (*runtime.events, event)})
-    return _with_runtime(state, updated_runtime, "openings_complete", {"opening": summary})
+    updated_runtime = updated_runtime.model_copy(
+        update={"events": (*runtime.events, event)}
+    )
+    return _with_runtime(
+        state,
+        updated_runtime,
+        "openings_complete",
+        {"opening": summary},
+    )
 
 
 def run_witness_loop_node(state: V2AiAiState) -> V2AiAiState:
@@ -176,7 +183,9 @@ def run_witness_loop_node(state: V2AiAiState) -> V2AiAiState:
                 for evidence_plan in strategy.evidence_plans
                 if evidence_plan.through_witness_id == witness_plan.witness_id
             )
-    unique_admissions = tuple({record.evidence_id: record for record in admissions}.values())
+    unique_admissions = tuple(
+        {record.evidence_id: record for record in admissions}.values()
+    )
     summary = f"Witness loop completed with {len(outputs)} examination record(s)."
     event = _event(
         CourtroomEventType.EVIDENCE_UPDATED,
@@ -216,7 +225,11 @@ def prepare_closing_record_node(state: V2AiAiState) -> V2AiAiState:
         "Closing record prepared from admitted evidence "
         f"{tuple(runtime.admitted_evidence_ids)}."
     )
-    event = _event(CourtroomEventType.EVIDENCE_UPDATED, TrialPhase.CLOSING_RECORD, summary)
+    event = _event(
+        CourtroomEventType.EVIDENCE_UPDATED,
+        TrialPhase.CLOSING_RECORD,
+        summary,
+    )
     updated_runtime = runtime.with_phase(TrialPhase.CLOSING, summary).model_copy(
         update={"events": (*runtime.events, event)}
     )
@@ -235,7 +248,12 @@ def run_closing_phase_node(state: V2AiAiState) -> V2AiAiState:
     updated_runtime = runtime.with_phase(TrialPhase.DELIBERATION, summary).model_copy(
         update={"events": (*runtime.events, event)}
     )
-    return _with_runtime(state, updated_runtime, "closings_complete", {"closing": summary})
+    return _with_runtime(
+        state,
+        updated_runtime,
+        "closings_complete",
+        {"closing": summary},
+    )
 
 
 def run_deliberation_node(state: V2AiAiState) -> V2AiAiState:
@@ -282,10 +300,12 @@ def run_evaluation_node(state: V2AiAiState) -> V2AiAiState:
         f"{len(evaluation.observations)} grounded observation(s) and "
         f"{len(evaluation.missed_opportunities)} missed opportunity record(s)."
     )
-    event = _event(CourtroomEventType.EVALUATION_COMPLETED, TrialPhase.EVALUATION, summary)
-    updated_runtime = runtime.model_copy(
-        update={"events": (*runtime.events, event)}
+    event = _event(
+        CourtroomEventType.EVALUATION_COMPLETED,
+        TrialPhase.EVALUATION,
+        summary,
     )
+    updated_runtime = runtime.model_copy(update={"events": (*runtime.events, event)})
     return _with_runtime(
         state.model_copy(update={"evaluation": evaluation}),
         updated_runtime,
@@ -304,7 +324,11 @@ def run_coaching_node(state: V2AiAiState) -> V2AiAiState:
         f"{len(coaching.moments)} moment(s) and "
         f"{len(coaching.skill_profile_updates)} skill update(s)."
     )
-    event = _event(CourtroomEventType.COACHING_COMPLETED, TrialPhase.EVALUATION, summary)
+    event = _event(
+        CourtroomEventType.COACHING_COMPLETED,
+        TrialPhase.EVALUATION,
+        summary,
+    )
     updated_runtime = runtime.with_phase(TrialPhase.COMPLETE, summary).model_copy(
         update={"events": (*runtime.events, event)}
     )
@@ -316,7 +340,7 @@ def run_coaching_node(state: V2AiAiState) -> V2AiAiState:
     )
 
 
-def build_v2_ai_ai_graph():
+def build_ai_ai_trial_graph():
     builder = StateGraph(V2AiAiState)
     builder.add_node("initialize_session", initialize_session_node)
     builder.add_node("analyze_case", analyze_case_node)
@@ -339,6 +363,22 @@ def build_v2_ai_ai_graph():
     builder.add_edge("run_deliberation", "run_evaluation")
     builder.add_edge("run_evaluation", "run_coaching")
     builder.add_edge("run_coaching", END)
+    return builder.compile()
+
+
+def build_ai_ai_witness_loop_graph():
+    builder = StateGraph(V2AiAiState)
+    builder.add_node("initialize_session", initialize_session_node)
+    builder.add_node("analyze_case", analyze_case_node)
+    builder.add_node("plan_sides", plan_sides_node)
+    builder.add_node("run_opening_phase", run_opening_phase_node)
+    builder.add_node("run_witness_loop", run_witness_loop_node)
+    builder.add_edge(START, "initialize_session")
+    builder.add_edge("initialize_session", "analyze_case")
+    builder.add_edge("analyze_case", "plan_sides")
+    builder.add_edge("plan_sides", "run_opening_phase")
+    builder.add_edge("run_opening_phase", "run_witness_loop")
+    builder.add_edge("run_witness_loop", END)
     return builder.compile()
 
 

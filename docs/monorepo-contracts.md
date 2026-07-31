@@ -43,8 +43,6 @@ The current supported V2 flow is AI-vs-AI and it is registered in
 `apps/agent-service-v2/langgraph.json`.
 
 - `ai-ai-trial` runs the full deterministic structural AI-vs-AI trial flow.
-- `ai-ai-witness-loop` runs initialization, case analysis, side planning,
-  openings, and stops after the witness-loop node for Studio inspection.
 - `ai-ai-evaluation` runs the standalone V2 evaluation graph from prepared trial
   outputs.
 

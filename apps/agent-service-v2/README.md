@@ -18,5 +18,4 @@ uv run langgraph dev
 The package exposes these Studio graph IDs:
 
 - `ai-ai-trial`
-- `ai-ai-witness-loop`
 - `ai-ai-evaluation`

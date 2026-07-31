@@ -2,7 +2,6 @@
   "dependencies": ["."],
   "graphs": {
     "ai-ai-trial": "./src/agent_service_v2/studio.py:ai_ai_trial",
-    "ai-ai-witness-loop": "./src/agent_service_v2/studio.py:ai_ai_witness_loop",
     "ai-ai-evaluation": "./src/agent_service_v2/studio.py:ai_ai_evaluation"
   },
   "python_version": "3.11"

@@ -100,9 +100,22 @@ Goal: teach the system to read a compact case the way an elite trial lawyer star
 ## Minimum Practical V2 Graph
 
 - [x] Replace the smoke graph with the minimum practical graph from `v2-graph-design.md`: initialize session, analyze case, plan both sides, opening phase, witness loop, closing record, closing phase, structured deliberation, evaluation.
-- [x] Keep major phases as root nodes and use subgraphs for case intelligence, strategy, witness examination, deliberation, and evaluation.
+- [ ] Keep major phases as root nodes and use subgraphs for case intelligence, strategy, witness examination, deliberation, and evaluation.
 - [x] Store root state as references and phase outputs rather than copying the complete case into every checkpoint.
 - [x] Keep `trial-v2-ai-ai` additive and leave `trial` and `examine-witness` unchanged.
+
+### Graph Design Conformance Correction
+
+Context: implementation review found that the previous graph-completion checkboxes were too broad. The reusable deterministic services exist, but the LangGraph layer in `apps/agent-service-v2/src/agent_service_v2/flows/ai_ai` had mostly coarse wrapper nodes and did not expose the node-level topology described in `v2-graph-design.md`. Real LLM calls remain out of scope for this correction; every future LLM call site should be represented now by deterministic, typed, traceable node behavior.
+
+- [x] Replace the root AI-vs-AI graph wrapper sequence with documented phase nodes: `initialize_session`, `analyze_case`, `plan_prosecution_case`, `plan_defense_case`, `finalize_trial_plan`, `run_opening_phase`, `select_next_witness`, `run_witness_examination`, `update_trial_position`, `prepare_closings`, `run_closing_phase`, `run_deliberation`, `run_evaluation`, `generate_coaching`, and `persist_learning_trace`.
+- [x] Replace the Python-only witness loop with LangGraph conditional routing from `select_next_witness` to either `run_witness_examination` or closings.
+- [x] Expand the witness examination graph into deterministic trace nodes matching the documented action pipeline.
+- [x] Add root-state trace artifacts for selected witness, latest witness result, opening commitments, closing record, trial-position updates, and learning trace persistence.
+- [ ] Add dedicated deterministic graph builders for case intelligence, strategy, opening, closing, judicial deliberation, evaluation, and coaching rather than relying on root-node service wrappers.
+- [ ] Add reducer-backed parallel execution for independently planned side strategies and independent evaluator branches.
+- [ ] Add persistent production checkpointer wiring after graph topology stabilizes.
+- [x] Add graph conformance tests that inspect required nodes, conditional routes, and trace outputs.
 
 ## Witness Examination Redesign
 

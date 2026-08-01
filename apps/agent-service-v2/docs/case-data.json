@@ -1,0 +1,265 @@
+{
+    "case_template": {
+      "metadata": {
+        "case_id": "CASE-KEENE-PROTYPE-THEFT",
+        "title": "People v. Keene",
+        "case_kind": "criminal",
+        "jurisdiction": "US-CA",
+        "trial_type": "jury"
+      },
+      "parties": [
+        {
+          "party_id": "PTY-PROSECUTION",
+          "name": "People of California",
+          "side": "prosecution"
+        },
+        {
+          "party_id": "PTY-DEFENSE",
+          "name": "Rowan Keene",
+          "side": "defense"
+        }
+      ],
+      "actors": [
+        {
+          "actor_id": "ACT-PROSECUTOR",
+          "role": "prosecution_lawyer",
+          "name": "Prosecutor",
+          "party_id": "PTY-PROSECUTION",
+          "witness_id": null
+        },
+        {
+          "actor_id": "ACT-DEFENSE-LAWYER",
+          "role": "defense_lawyer",
+          "name": "Defense counsel",
+          "party_id": "PTY-DEFENSE",
+          "witness_id": null
+        },
+        {
+          "actor_id": "ACT-SECURITY-ADMIN",
+          "role": "witness",
+          "name": "Morgan Ibarra",
+          "party_id": null,
+          "witness_id": "WIT-SECURITY-ADMIN"
+        },
+        {
+          "actor_id": "ACT-SYSTEMS-TECHNICIAN",
+          "role": "witness",
+          "name": "Samira Holt",
+          "party_id": null,
+          "witness_id": "WIT-SYSTEMS-TECHNICIAN"
+        },
+        {
+          "actor_id": "ACT-PROJECT-LEAD",
+          "role": "witness",
+          "name": "Devon Price",
+          "party_id": null,
+          "witness_id": "WIT-PROJECT-LEAD"
+        },
+        {
+          "actor_id": "ACT-JUDGE",
+          "role": "trial_judge",
+          "name": "Judge",
+          "party_id": null,
+          "witness_id": null
+        }
+      ],
+      "matters": [
+        {
+          "matter_id": "CHG-PROTOTYPE-THEFT",
+          "case_kind": "criminal",
+          "title": "Theft of a prototype",
+          "elements": [
+            {
+              "element_id": "ELM-IDENTITY",
+              "label": "Identity",
+              "description": "Rowan Keene was the person who removed the prototype.",
+              "burden": "beyond_reasonable_doubt",
+              "proving_side": "prosecution"
+            },
+            {
+              "element_id": "ELM-INTENT",
+              "label": "Intent to deprive",
+              "description": "The removal was without permission and intended to deprive the owner.",
+              "burden": "beyond_reasonable_doubt",
+              "proving_side": "prosecution"
+            }
+          ]
+        }
+      ],
+      "facts": [
+        {
+          "fact_id": "FAC-BADGE-ACCESS",
+          "text": "A badge assigned to Rowan Keene opened the incubator lab at 9:17 p.m.",
+          "visibility": "public_case",
+          "supports_element_ids": ["ELM-IDENTITY"],
+          "disputed": true
+        },
+        {
+          "fact_id": "FAC-CORRIDOR-VIDEO",
+          "text": "Corridor video shows a person in Rowan's distinctive jacket leaving with a hard case.",
+          "visibility": "public_case",
+          "supports_element_ids": ["ELM-IDENTITY", "ELM-INTENT"],
+          "disputed": true
+        },
+        {
+          "fact_id": "FAC-PAYMENT-DISPUTE",
+          "text": "Rowan had argued that the startup owed overdue consulting fees.",
+          "visibility": "public_case",
+          "supports_element_ids": ["ELM-INTENT"],
+          "disputed": true
+        },
+        {
+          "fact_id": "FAC-SHARED-BADGE",
+          "text": "The lab team sometimes shared badges when working late.",
+          "visibility": "defense_private",
+          "supports_element_ids": ["ELM-IDENTITY"],
+          "disputed": true
+        },
+        {
+          "fact_id": "FAC-CLOCK-OFFSET",
+          "text": "The access-control server may have run eleven minutes ahead of the corridor camera.",
+          "visibility": "defense_private",
+          "supports_element_ids": ["ELM-IDENTITY"],
+          "disputed": true
+        },
+        {
+          "fact_id": "FAC-CONSENT-MESSAGE",
+          "text": "A project lead had previously told Rowan to collect personal equipment from the lab.",
+          "visibility": "defense_private",
+          "supports_element_ids": ["ELM-INTENT"],
+          "disputed": true
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "EVD-ACCESS-LOG",
+          "title": "Incubator badge-access export",
+          "description": "System export recording the badge event at 9:17 p.m.",
+          "offered_by": "prosecution",
+          "visibility": "public_case",
+          "supports_fact_ids": ["FAC-BADGE-ACCESS"],
+          "foundation_required": true
+        },
+        {
+          "evidence_id": "EVD-CORRIDOR-VIDEO",
+          "title": "Corridor camera clip",
+          "description": "Low-resolution footage of a person carrying a hard case.",
+          "offered_by": "prosecution",
+          "visibility": "public_case",
+          "supports_fact_ids": ["FAC-CORRIDOR-VIDEO"],
+          "foundation_required": true
+        },
+        {
+          "evidence_id": "EVD-PAYMENT-MESSAGES",
+          "title": "Consulting-fee messages",
+          "description": "Messages reflecting the parties' dispute over unpaid consulting fees.",
+          "offered_by": "prosecution",
+          "visibility": "public_case",
+          "supports_fact_ids": ["FAC-PAYMENT-DISPUTE"],
+          "foundation_required": true
+        },
+        {
+          "evidence_id": "EVD-SYSTEM-REPORT",
+          "title": "Access-control maintenance report",
+          "description": "Maintenance report relevant to whether the access and camera clocks matched.",
+          "offered_by": "defense",
+          "visibility": "defense_private",
+          "supports_fact_ids": ["FAC-CLOCK-OFFSET"],
+          "foundation_required": true
+        },
+        {
+          "evidence_id": "EVD-PROJECT-MESSAGE",
+          "title": "Project lead message",
+          "description": "Message about Rowan retrieving personal equipment from the lab.",
+          "offered_by": "defense",
+          "visibility": "defense_private",
+          "supports_fact_ids": ["FAC-CONSENT-MESSAGE"],
+          "foundation_required": true
+        }
+      ],
+      "witnesses": [
+        {
+          "witness_id": "WIT-SECURITY-ADMIN",
+          "name": "Morgan Ibarra",
+          "called_by": "prosecution",
+          "public_summary": "Security administrator familiar with badge access records.",
+          "knowledge_atom_ids": ["KNO-SECURITY-BADGES"]
+        },
+        {
+          "witness_id": "WIT-SYSTEMS-TECHNICIAN",
+          "name": "Samira Holt",
+          "called_by": "defense",
+          "public_summary": "Systems technician familiar with the access and camera clocks.",
+          "knowledge_atom_ids": ["KNO-TECHNICIAN-CLOCKS"]
+        },
+        {
+          "witness_id": "WIT-PROJECT-LEAD",
+          "name": "Devon Price",
+          "called_by": "defense",
+          "public_summary": "Project lead who discussed payment and equipment with Rowan.",
+          "knowledge_atom_ids": ["KNO-PROJECT-LEAD-CONSENT"]
+        }
+      ],
+      "witness_knowledge": [
+        {
+          "knowledge_atom_id": "KNO-SECURITY-BADGES",
+          "witness_id": "WIT-SECURITY-ADMIN",
+          "text": "The security administrator knows the badge export procedure and that badges were sometimes shared informally.",
+          "related_fact_ids": ["FAC-BADGE-ACCESS", "FAC-SHARED-BADGE"],
+          "visibility": "witness_private"
+        },
+        {
+          "knowledge_atom_id": "KNO-TECHNICIAN-CLOCKS",
+          "witness_id": "WIT-SYSTEMS-TECHNICIAN",
+          "text": "The systems technician can explain whether the two systems were synchronized on the relevant date.",
+          "related_fact_ids": ["FAC-CLOCK-OFFSET", "FAC-CORRIDOR-VIDEO"],
+          "visibility": "witness_private"
+        },
+        {
+          "knowledge_atom_id": "KNO-PROJECT-LEAD-CONSENT",
+          "witness_id": "WIT-PROJECT-LEAD",
+          "text": "The project lead remembers the payment dispute and the prior message about personal equipment.",
+          "related_fact_ids": ["FAC-PAYMENT-DISPUTE", "FAC-CONSENT-MESSAGE"],
+          "visibility": "witness_private"
+        }
+      ],
+      "private_truth": {
+        "ground_truth_summary": "The available record does not resolve who entered the lab or whether the removal was authorized; the access-and-timing evidence must be tested at trial.",
+        "expected_contradictions": [
+          {
+            "contradiction_id": "CON-ACCESS-CLOCKS",
+            "description": "The badge record and corridor video support identity only if their timestamps can be reliably aligned.",
+            "involved_fact_ids": [
+              "FAC-BADGE-ACCESS",
+              "FAC-CORRIDOR-VIDEO",
+              "FAC-CLOCK-OFFSET"
+            ],
+            "visibility": "evaluator_only"
+          },
+          {
+            "contradiction_id": "CON-MOTIVE-CONSENT",
+            "description": "The payment dispute can suggest motive, but the project-lead message may support authorized retrieval.",
+            "involved_fact_ids": [
+              "FAC-PAYMENT-DISPUTE",
+              "FAC-CONSENT-MESSAGE"
+            ],
+            "visibility": "evaluator_only"
+          }
+        ],
+        "coaching_references": [
+          {
+            "objective_id": "OBJ-AUTHENTICATE-TIMELINE",
+            "label": "Authenticate the timeline",
+            "ideal_action": "Establish or challenge synchronization before relying on the access-and- video timeline.",
+            "visibility": "coach_only"
+          },
+          {
+            "objective_id": "OBJ-TEST-CONSENT",
+            "label": "Test authorization",
+            "ideal_action": "Connect any authorization message to the prototype and the relevant time window before arguing intent.",
+            "visibility": "coach_only"
+          }
+        ]
+      }
+    }
+  }

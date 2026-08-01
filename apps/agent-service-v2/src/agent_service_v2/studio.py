@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+from openai import OpenAI
+
 from agent_service_v2.evaluation import build_evaluation_graph
 from agent_service_v2.flows.ai_ai import build_ai_ai_trial_graph
+from agent_service_v2.shared import (
+    OpenAIResponsesPromptExecutor,
+    configure_runtime_environment,
+)
 
-ai_ai_trial = build_ai_ai_trial_graph()
+configure_runtime_environment()
+ai_ai_trial = build_ai_ai_trial_graph(OpenAIResponsesPromptExecutor(OpenAI()))
 ai_ai_evaluation = build_evaluation_graph()
 
 __all__ = ["ai_ai_evaluation", "ai_ai_trial"]

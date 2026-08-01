@@ -3,9 +3,11 @@ from __future__ import annotations
 from agent_service_v2.evaluation import EvaluationState, build_evaluation_graph
 from agent_service_v2.flows.ai_ai import V2AiAiState, build_ai_ai_trial_graph
 
+from .prompt_fakes import CannedPromptExecutor
+
 
 def test_evaluation_graph_runs_from_trial_outputs() -> None:
-    trial_result = build_ai_ai_trial_graph().invoke(V2AiAiState())
+    trial_result = build_ai_ai_trial_graph(CannedPromptExecutor()).invoke(V2AiAiState())
 
     result = build_evaluation_graph().invoke(
         EvaluationState(

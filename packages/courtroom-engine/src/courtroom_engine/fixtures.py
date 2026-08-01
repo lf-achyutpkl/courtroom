@@ -289,3 +289,224 @@ def build_case_intelligence_criminal_case() -> AuthoredCaseTemplate:
             ),
         ),
     )
+
+
+def build_balanced_prototype_theft_case() -> AuthoredCaseTemplate:
+    """Return a contested criminal case where advocacy around timing is decisive."""
+    prosecution = Party(
+        party_id="PTY-PROSECUTION",
+        name="People of California",
+        side=PartySide.PROSECUTION,
+    )
+    defense = Party(
+        party_id="PTY-DEFENSE",
+        name="Rowan Keene",
+        side=PartySide.DEFENSE,
+    )
+    identity = LegalElement(
+        element_id="ELM-IDENTITY",
+        label="Identity",
+        description="Rowan Keene was the person who removed the prototype.",
+        burden="beyond_reasonable_doubt",
+        proving_side=PartySide.PROSECUTION,
+    )
+    intent = LegalElement(
+        element_id="ELM-INTENT",
+        label="Intent to deprive",
+        description="The removal was without permission and intended to deprive the owner.",
+        burden="beyond_reasonable_doubt",
+        proving_side=PartySide.PROSECUTION,
+    )
+    badge_log = Fact(
+        fact_id="FAC-BADGE-ACCESS",
+        text="A badge assigned to Rowan Keene opened the incubator lab at 9:17 p.m.",
+        supports_element_ids=("ELM-IDENTITY",),
+    )
+    corridor_video = Fact(
+        fact_id="FAC-CORRIDOR-VIDEO",
+        text="Corridor video shows a person in Rowan's distinctive jacket leaving with a hard case.",
+        supports_element_ids=("ELM-IDENTITY", "ELM-INTENT"),
+    )
+    payment_dispute = Fact(
+        fact_id="FAC-PAYMENT-DISPUTE",
+        text="Rowan had argued that the startup owed overdue consulting fees.",
+        supports_element_ids=("ELM-INTENT",),
+    )
+    shared_badge = Fact(
+        fact_id="FAC-SHARED-BADGE",
+        text="The lab team sometimes shared badges when working late.",
+        visibility=VisibilityScope.DEFENSE_PRIVATE,
+        supports_element_ids=("ELM-IDENTITY",),
+    )
+    clock_offset = Fact(
+        fact_id="FAC-CLOCK-OFFSET",
+        text="The access-control server may have run eleven minutes ahead of the corridor camera.",
+        visibility=VisibilityScope.DEFENSE_PRIVATE,
+        supports_element_ids=("ELM-IDENTITY",),
+    )
+    consent_message = Fact(
+        fact_id="FAC-CONSENT-MESSAGE",
+        text="A project lead had previously told Rowan to collect personal equipment from the lab.",
+        visibility=VisibilityScope.DEFENSE_PRIVATE,
+        supports_element_ids=("ELM-INTENT",),
+    )
+    access_log = EvidenceItem(
+        evidence_id="EVD-ACCESS-LOG",
+        title="Incubator badge-access export",
+        description="System export recording the badge event at 9:17 p.m.",
+        offered_by=PartySide.PROSECUTION,
+        supports_fact_ids=("FAC-BADGE-ACCESS",),
+    )
+    video = EvidenceItem(
+        evidence_id="EVD-CORRIDOR-VIDEO",
+        title="Corridor camera clip",
+        description="Low-resolution footage of a person carrying a hard case.",
+        offered_by=PartySide.PROSECUTION,
+        supports_fact_ids=("FAC-CORRIDOR-VIDEO",),
+    )
+    colleague_message = EvidenceItem(
+        evidence_id="EVD-PAYMENT-MESSAGES",
+        title="Consulting-fee messages",
+        description="Messages reflecting the parties' dispute over unpaid consulting fees.",
+        offered_by=PartySide.PROSECUTION,
+        supports_fact_ids=("FAC-PAYMENT-DISPUTE",),
+    )
+    system_report = EvidenceItem(
+        evidence_id="EVD-SYSTEM-REPORT",
+        title="Access-control maintenance report",
+        description="Maintenance report relevant to whether the access and camera clocks matched.",
+        offered_by=PartySide.DEFENSE,
+        visibility=VisibilityScope.DEFENSE_PRIVATE,
+        supports_fact_ids=("FAC-CLOCK-OFFSET",),
+    )
+    project_message = EvidenceItem(
+        evidence_id="EVD-PROJECT-MESSAGE",
+        title="Project lead message",
+        description="Message about Rowan retrieving personal equipment from the lab.",
+        offered_by=PartySide.DEFENSE,
+        visibility=VisibilityScope.DEFENSE_PRIVATE,
+        supports_fact_ids=("FAC-CONSENT-MESSAGE",),
+    )
+    security_knowledge = KnowledgeAtom(
+        knowledge_atom_id="KNO-SECURITY-BADGES",
+        witness_id="WIT-SECURITY-ADMIN",
+        text="The security administrator knows the badge export procedure and that badges were sometimes shared informally.",
+        related_fact_ids=("FAC-BADGE-ACCESS", "FAC-SHARED-BADGE"),
+    )
+    technician_knowledge = KnowledgeAtom(
+        knowledge_atom_id="KNO-TECHNICIAN-CLOCKS",
+        witness_id="WIT-SYSTEMS-TECHNICIAN",
+        text="The systems technician can explain whether the two systems were synchronized on the relevant date.",
+        related_fact_ids=("FAC-CLOCK-OFFSET", "FAC-CORRIDOR-VIDEO"),
+    )
+    project_lead_knowledge = KnowledgeAtom(
+        knowledge_atom_id="KNO-PROJECT-LEAD-CONSENT",
+        witness_id="WIT-PROJECT-LEAD",
+        text="The project lead remembers the payment dispute and the prior message about personal equipment.",
+        related_fact_ids=("FAC-PAYMENT-DISPUTE", "FAC-CONSENT-MESSAGE"),
+    )
+    return AuthoredCaseTemplate(
+        metadata=CaseMetadata(
+            case_id="CASE-KEENE-PROTOTYPE-THEFT",
+            title="People v. Keene",
+            case_kind=CaseKind.CRIMINAL,
+        ),
+        parties=(prosecution, defense),
+        actors=(
+            Actor(
+                actor_id="ACT-PROSECUTOR",
+                role=ActorRole.PROSECUTION_LAWYER,
+                name="Prosecutor",
+                party_id=prosecution.party_id,
+            ),
+            Actor(
+                actor_id="ACT-DEFENSE-LAWYER",
+                role=ActorRole.DEFENSE_LAWYER,
+                name="Defense counsel",
+                party_id=defense.party_id,
+            ),
+            Actor(
+                actor_id="ACT-SECURITY-ADMIN",
+                role=ActorRole.WITNESS,
+                name="Morgan Ibarra",
+                witness_id="WIT-SECURITY-ADMIN",
+            ),
+            Actor(
+                actor_id="ACT-SYSTEMS-TECHNICIAN",
+                role=ActorRole.WITNESS,
+                name="Samira Holt",
+                witness_id="WIT-SYSTEMS-TECHNICIAN",
+            ),
+            Actor(
+                actor_id="ACT-PROJECT-LEAD",
+                role=ActorRole.WITNESS,
+                name="Devon Price",
+                witness_id="WIT-PROJECT-LEAD",
+            ),
+            Actor(actor_id="ACT-JUDGE", role=ActorRole.TRIAL_JUDGE, name="Judge"),
+        ),
+        matters=(
+            ClaimOrCharge(
+                matter_id="CHG-PROTOTYPE-THEFT",
+                case_kind=CaseKind.CRIMINAL,
+                title="Theft of a prototype",
+                elements=(identity, intent),
+            ),
+        ),
+        facts=(badge_log, corridor_video, payment_dispute, shared_badge, clock_offset, consent_message),
+        evidence=(access_log, video, colleague_message, system_report, project_message),
+        witnesses=(
+            Witness(
+                witness_id="WIT-SECURITY-ADMIN",
+                name="Morgan Ibarra",
+                called_by=PartySide.PROSECUTION,
+                public_summary="Security administrator familiar with badge access records.",
+                knowledge_atom_ids=("KNO-SECURITY-BADGES",),
+            ),
+            Witness(
+                witness_id="WIT-SYSTEMS-TECHNICIAN",
+                name="Samira Holt",
+                called_by=PartySide.DEFENSE,
+                public_summary="Systems technician familiar with the access and camera clocks.",
+                knowledge_atom_ids=("KNO-TECHNICIAN-CLOCKS",),
+            ),
+            Witness(
+                witness_id="WIT-PROJECT-LEAD",
+                name="Devon Price",
+                called_by=PartySide.DEFENSE,
+                public_summary="Project lead who discussed payment and equipment with Rowan.",
+                knowledge_atom_ids=("KNO-PROJECT-LEAD-CONSENT",),
+            ),
+        ),
+        witness_knowledge=(security_knowledge, technician_knowledge, project_lead_knowledge),
+        private_truth=PrivateSimulationTruth(
+            ground_truth_summary=(
+                "The available record does not resolve who entered the lab or whether the removal was authorized; "
+                "the access-and-timing evidence must be tested at trial."
+            ),
+            expected_contradictions=(
+                ExpectedContradiction(
+                    contradiction_id="CON-ACCESS-CLOCKS",
+                    description="The badge record and corridor video support identity only if their timestamps can be reliably aligned.",
+                    involved_fact_ids=("FAC-BADGE-ACCESS", "FAC-CORRIDOR-VIDEO", "FAC-CLOCK-OFFSET"),
+                ),
+                ExpectedContradiction(
+                    contradiction_id="CON-MOTIVE-CONSENT",
+                    description="The payment dispute can suggest motive, but the project-lead message may support authorized retrieval.",
+                    involved_fact_ids=("FAC-PAYMENT-DISPUTE", "FAC-CONSENT-MESSAGE"),
+                ),
+            ),
+            coaching_references=(
+                CoachingReference(
+                    objective_id="OBJ-AUTHENTICATE-TIMELINE",
+                    label="Authenticate the timeline",
+                    ideal_action="Establish or challenge synchronization before relying on the access-and-video timeline.",
+                ),
+                CoachingReference(
+                    objective_id="OBJ-TEST-CONSENT",
+                    label="Test authorization",
+                    ideal_action="Connect any authorization message to the prototype and the relevant time window before arguing intent.",
+                ),
+            ),
+        ),
+    )

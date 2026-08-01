@@ -3,18 +3,29 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from courtroom_engine.fixtures import build_balanced_prototype_theft_case
+
 from agent_service_v2.flows.ai_ai import (
     V2AiAiState,
     build_ai_ai_trial_graph,
 )
 from agent_service_v2.flows.ai_ai.witness_graph import build_witness_examination_graph
+from agent_service_v2.shared import (
+    InvocationOutcome,
+    PromptInvocationError,
+    PromptInvocationResult,
+    PromptUsage,
+)
+
+from .prompt_fakes import CannedPromptExecutor
 
 
 def test_ai_ai_trial_graph_reaches_coaching_complete() -> None:
-    result = build_ai_ai_trial_graph().invoke(V2AiAiState())
+    result = build_ai_ai_trial_graph(CannedPromptExecutor()).invoke(V2AiAiState())
 
     assert result["status"] == "learning_trace_persisted"
     assert result["runtime"].phase == "complete"
+    assert result["case_intelligence_analysis"]
     assert "evaluation" in result["phase_outputs"]
     assert "coaching" in result["phase_outputs"]
     assert "persist_learning_trace" in result["phase_outputs"]
@@ -22,6 +33,35 @@ def test_ai_ai_trial_graph_reaches_coaching_complete() -> None:
     assert result["closing_record"] is not None
     assert result["learning_trace"] is not None
     assert result["trace"]
+
+
+def test_ai_ai_trial_graph_uses_supplied_case_template() -> None:
+    result = build_ai_ai_trial_graph(CannedPromptExecutor()).invoke(
+        V2AiAiState(case_template=build_balanced_prototype_theft_case())
+    )
+
+    assert result["case_package"].metadata.case_id == "CASE-KEENE-PROTOTYPE-THEFT"
+    assert result["runtime"].case_id == "CASE-KEENE-PROTOTYPE-THEFT"
+
+
+def test_ai_ai_trial_graph_ends_with_recorded_prompt_failure() -> None:
+    class FailingPromptExecutor:
+        def invoke(self, **_: object) -> PromptInvocationResult[object]:
+            result = PromptInvocationResult(
+                output=None,
+                outcome=InvocationOutcome.REFUSAL_OR_UNUSABLE,
+                usage=PromptUsage(),
+                attempts=1,
+                response_id="resp_failure",
+            )
+            raise PromptInvocationError("case review was invalid", result=result)
+
+    result = build_ai_ai_trial_graph(FailingPromptExecutor()).invoke(V2AiAiState())
+
+    assert result["status"] == "failed"
+    assert result["node_failure"].node_name == "analyze_case"
+    assert result["node_failure"].response_id == "resp_failure"
+    assert "plan_prosecution_case" not in result["phase_outputs"]
 
 
 def test_ai_ai_trial_graph_exposes_documented_phase_nodes() -> None:

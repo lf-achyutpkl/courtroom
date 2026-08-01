@@ -28,6 +28,7 @@ from courtroom_engine.domain.case_intelligence import (
     EvidenceRelationshipType,
 )
 from courtroom_engine.fixtures import (
+    build_balanced_prototype_theft_case,
     build_case_intelligence_civil_case,
     build_case_intelligence_criminal_case,
 )
@@ -70,6 +71,24 @@ class CaseIntelligenceAnalyzerTests(unittest.TestCase):
             ("FAC-CAMERA-MATCH", "CHG-THEFT", PartySide.PROSECUTION),
             material,
         )
+
+    def test_balanced_prototype_theft_fixture_compiles_with_contested_evidence(self) -> None:
+        package = self.compiler.compile(build_balanced_prototype_theft_case())
+
+        self.assertEqual(package.metadata.case_id, "CASE-KEENE-PROTOTYPE-THEFT")
+        self.assertEqual(
+            {party.side for party in package.parties},
+            {PartySide.PROSECUTION, PartySide.DEFENSE},
+        )
+        self.assertGreaterEqual(
+            len({evidence.offered_by for evidence in package.evidence}),
+            2,
+        )
+        contradictions = {
+            contradiction.contradiction_id
+            for contradiction in package.intelligence.contradiction_graph.contradictions
+        }
+        self.assertIn("CON-ACCESS-CLOCKS", contradictions)
 
     def test_compiler_validates_reference_errors(self) -> None:
         template = build_case_intelligence_civil_case()

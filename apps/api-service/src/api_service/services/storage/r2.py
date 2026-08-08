@@ -3,7 +3,12 @@ from __future__ import annotations
 from functools import cached_property
 from typing import Any
 
-from .base import ObjectStorageService, StoredObject
+from .base import (
+    ObjectStorageService,
+    PresignedUpload,
+    PrivateObjectMetadata,
+    StoredObject,
+)
 
 
 class R2ObjectStorageService(ObjectStorageService):
@@ -59,3 +64,40 @@ class R2ObjectStorageService(ObjectStorageService):
             content_type=content_type,
             size_bytes=len(payload),
         )
+
+    def create_private_upload(
+        self, *, key: str, content_type: str, expires_in_seconds: int
+    ) -> PresignedUpload:
+        url = self._client.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": self.bucket_name,
+                "Key": key,
+                "ContentType": content_type,
+            },
+            ExpiresIn=expires_in_seconds,
+            HttpMethod="PUT",
+        )
+        return PresignedUpload(url, {"Content-Type": content_type}, expires_in_seconds)
+
+    def get_private_metadata(self, *, key: str) -> PrivateObjectMetadata | None:
+        try:
+            result = self._client.head_object(Bucket=self.bucket_name, Key=key)
+        except self._client.exceptions.ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") in {
+                "404",
+                "NoSuchKey",
+                "NotFound",
+            }:
+                return None
+            raise
+        return PrivateObjectMetadata(
+            bucket=self.bucket_name,
+            key=key,
+            content_type=result.get("ContentType", "application/octet-stream"),
+            size_bytes=int(result.get("ContentLength", 0)),
+            checksum=result.get("ETag", "").strip('"') or None,
+        )
+
+    def download_private_bytes(self, *, key: str) -> bytes:
+        return self._client.get_object(Bucket=self.bucket_name, Key=key)["Body"].read()

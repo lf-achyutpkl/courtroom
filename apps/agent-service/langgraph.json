@@ -1,7 +1,8 @@
   {
     "dependencies": ["."],
     "graphs": {
-      "trial": "./src/agent.py:graph",
+    "trial": "./src/agent.py:graph",
+    "ai-human-trial": "./src/interactive/agent.py:graph",
       "examine-witness": "./src/subgraphs/witness/agent.py:witness_graph"
     },
     "env": "./.env",

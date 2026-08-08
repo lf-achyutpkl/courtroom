@@ -43,7 +43,12 @@ Or start queue-specific workers:
 ```bash
 make worker-llm
 make worker-tts
+make worker-interactive
 ```
+
+AI-vs-human trials are consumed from the `interactive_trial` queue. Run
+`make worker-all` or `make worker-interactive` before creating a trial; a run
+will remain `queued` until a worker listens to that queue.
 
 Create a new migration after changing SQLAlchemy models with:
 

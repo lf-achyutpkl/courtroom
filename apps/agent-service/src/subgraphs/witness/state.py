@@ -12,6 +12,7 @@ class WitnessExaminationState(BaseModel):
     current_witness_id: str
     examination_phase: Literal["direct", "cross"] = "direct"
     examining_attorney: Literal["prosecution", "defense"]
+    human_attorney_side: Literal["prosecution", "defense"] | None = None
     turn_count: int = 0
     current_witness_transcript: list[TranscriptTurn] = Field(default_factory=list)
     node_telemetry: Annotated[list[NodeTelemetry], add] = Field(default_factory=list)

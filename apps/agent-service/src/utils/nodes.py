@@ -4,6 +4,7 @@ from typing import Literal, TypedDict
 
 from courtroom_domain import VerdictOutput
 
+from ..interactive.witness_graph import build_ai_human_witness_graph
 from ..subgraphs.witness.graph import build_witness_graph
 from ..subgraphs.witness.state import WitnessExaminationState
 from . import types
@@ -72,6 +73,7 @@ class VerdictUpdate(TypedDict):
 
 
 _witness_graph = build_witness_graph()
+_ai_human_witness_graph = build_ai_human_witness_graph()
 
 
 def load_case_template_node(state: TrialState) -> dict[str, object]:
@@ -215,8 +217,14 @@ def examine_witness_node(state: TrialState) -> WitnessExaminationUpdate:
         run_id=state.run_id,
         current_witness_id=state.current_witness_id,
         examining_attorney=witness.called_by,
+        human_attorney_side=(
+            state.human_attorney_side if state.trial_mode == "ai_vs_human" else None
+        ),
     )
-    result = _witness_graph.invoke(witness_state)
+    witness_graph = (
+        _ai_human_witness_graph if state.trial_mode == "ai_vs_human" else _witness_graph
+    )
+    result = witness_graph.invoke(witness_state)
     result_state = (
         result
         if isinstance(result, WitnessExaminationState)

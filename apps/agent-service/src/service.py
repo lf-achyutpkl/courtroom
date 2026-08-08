@@ -43,6 +43,9 @@ def _langsmith_tracing_enabled() -> bool:
 def _build_initial_state(request: RunTrialRequest) -> TrialState:
     return TrialState(
         case_file=request.case_file,
+        trial_mode=request.trial_mode,
+        human_attorney_side=request.human_attorney_side,
+        human_witness_plan=request.human_witness_plan,
         run_id=str(uuid4()),
         run_started_at=_utc_now_iso(),
     )
@@ -51,6 +54,14 @@ def _build_initial_state(request: RunTrialRequest) -> TrialState:
 def _run_trial_with_state(
     request: RunTrialRequest,
 ) -> tuple[RunTrialResponse, TrialState]:
+    if request.trial_mode == "ai_vs_human":
+        raise ValueError(
+            "AI-vs-human trials require the checkpointed interactive runtime. "
+            "Use src.interactive.execute_interactive_trial through the "
+            "interactive-trial worker flow, then resume each human turn with "
+            "an audio payload."
+        )
+
     initial_state = _build_initial_state(request)
     with collect_runs() as runs_cb:
         result = _trial_graph.invoke(initial_state)

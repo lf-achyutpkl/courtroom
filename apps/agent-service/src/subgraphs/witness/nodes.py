@@ -1,5 +1,8 @@
 from typing import Literal
 
+from langgraph.types import interrupt
+
+from ...interactive.transcription import transcribe_deepgram
 from ...utils import llm, types
 from ...utils.config import TRIAL_CONFIG
 from ...utils.helpers import (
@@ -25,6 +28,32 @@ from .state import WitnessExaminationState
 
 
 def ask_question_node(state: WitnessExaminationState) -> dict:
+    if state.examining_attorney == state.human_attorney_side:
+        payload = interrupt(
+            {
+                "kind": "human_question",
+                "attorney_side": state.examining_attorney,
+                "phase": state.examination_phase,
+                "witness_id": state.current_witness_id,
+                "required": ["audio_base64", "mime_type", "is_final"],
+            }
+        )
+        if not isinstance(payload, dict) or not isinstance(
+            payload.get("is_final"), bool
+        ):
+            raise ValueError("human question requires a boolean is_final control")
+        question = transcribe_deepgram(payload)
+        turn = types.TranscriptTurn(
+            scene=state.examination_phase,
+            speaker_id=state.examining_attorney,
+            text=question,
+        )
+        return {
+            "current_witness_transcript": append_witness_turn(state, turn),
+            "turn_count": current_phase_question_count(state) + 1,
+            "attorney_is_done": payload["is_final"],
+            "active_question_text": question,
+        }
     """Ask a question based on the current trial state."""
     if state.current_witness_id is None:
         raise ValueError("current_witness_id must be set before asking a question")
@@ -82,6 +111,36 @@ def ask_question_node(state: WitnessExaminationState) -> dict:
 
 
 def objection_check_node(state: WitnessExaminationState) -> dict:
+    opposing = "defense" if state.examining_attorney == "prosecution" else "prosecution"
+    if opposing == state.human_attorney_side:
+        payload = interrupt(
+            {
+                "kind": "human_objection",
+                "attorney_side": opposing,
+                "phase": state.examination_phase,
+                "witness_id": state.current_witness_id,
+                "required": ["object"],
+                "audio_required_when_objecting": True,
+            }
+        )
+        if not isinstance(payload, dict) or not isinstance(payload.get("object"), bool):
+            raise ValueError("human objection requires a boolean object control")
+        if not payload["object"]:
+            return {
+                "objection_pending": False,
+                "last_objection_type": None,
+                "last_objection_text": None,
+            }
+        objection_text = transcribe_deepgram(payload)
+        turn = types.TranscriptTurn(
+            scene="objection", speaker_id=opposing, text=objection_text
+        )
+        return {
+            "current_witness_transcript": append_witness_turn(state, turn),
+            "objection_pending": True,
+            "last_objection_type": "human_objection",
+            "last_objection_text": objection_text,
+        }
     opposing = "defense" if state.examining_attorney == "prosecution" else "prosecution"
     last_question = state.active_question_text
     if TRIAL_CONFIG.skip_direct_objections and state.examination_phase == "direct":

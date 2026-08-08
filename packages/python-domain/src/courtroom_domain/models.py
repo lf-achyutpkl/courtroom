@@ -102,6 +102,9 @@ class CaseFile(BaseModel):
 
 class TrialState(BaseModel):
     case_file: CaseFile
+    trial_mode: Literal["ai_vs_ai", "ai_vs_human"] = "ai_vs_ai"
+    human_attorney_side: Literal["prosecution", "defense"] = "defense"
+    human_witness_plan: list[str] = Field(default_factory=list)
     run_id: str | None = None
     run_started_at: str | None = None
     prosecution_witness_plan: list[str] = Field(default_factory=list)

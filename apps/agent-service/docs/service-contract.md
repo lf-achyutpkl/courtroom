@@ -230,3 +230,11 @@ This aligns with the current web app transcript input shape.
 ## Shared Package Threshold
 
 Do not create a shared schema package yet. Promote these shapes into a shared package only when both workspaces need versioned validation code.
+# Interactive execution boundary
+
+The API worker calls `src.interactive.execute_interactive_trial` with a stable
+LangGraph `thread_id` and a Postgres checkpointer. Initial execution supplies
+the case file and human side; subsequent calls supply only `resume_payload`.
+It returns a normalized state snapshot plus either a pending interrupt or a
+completed outcome. HTTP, RQ orchestration, R2 download, and public persistence
+remain owned by `apps/api-service`.

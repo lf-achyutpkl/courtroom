@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import START, StateGraph
 
 from ..subgraphs.witness.nodes import (
@@ -90,3 +91,42 @@ def build_ai_human_witness_graph(*, checkpointer: Any | None = None):
     builder.add_conditional_edges("witness_answer", _route_after_answer)
     builder.add_edge("swap_to_cross", "ask_question")
     return builder.compile(checkpointer=checkpointer)
+
+
+_compiled_witness_graph = build_ai_human_witness_graph()
+
+
+def examine_witness_node(
+    state: InteractiveTrialState, config: RunnableConfig
+) -> dict[str, object]:
+    """Run the witness subgraph and report only the turns/telemetry it added.
+
+    ``InteractiveTrialState`` shares ``full_trial_transcript`` and
+    ``node_telemetry`` with the parent trial graph, and both fields use an
+    ``add`` reducer. If the compiled subgraph were added directly as a parent
+    node (as it shares the same schema), LangGraph would hand the parent the
+    subgraph's *entire* final state for those keys -- which already contains
+    everything the parent passed in -- and the parent's own reducer would
+    append that on top of what it already has, duplicating every prior turn
+    and telemetry entry on each witness examination. Invoking the subgraph
+    here and returning only the slice produced during this call avoids that.
+    Passing `config` through keeps this call nested under the parent's
+    checkpoint namespace, so interrupts/resumes for human turns still work.
+    """
+
+    transcript_before = len(state.full_trial_transcript)
+    telemetry_before = len(state.node_telemetry)
+
+    result = _compiled_witness_graph.invoke(state, config)
+    result_state = (
+        result
+        if isinstance(result, InteractiveTrialState)
+        else InteractiveTrialState.model_validate(result)
+    )
+
+    return {
+        "full_trial_transcript": result_state.full_trial_transcript[
+            transcript_before:
+        ],
+        "node_telemetry": result_state.node_telemetry[telemetry_before:],
+    }

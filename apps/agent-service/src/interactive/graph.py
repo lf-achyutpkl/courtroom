@@ -24,7 +24,7 @@ from ..utils.nodes import (
 from ..utils.state import TrialState
 from .state import InteractiveTrialState
 from .transcription import transcribe_deepgram
-from .witness_graph import build_ai_human_witness_graph
+from .witness_graph import examine_witness_node
 
 
 def _human_plan(state: TrialState) -> dict[str, object]:
@@ -121,7 +121,7 @@ def build_ai_human_graph(*, checkpointer: Any | None = None):
         ("opening_prosecution", _opening_prosecution),
         ("opening_defense", _opening_defense),
         ("select_next_witness", select_next_witness_node),
-        ("examine_witness", build_ai_human_witness_graph()),
+        ("examine_witness", examine_witness_node),
         ("summarize_trial_transcript", summarize_trial_transcript_node),
         ("closing_prosecution", _closing_prosecution),
         ("closing_defense", _closing_defense),

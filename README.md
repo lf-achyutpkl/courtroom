@@ -13,6 +13,8 @@ AI courtroom simulation built with `LangGraph`, `FastAPI`, `Next.js`, and `RQ`. 
 > ⚖️ **v2.0 coming: from playback to live practice**
 >
 > V2 turns this into a live, voice-driven courtroom training loop: you argue your case out loud in real time — live STT for your side, live TTS for the opposing counsel and judge — against an LLM-powered opponent, with the whole exchange unfolding as a genuine live discussion rather than a scripted run. An LLM judge delivers the verdict on the spot, and the system returns structured feedback on argument quality, performance, strengths, and weaknesses.
+>
+> 🚪 **Early access is open now at [trialnex.online](https://www.trialnex.online/)**
 
 ## 🎬 Case Builder Demo
 
